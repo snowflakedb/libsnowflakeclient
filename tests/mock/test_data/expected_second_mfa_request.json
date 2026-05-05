@@ -10,7 +10,8 @@
 		"CLIENT_ENVIRONMENT":	{
 			"OS":	"Linux",
 			"OS_VERSION":	"0",
-			"APPLICATION_PATH":	"/app/path"
+			"APPLICATION_PATH":	"/app/path",
+			"PLATFORM":	["disabled"]
 		},
 		"SESSION_PARAMETERS":	{
 			"AUTOCOMMIT":	"TRUE",

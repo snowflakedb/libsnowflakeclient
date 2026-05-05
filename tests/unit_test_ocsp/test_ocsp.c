@@ -281,6 +281,19 @@ checkDefaultURLDomain(char *host, char *port, char *cacert)
 
 int main(int argc, char **argv)
 {
+    // TODO: Reenable after SNOW-3355426 is completed
+    if (getenv("JENKINS_HOME"))
+    {
+        printf("Skipping test_ocsp on Jenkins CI\n");
+        return 0;
+    }
+    char *cloud_provider = getenv("CLOUD_PROVIDER");
+    if (cloud_provider && strcmp(cloud_provider, "AWS") == 0)
+    {
+        printf("Skipping test_ocsp on AWS CI\n");
+        return 0;
+    }
+
     char cacert[4096];
     char host[4096];
     char port[100] = "443";

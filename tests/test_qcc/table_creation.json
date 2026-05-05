@@ -1,0 +1,79 @@
+{
+    "requiredScenarioState": "Logged in",
+    "newScenarioState": "Create hybrid table",
+    "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+            {
+                "matchesJsonPath": {
+                    "expression": "$.sqlText",
+                    "contains": "CREATE OR REPLACE"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "jsonBody": {
+            "data": {
+                "parameters": [
+                    {
+                        "name": "AUTOCOMMIT",
+                        "value": true
+                    }
+                ],
+                "rowtype": [
+                    {
+                        "name": "status",
+                        "database": "",
+                        "schema": "",
+                        "table": "",
+                        "collation": null,
+                        "scale": null,
+                        "nullable": true,
+                        "byteLength": 16777216,
+                        "precision": null,
+                        "length": 16777216,
+                        "type": "text"
+                    }
+                ],
+                "rowset": [
+                    [
+                        "Table TKV successfully created."
+                    ]
+                ],
+                "total": 1,
+                "returned": 1,
+                "queryId": "01c3b59b-0915-65cc-0000-53b10c41b026",
+                "databaseProvider": null,
+                "finalDatabaseName": "TEST",
+                "finalSchemaName": "TEST",
+                "finalWarehouseName": "TEST_WH",
+                "finalRoleName": "ANALYST",
+                "numberOfBinds": 0,
+                "arrayBindSupported": false,
+                "statementTypeId": 24833,
+                "version": 1,
+                "sendResultTime": 1776193628144,
+                "queryResultFormat": "json",
+                "queryContext": {
+                    "entries": [
+                        {
+                            "id": 0,
+                            "timestamp": 1776193628129319,
+                            "priority": 0,
+                            "context": "COKo1gI="
+                        }
+                    ]
+                }
+            },
+            "code": null,
+            "message": null,
+            "success": true
+        }
+    }
+}

@@ -19,6 +19,7 @@ SET(TESTS_C
         test_crud
         test_error_handlings
         test_large_result_set
+        test_log_query
         test_transaction
         test_ping_pong
         test_stmt_with_bad_connect
@@ -411,5 +412,6 @@ if (LINUX AND NOT MOCK)
     add_subdirectory(test_platform_detection)
     add_subdirectory(test_usr_pwd_mfa)
     add_subdirectory(test_default_auth)
+    add_subdirectory(test_qcc)
 endif()
 add_subdirectory(test_bind_datastructures)

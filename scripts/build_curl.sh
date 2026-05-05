@@ -28,10 +28,10 @@ UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
 CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
 
 rm -rf $LIBCURL_SOURCE_DIR
-curl https://curl.se/download/curl-8.16.0.tar.gz -o $DEPS_DIR/curl-8.16.0.tar.gz
+curl https://curl.se/download/curl-${CURL_SRC_VERSION}.tar.gz -o $DEPS_DIR/curl-${CURL_SRC_VERSION}.tar.gz
 pushd $DEPS_DIR
-  tar -xf curl-8.16.0.tar.gz
-  mv curl-8.16.0 curl
+  tar -xf curl-${CURL_SRC_VERSION}.tar.gz
+  mv curl-${CURL_SRC_VERSION} curl
 popd
 pushd $DEPS_DIR/../
   # Unset any git environment variables that might interfere
@@ -66,7 +66,8 @@ pushd $DEPS_DIR/../
   git reset HEAD~1
   [ -n "$GIT_USERNAME" ] && git config user.name $GIT_USERNAME
   [ -n "$GIT_USER_EMAIL" ] && git config user.email $GIT_USER_EMAIL
-  
+  # copy the custom source files we added
+  cp -rf patches/curl deps/
   # Clean up environment variables
   unset GIT_DIR
   unset GIT_WORK_TREE

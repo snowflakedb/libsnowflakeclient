@@ -604,6 +604,15 @@ static void STDCALL log_term() {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    if (sf->log_query_text)
+    {
+        log_info("log_query_text is set to true, query text will be logged on info level.");
+    }
+    if (sf->log_query_parameters)
+    {
+        log_info("log_query_parameters is set to true, query bindings will be logged on info level.");
+    }
+
     AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
     if (AUTH_UNSUPPORTED == auth_type) {
         // Invalid authenticator
@@ -1180,6 +1189,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->oauth_scope = NULL;
         sf->oauth_refresh_token = NULL;
         sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
+        
+        sf->log_query_text = SF_BOOLEAN_FALSE;
+        sf->log_query_parameters = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1412,6 +1424,23 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         sf->password && (strcmp(sf->password, "renew injection") == 0)) {
         renew_injection = SF_BOOLEAN_TRUE;
     }
+    // Bound the JWT-renewal continue path below: when http_perform reports
+    // is_renew=TRUE because renew_timeout elapsed (e.g. login wedged behind a
+    // bad proxy or slow network), this outer loop regenerates the JWT and
+    // retries. Without a bound it loops forever - SF_CON_LOGIN_TIMEOUT is only
+    // checked inside http_perform's per-attempt retry_timeout, not across
+    // these renew rounds. Cap it by the same overall login_timeout budget the
+    // user already provides.
+    time_t connect_start_time = time(NULL);
+    int8 renew_round = 0;
+    int8 max_renew_rounds = get_login_retry_count(sf);
+    if (max_renew_rounds <= 0) {
+        max_renew_rounds = SF_MAX_RETRY;
+    }
+    int64 connect_overall_timeout = get_login_timeout(sf);
+    if (connect_overall_timeout <= 0) {
+        connect_overall_timeout = SF_LOGIN_TIMEOUT;
+    }
     while (!success) {
         if (request(sf, &resp, SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
@@ -1496,6 +1525,30 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             }
         } else {
             if (is_renew && (renew_timeout > 0)) {
+                // Bound the JWT-renewal retry loop. http_perform sets
+                // is_renew=TRUE every time renew_timeout elapses without a
+                // successful login (e.g. when an unreachable proxy keeps
+                // CURLE_OPERATION_TIMEDOUT firing). Without these guards we
+                // would regenerate the JWT and retry forever.
+                if (renew_round >= max_renew_rounds) {
+                    char msg[256];
+                    sf_sprintf(msg, sizeof(msg),
+                               "Exceeded JWT renewal attempts (%d) during login",
+                               (int)max_renew_rounds);
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_RETRY,
+                                        msg, SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    goto cleanup;
+                }
+                if ((time(NULL) - connect_start_time) >= connect_overall_timeout) {
+                    char msg[256];
+                    sf_sprintf(msg, sizeof(msg),
+                               "Exceeded login timeout (%llds) during JWT renewal",
+                               (long long)connect_overall_timeout);
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_RETRY,
+                                        msg, SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    goto cleanup;
+                }
+                renew_round++;
                 // renew authentication information in body
                 auth_renew_json_body(sf, body);
                 s_body = snowflake_cJSON_Print(body);
@@ -1851,6 +1904,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_AZURE_RESOURCE:
             alloc_buffer_and_copy(&sf->wif_azure_resource, value);
             break;
+        case SF_CON_LOG_QUERY_TEXT:
+            sf->log_query_text = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_LOG_QUERY_PARAMETERS:
+            sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2101,6 +2160,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_WIF_AZURE_RESOURCE:
             *value = sf->wif_azure_resource;
+            break;
+        case SF_CON_LOG_QUERY_TEXT:
+            *value = &sf->log_query_text;
+            break;
+        case SF_CON_LOG_QUERY_PARAMETERS:
+            *value = &sf->log_query_parameters;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -3486,6 +3551,15 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
         goto cleanup;
     }
 
+    if ((sfstmt->connection->log_query_text) && sfstmt->sql_text) {
+        log_info("Executing query:\n%s", sfstmt->sql_text);
+    }
+    if ((sfstmt->connection->log_query_parameters) && bindings) {
+        char* s_bindings = snowflake_cJSON_Print(bindings);
+        log_info("Query bindings:\n%s", s_bindings);
+        SF_FREE(s_bindings);
+    }
+
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
                                   is_string_empty(sfstmt->connection->directURL) ?
@@ -3513,7 +3587,19 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_debug("Here is constructed body:\n%s", s_body);
+    
+    /* sql text and bindings are logged previously when switch is on,
+     * here we only log masked body for debug purpose.
+     */
+    cJSON* body_copy = snowflake_cJSON_Duplicate(body, 1);
+    snowflake_cJSON_ReplaceItemInObject(body_copy, "sqlText",
+        snowflake_cJSON_CreateString("****"));
+    snowflake_cJSON_ReplaceItemInObject(body_copy, "bindings",
+        snowflake_cJSON_CreateString("****"));
+    char* masked_body = snowflake_cJSON_Print(body_copy);
+    log_debug("Here is constructed body:\n%s", masked_body);
+    SF_FREE(masked_body);
+    snowflake_cJSON_Delete(body_copy);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
@@ -3676,6 +3762,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             cJSON *messageJson = NULL;
             char *message = NULL;
             cJSON *codeJson = NULL;
+            cJSON *qcc_json = NULL;
             int64 code = -1;
             if (json_copy_string_no_alloc(sfstmt->error.sqlstate, data,
                                           "sqlState", SF_SQLSTATE_LEN)) {
@@ -3691,6 +3778,15 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             } else {
                 log_debug("No code element.");
             }
+
+            /* Omitting queryContext must not clear QCC (deserialize treats NULL as clear). */
+            qcc_json = snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY);
+            if (qcc_json && snowflake_cJSON_IsObject(qcc_json)) {
+                _mutex_lock(&sfstmt->connection->mutex_parameters);
+                qcc_deserialize(sfstmt->connection, qcc_json);
+                _mutex_unlock(&sfstmt->connection->mutex_parameters);
+            }
+
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                      message ? message
                                              : "Query was not successful",
@@ -3817,7 +3913,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             {
                 log_debug("Array bind is not supported - each parameter set entry "
                           "will be executed as a single request for query: %s",
-                          sfstmt->sql_text);
+                          sfstmt->connection->log_query_text ? sfstmt->sql_text : "****");
                 need_batch_exec = SF_BOOLEAN_TRUE;
             }
         }

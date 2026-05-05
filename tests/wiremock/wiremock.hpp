@@ -40,12 +40,14 @@ namespace Snowflake
 
         public:
             WiremockRunner();
-            WiremockRunner(const std::string &idpMappingFile, const std::vector<std::string> &additionalMappingFiles);
-            WiremockRunner(const std::string &idpMappingFile, const std::vector<std::string> &additionalMappingFiles, const int port);
+            WiremockRunner(const std::string &initialMappingFile, const std::vector<std::string> &additionalMappingFiles);
+            WiremockRunner(const std::string &initialMappingFile, const std::vector<std::string> &additionalMappingFiles, const int port);
             ~WiremockRunner();
             static void resetMapping();
             static void initMappingFromFile(const std::string &mappingFile);
             static void initMappingFromFile(const std::string &mappingFile, const int port);
+            static void initMappingFromMultiFile(const std::string &initialMappingFile, const std::vector<std::string> &additionalMappingFiles);
+            static void initMappingFromMultiFile(const std::string &initialMappingFile, const std::vector<std::string> &additionalMappingFiles, const int port);
             static void addMappingFromFile(const std::string &mappingFile);
             static void addMappingFromFile(const std::string &mappingFile, const int port);
         };

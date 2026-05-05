@@ -24,14 +24,14 @@ namespace Snowflake
             CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
         }
 
-        WiremockRunner::WiremockRunner(const std::string& idpMappingFile, const std::vector<std::string>& additionalMappingFiles)
+        WiremockRunner::WiremockRunner(const std::string& initialMappingFile, const std::vector<std::string>& additionalMappingFiles)
         {
             CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::ctor");
             thread = std::thread(setup);
             CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
-            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", idpMappingFile.c_str());
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", initialMappingFile.c_str());
             waitForWiremockRunning();
-            initMappingFromFile(idpMappingFile);
+            initMappingFromFile(initialMappingFile);
             for (const auto& mappingFile : additionalMappingFiles)
             {
                 CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
@@ -39,14 +39,14 @@ namespace Snowflake
             }
         }
 
-        WiremockRunner::WiremockRunner(const std::string& idpMappingFile, const std::vector<std::string>& additionalMappingFiles, const int port)
+        WiremockRunner::WiremockRunner(const std::string& initialMappingFile, const std::vector<std::string>& additionalMappingFiles, const int port)
         {
             CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::ctor");
             thread = std::thread(setup);
             CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
-            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", idpMappingFile.c_str());
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", initialMappingFile.c_str());
             waitForWiremockRunning();
-            initMappingFromFile(idpMappingFile, port);
+            initMappingFromFile(initialMappingFile, port);
             for (const auto& mappingFile : additionalMappingFiles)
             {
                 CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
@@ -67,7 +67,7 @@ namespace Snowflake
             waitForWiremockRunning();
             std::string request = std::string("curl -s") + " -H 'Accept: application/json'" + " -H 'Content-Type: application-json'" + " -d '" + mapping + "'" + " -X POST http://" + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings/import";
             int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf::WiremockRunner::resetMapping::wiremock mappings initialized: %d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::initMapping::wiremock mappings initialized: %d", ret);
         }
 
         void WiremockRunner::initMappingFromFile(const std::string& mappingFile)
@@ -84,6 +84,28 @@ namespace Snowflake
             std::string portStr = std::to_string(port);
             mapping = WiremockRunner::replaceAll(mapping, "$PORT", portStr);
             initMapping(mapping);
+        }
+
+        void WiremockRunner::initMappingFromMultiFile(const std::string& initialMappingFile, const std::vector<std::string>& additionalMappingFiles) 
+        {
+            waitForWiremockRunning();
+            initMappingFromFile(initialMappingFile);
+            for (const auto& mappingFile : additionalMappingFiles)
+            {
+                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
+                addMappingFromFile(mappingFile);
+            };
+        }
+
+        void WiremockRunner::initMappingFromMultiFile(const std::string& initialMappingFile, const std::vector<std::string>& additionalMappingFiles, int port) 
+        {
+            waitForWiremockRunning();
+            initMappingFromFile(initialMappingFile, port);
+            for (const auto& mappingFile : additionalMappingFiles)
+            {
+                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
+                addMappingFromFile(mappingFile, port);
+            };
         }
 
         void WiremockRunner::addMapping(const std::string& mapping)
@@ -215,8 +237,8 @@ namespace Snowflake
                     + " --proxy-pass-through false"
                     + " --port " + wiremockAdminPort
                     + " --https-port " + wiremockPort
-                    + " --https-keystore ../../tests/wiremock/ca-cert.jks"
-                    + " --ca-keystore ../../tests/wiremock/ca-cert.jks";
+                    + " --https-keystore ../wiremock/ca-cert.jks"
+                    + " --ca-keystore ..그/wiremock/ca-cert.jks";
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock command: %s", command.c_str());
                 exec(command); // blocking call, will be running in a separate thread
             }

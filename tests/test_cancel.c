@@ -220,19 +220,15 @@ void test_multiple_statements() {
   status = snowflake_prepare(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  SF_THREAD_HANDLE execute_thread;
-  SF_THREAD_HANDLE cancel_thread;
-  _thread_init(&execute_thread, (void *)snowflake_execute, (void *)sfstmt);
-  // Give time for query to init
-  sf_sleep_ms(1000);
-  _thread_init(&cancel_thread, (void *)snowflake_cancel_query, (void *)sfstmt);
+  status = snowflake_async_execute(sfstmt);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  _thread_join(execute_thread);
-  _thread_join(cancel_thread);
-  // Give time for query to cancel
-  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
   int retry = 0;
-  while (SF_QUERY_STATUS_RUNNING == query_status)
+  while (SF_QUERY_STATUS_RUNNING != query_status)
   {
     if (retry > STATUS_WAIT_RETRY_MAX)
     {
@@ -243,8 +239,12 @@ void test_multiple_statements() {
     }
     sf_sleep_ms(1000);
     query_status = snowflake_get_query_status(sfstmt);
-	retry++;
+    retry++;
   }
+
+  status = snowflake_cancel_query(sfstmt);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
   while (SF_QUERY_STATUS_RUNNING == query_status)
   {
     if (retry > STATUS_WAIT_RETRY_MAX)
@@ -259,8 +259,21 @@ void test_multiple_statements() {
     retry++;
   }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
-  assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
-  assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
+  /* The server runs multi-statement queries in a SYSTEM$MULTISTMT JavaScript
+   * wrapper. Cancellation may surface as error 604 (SF_STATUS_ERROR_QUERY_CANCELLED)
+   * or as a generic JS execution error (SF_STATUS_ERROR_GENERAL) when the wrapper
+   * catches the cancellation and re-throws it. Both indicate a successful cancel. */
+  assert_true(sfstmt->error.error_code == SF_STATUS_ERROR_QUERY_CANCELLED ||
+              sfstmt->error.error_code == SF_STATUS_ERROR_GENERAL);
+  if (sfstmt->error.error_code == SF_STATUS_ERROR_QUERY_CANCELLED)
+  {
+    assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
+  }
+  else
+  {
+    assert_true(strstr(sfstmt->error.msg,
+                       "Execution of multiple statements failed") != NULL);
+  }
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);

@@ -93,17 +93,11 @@ std::string MockIDP::getSSOURL() {
 class MockOkta : public IAuthenticatorOKTA {
 
 public:
-    MockOkta(SF_CONNECT* connection) : m_connection(connection)
+    MockOkta(SF_CONNECT* connection) : IAuthenticatorOKTA(new MockIDP(connection)), m_connection(connection)
     {
         m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
-        m_idp = new MockIDP(connection);
     };
-
-    ~MockOkta()
-    {
-        delete m_idp;
-    };
-
+    
     bool getCurrentCallFailed();
     bool getPostCallFailed();
     bool getCurlGetRequestFailed();
@@ -132,38 +126,47 @@ public:
 
 bool MockOkta::getCurrentCallFailed() 
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    return idp->isCurrentCallFailed;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        return idp->isCurrentCallFailed;
+    }
+    return false;
 }
 
 bool MockOkta::getPostCallFailed()
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    return idp->isPostCallFailed;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        return idp->isPostCallFailed;
+    }
+    return false;
 }
 
 bool MockOkta::getCurlGetRequestFailed()
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    return idp->isCurlGetRequestFailed;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        return idp->isCurlGetRequestFailed;
+    }
+    return false;
 }
 
 void MockOkta::setCurrentCallFailed(bool value)
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    idp->isCurrentCallFailed = value;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        idp->isCurrentCallFailed = value;
+    }
 }
 
 void MockOkta::setPostCallFailed(bool value)
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    idp->isPostCallFailed = value;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        idp->isPostCallFailed = value;
+    }
 }
 
 void MockOkta::setCurlGetRequestFailed(bool value)
 {
-    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
-    idp->isCurlGetRequestFailed = value;
+    if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
+        idp->isCurlGetRequestFailed = value;
+    }
 }
 
 
@@ -191,7 +194,7 @@ void test_idp_authenticator(void**)
     snowflake_term(sf);
 }
 
-void test_okta_getAuthetnicate(void**)
+void test_okta_getAuthenticator(void**)
 {
     assert_int_equal(getAuthenticatorType("hello"), AUTH_OKTA);
     assert_int_equal(getAuthenticatorType("www.okta.com"), AUTH_OKTA);
@@ -296,7 +299,7 @@ int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_idp_authenticator),
-    cmocka_unit_test(test_okta_getAuthetnicate),
+    cmocka_unit_test(test_okta_getAuthenticator),
     cmocka_unit_test(test_okta_initializie_and_terminatie),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
