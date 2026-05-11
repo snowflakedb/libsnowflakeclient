@@ -39,9 +39,7 @@ void test_connect_with_minimum_parameters() {
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
+    set_authentication_attributes(sf);
     char *host, *port, *protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {
