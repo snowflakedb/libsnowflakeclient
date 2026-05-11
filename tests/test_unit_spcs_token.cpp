@@ -143,7 +143,6 @@ void test_json_data_with_spcs_token_path_is_null(void** unused)
     cJSON* data = snowflake_cJSON_CreateObject();
     append_spcs_token(data, NULL);
 
-    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
 
     snowflake_cJSON_Delete(data);
@@ -160,7 +159,6 @@ void test_json_data_with_spcs_token_file_not_exist(void** unused)
     cJSON* data = snowflake_cJSON_CreateObject();
     append_spcs_token(data, spcsToken.getFilePath().c_str());
 
-    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
 
     snowflake_cJSON_Delete(data);
@@ -177,7 +175,6 @@ void test_json_data_with_spcs_path_is_dir(void** unused)
     cJSON* data = snowflake_cJSON_CreateObject();
     append_spcs_token(data, spcsToken.getTmpCacheDir().c_str());
 
-    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
 
     snowflake_cJSON_Delete(data);
