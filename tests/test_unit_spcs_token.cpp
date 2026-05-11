@@ -13,11 +13,13 @@
 
 class SpcsToken {
 public:
-    explicit SpcsToken(std::string token, bool generateDir = true) : m_token(std::move(token)) {
-        if (generateDir) {
-            GenerateRandomDir();
+    explicit SpcsToken(std::string token, bool generateTokenFile = true) : m_token(std::move(token)) {
+        GenerateRandomDir();
+        
+        if (generateTokenFile)
+        {
+            writeSpcsTokenFile();
         }
-        writeSpcsTokenFile();
     }
 
     ~SpcsToken() {
@@ -29,9 +31,15 @@ public:
         return m_filePath;
     }
 
+    std::string getTmpCacheDir()
+    {
+        return m_tmpCacheDir;
+    }
+
 private:
     std::string m_token;
     std::string m_filePath;
+    std::string m_tmpCacheDir;
 
     void writeSpcsTokenFile() const {
         std::ofstream out(m_filePath, std::ios::out | std::ios::trunc);
@@ -79,6 +87,8 @@ private:
         chmod(tmp_cache_dir.c_str(), 0700);
 #endif
 
+        m_tmpCacheDir = tmp_cache_dir;
+
 #ifdef _WIN32
         m_filePath = tmp_cache_dir + "\\" + "spcs_token";
 #else
@@ -88,27 +98,92 @@ private:
 };
 
 
-void test_json_data_not_in_spcs(void** unused)
+void test_json_data_different_false_env_values(void** unused)
 {
     SF_UNUSED(unused);
     const std::string expectedToken = "spcs-token-value";
 
-    char* spcs_env = sf_getenv_s(SF_SPCS_ENV_VAR, NULL, 0);
-    sf_unsetenv(SF_SPCS_ENV_VAR);
     SpcsToken spcsToken(expectedToken);
+
+
+    cJSON* data = snowflake_cJSON_CreateObject();
+    
+    {
+        EnvOverride envOverride(SF_SPCS_ENV_VAR, "false");
+        append_spcs_token(data, spcsToken.getFilePath().c_str());
+
+        assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+    }
+
+    {
+        EnvOverride envOverride(SF_SPCS_ENV_VAR, "0");
+        append_spcs_token(data, spcsToken.getFilePath().c_str());
+
+        assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+    }
+
+    {
+        EnvOverride envOverride(SF_SPCS_ENV_VAR, "");
+        append_spcs_token(data, spcsToken.getFilePath().c_str());
+
+        assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+    }
+
+    snowflake_cJSON_Delete(data);
+}
+
+void test_json_data_with_spcs_token_path_is_null(void** unused)
+{
+    SF_UNUSED(unused);
+
+    const std::string expectedToken = "spcs-token-value";
+    SpcsToken spcsToken(expectedToken, false);
+    EnvOverride envOverride(SF_SPCS_ENV_VAR, "true");
+
+    cJSON* data = snowflake_cJSON_CreateObject();
+    append_spcs_token(data, NULL);
+
+    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
+    assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+
+    snowflake_cJSON_Delete(data);
+}
+
+void test_json_data_with_spcs_token_file_not_exist(void** unused)
+{
+    SF_UNUSED(unused);
+
+    const std::string expectedToken = "spcs-token-value";
+    SpcsToken spcsToken(expectedToken, false);
+    EnvOverride envOverride(SF_SPCS_ENV_VAR, "true");
 
     cJSON* data = snowflake_cJSON_CreateObject();
     append_spcs_token(data, spcsToken.getFilePath().c_str());
 
+    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
 
-    if (spcs_env) {
-        sf_setenv(SF_SPCS_ENV_VAR, spcs_env);
-    }
     snowflake_cJSON_Delete(data);
 }
 
-void test_json_data_with_spcs_token_absent(void **unused)
+void test_json_data_with_spcs_path_is_dir(void** unused)
+{
+    SF_UNUSED(unused);
+
+    const std::string expectedToken = "spcs-token-value";
+    SpcsToken spcsToken(expectedToken, false);
+    EnvOverride envOverride(SF_SPCS_ENV_VAR, "true");
+
+    cJSON* data = snowflake_cJSON_CreateObject();
+    append_spcs_token(data, spcsToken.getTmpCacheDir().c_str());
+
+    cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
+    assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+
+    snowflake_cJSON_Delete(data);
+}
+
+void test_json_data_with_empty_token_file(void **unused)
 {
     SF_UNUSED(unused);
 
@@ -123,6 +198,20 @@ void test_json_data_with_spcs_token_absent(void **unused)
     snowflake_cJSON_Delete(data);
 }
 
+void test_json_data_with_whitespace_only(void** unused)
+{
+    SF_UNUSED(unused);
+
+    SpcsToken spcsToken("                                         ");
+
+    EnvOverride envOverride(SF_SPCS_ENV_VAR, "true");
+    cJSON* data = snowflake_cJSON_CreateObject();
+    append_spcs_token(data, spcsToken.getFilePath().c_str());
+
+    assert_null(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN"));
+
+    snowflake_cJSON_Delete(data);
+}
 
 void test_json_data_with_spcs_token_present(void **unused)
 {
@@ -163,8 +252,12 @@ int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_json_data_not_in_spcs),
-        cmocka_unit_test(test_json_data_with_spcs_token_absent),
+        cmocka_unit_test(test_json_data_different_false_env_values),
+        cmocka_unit_test(test_json_data_with_empty_token_file),
+        cmocka_unit_test(test_json_data_with_whitespace_only),
+        cmocka_unit_test(test_json_data_with_spcs_token_file_not_exist),
+        cmocka_unit_test(test_json_data_with_spcs_token_path_is_null),
+        cmocka_unit_test(test_json_data_with_spcs_path_is_dir),
         cmocka_unit_test(test_json_data_with_spcs_token_present),
         cmocka_unit_test(test_json_data_with_spcs_token_with_white_space),
     };
