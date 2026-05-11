@@ -174,13 +174,19 @@ cJSON * get_detected_platforms(long timeoutms)
 }
 
 
-void appendSPCSToken(cJSON* data, const char* spcs_token_path)
+void append_spcs_token(cJSON* data, const char* spcs_token_path)
 {
     char envBuf[MAX_PATH + 1];
     char* spcsEnv = sf_getenv_s(SF_SPCS_ENV_VAR, envBuf, sizeof(envBuf));
 
-    if (!spcsEnv)
+    if (is_string_empty(spcsEnv) || sf_strncasecmp(spcsEnv, "true", 4) != 0)
     {
+        return;
+    }
+
+    if (is_string_empty(spcs_token_path))
+    {
+        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::SPCS token path is not set, skipping appending SPCS token");
         return;
     }
 
