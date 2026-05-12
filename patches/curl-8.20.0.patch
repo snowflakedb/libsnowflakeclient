@@ -358,7 +358,7 @@ index fd26c5f0bc..38c79131d7 100644
  #  include <inet.h>
  #endif
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +#include <pthread.h>
 +#endif
 +
@@ -369,7 +369,7 @@ index fd26c5f0bc..38c79131d7 100644
    }
  }
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +static void Curl_print_pthread_error(int error)
 +{
 +  printf("pthread mutex_raw error no is: %d\n", error);
@@ -392,7 +392,7 @@ index fd26c5f0bc..38c79131d7 100644
 + * libnss_file.so being loaded before the pthread and SEGFAULT when
 + * calling getaddrinfo().
 + */
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +static pthread_mutex_t sf_getaddrinfo_mutex = PTHREAD_MUTEX_INITIALIZER;
 +char sf_enable_getaddrinfo_lock = 0;
 +#endif
@@ -404,13 +404,13 @@ index fd26c5f0bc..38c79131d7 100644
    struct Curl_addrinfo *ca;
    size_t ss_size;
    int error;
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +  int mutex_error;
 +#endif
  
    *result = NULL; /* assume failure */
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +  if(sf_enable_getaddrinfo_lock == 1) {
 +    mutex_error = pthread_mutex_lock(&sf_getaddrinfo_mutex);
 +    if(mutex_error) {
@@ -427,7 +427,7 @@ index fd26c5f0bc..38c79131d7 100644
    if(aihead)
      CURL_FREEADDRINFO(aihead);
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(USE_RESOLV_THREADED)
 +  if(sf_enable_getaddrinfo_lock == 1) {
 +    mutex_error = pthread_mutex_unlock(&sf_getaddrinfo_mutex);
 +    if(mutex_error) {
