@@ -36,7 +36,7 @@ index 6961a6c4c1..0e23c347c6 100644
  typedef void CURL;
  typedef void CURLSH;
  
-+#if defined(HAVE_THREADS_POSIX)
++#ifdef __linux__
 +extern char sf_enable_getaddrinfo_lock;
 +#endif
  /*
