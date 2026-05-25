@@ -406,7 +406,7 @@ void test_skip_token_file_verification(void **unused) {
 
   {
       EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
-      EnvOverride permOverride("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
       EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
 
       boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
@@ -423,7 +423,7 @@ void test_skip_token_file_verification(void **unused) {
 
   {
       EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
-      EnvOverride permOverride("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
       EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
 
       boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
@@ -440,7 +440,7 @@ void test_skip_token_file_verification(void **unused) {
 
   {
       EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
-      EnvOverride permOverride("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
       EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
 
       boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
