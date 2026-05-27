@@ -1,5 +1,5 @@
 diff --git a/deps/curl/CMakeLists.txt b/deps/curl/CMakeLists.txt
-index 1eb64a9cd2..1565c3b663 100644
+index 5dd9c7aa70..1deef5d312 100644
 --- a/deps/curl/CMakeLists.txt
 +++ b/deps/curl/CMakeLists.txt
 @@ -235,6 +235,7 @@ if(WIN32)
@@ -10,7 +10,7 @@ index 1eb64a9cd2..1565c3b663 100644
  elseif(DOS)
    set(BUILD_SHARED_LIBS OFF)
    set(BUILD_STATIC_LIBS ON)
-@@ -944,6 +945,9 @@ if(CURL_DEFAULT_SSL_BACKEND AND NOT _valid_default_ssl_backend)
+@@ -975,6 +976,9 @@ if(CURL_DEFAULT_SSL_BACKEND AND NOT _valid_default_ssl_backend)
    message(FATAL_ERROR "CURL_DEFAULT_SSL_BACKEND '${CURL_DEFAULT_SSL_BACKEND}' not enabled.")
  endif()
  
@@ -20,16 +20,16 @@ index 1eb64a9cd2..1565c3b663 100644
  # Keep ZLIB detection after TLS detection,
  # and before calling curl_openssl_check_exists().
  
-@@ -1794,6 +1798,7 @@ include(CMake/OtherTests.cmake)
+@@ -1823,6 +1827,7 @@ include(CMake/OtherTests.cmake)
  set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS "HAVE_CONFIG_H")
  
  if(WIN32)
 +  list(APPEND CURL_LIBS "crypt32" "ole32" "msvcrt")
    list(APPEND CURL_NETWORK_AND_TIME_LIBS "ws2_32")
    if(NOT WINDOWS_STORE)
-     list(APPEND CURL_NETWORK_AND_TIME_LIBS "iphlpapi")
+     list(APPEND CURL_NETWORK_AND_TIME_LIBS "iphlpapi")  # for if_nametoindex()
 diff --git a/deps/curl/include/curl/curl.h b/deps/curl/include/curl/curl.h
-index 209716b334..761fe961c3 100644
+index 6961a6c4c1..0e23c347c6 100644
 --- a/deps/curl/include/curl/curl.h
 +++ b/deps/curl/include/curl/curl.h
 @@ -109,6 +109,9 @@ extern "C" {
@@ -81,10 +81,10 @@ index 209716b334..761fe961c3 100644
  } CURLoption;
  
 diff --git a/deps/curl/lib/CMakeLists.txt b/deps/curl/lib/CMakeLists.txt
-index f2bf47c67d..eeb957f4fa 100644
+index aae466c677..bdda4437c8 100644
 --- a/deps/curl/lib/CMakeLists.txt
 +++ b/deps/curl/lib/CMakeLists.txt
-@@ -150,6 +150,7 @@ if(BUILD_STATIC_LIBS)
+@@ -154,6 +154,7 @@ if(BUILD_STATIC_LIBS)
    add_library(${PROJECT_NAME}::${LIB_STATIC} ALIAS ${LIB_STATIC})
    if(WIN32)
      set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
@@ -92,10 +92,31 @@ index f2bf47c67d..eeb957f4fa 100644
    endif()
    target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
    # Remove the "lib" prefix since the library is already named "libcurl".
-@@ -207,6 +208,14 @@ if(BUILD_STATIC_LIBS)
-       target_link_directories(${LIB_STATIC} INTERFACE ${_curl_libdirs})
-     endif()
-   endif()
+@@ -194,6 +195,35 @@ if(BUILD_STATIC_LIBS)
+   target_include_directories(${LIB_STATIC} INTERFACE
+     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
++
++  # CMake before CMP0099 (CMake 3.17 2020-03-20) did not propagate libdirs to
++  # targets. It expected libs to have an absolute filename. As a workaround,
++  # manually apply dependency libdirs, for CMake consumers without this policy.
++  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
++    cmake_policy(GET CMP0099 _has_CMP0099)  # https://cmake.org/cmake/help/latest/policy/CMP0099.html
++  endif()
++  if(NOT _has_CMP0099 AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.13 AND CURL_LIBS)
++    set(_curl_libdirs "")
++    foreach(_curl_lib IN LISTS CURL_LIBS)
++      if(TARGET "${_curl_lib}")
++        get_target_property(_curl_libdir "${_curl_lib}" INTERFACE_LINK_DIRECTORIES)
++        if(_curl_libdir)
++          list(APPEND _curl_libdirs "${_curl_libdir}")
++        endif()
++      endif()
++    endforeach()
++    if(_curl_libdirs)
++      target_link_directories(${LIB_STATIC} INTERFACE ${_curl_libdirs})
++    endif()
++  endif()
 +
 +  if(WIN32)
 +    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -108,10 +129,10 @@ index f2bf47c67d..eeb957f4fa 100644
  
  if(BUILD_SHARED_LIBS)
 diff --git a/deps/curl/lib/Makefile.in b/deps/curl/lib/Makefile.in
-index 8e8b5070cc..05c3d71944 100644
+index ff464a9c6c..a544a1b742 100644
 --- a/deps/curl/lib/Makefile.in
 +++ b/deps/curl/lib/Makefile.in
-@@ -365,7 +365,9 @@ am__objects_3 = vtls/libcurl_la-apple.lo \
+@@ -368,7 +368,9 @@ am__objects_3 = vtls/libcurl_la-apple.lo \
  	vtls/libcurl_la-rustls.lo vtls/libcurl_la-schannel.lo \
  	vtls/libcurl_la-schannel_verify.lo vtls/libcurl_la-vtls.lo \
  	vtls/libcurl_la-vtls_scache.lo vtls/libcurl_la-vtls_spack.lo \
@@ -122,7 +143,7 @@ index 8e8b5070cc..05c3d71944 100644
  am__objects_4 = vquic/libcurl_la-curl_ngtcp2.lo \
  	vquic/libcurl_la-curl_quiche.lo vquic/libcurl_la-vquic.lo \
  	vquic/libcurl_la-vquic-tls.lo
-@@ -483,7 +485,9 @@ am__libcurlu_la_SOURCES_DIST = altsvc.c amigaos.c asyn-ares.c \
+@@ -486,7 +488,9 @@ am__libcurlu_la_SOURCES_DIST = altsvc.c amigaos.c asyn-ares.c \
  	curlx/nonblock.h curlx/snprintf.h curlx/strcopy.h \
  	curlx/strdup.h curlx/strerr.h curlx/strparse.h \
  	curlx/timediff.h curlx/timeval.h curlx/version_win32.h \
@@ -133,7 +154,7 @@ index 8e8b5070cc..05c3d71944 100644
  am__objects_13 = libcurlu_la-altsvc.lo libcurlu_la-amigaos.lo \
  	libcurlu_la-asyn-ares.lo libcurlu_la-asyn-base.lo \
  	libcurlu_la-asyn-thrdd.lo libcurlu_la-bufq.lo \
-@@ -542,7 +546,9 @@ am__objects_13 = libcurlu_la-altsvc.lo libcurlu_la-amigaos.lo \
+@@ -546,7 +550,9 @@ am__objects_13 = libcurlu_la-altsvc.lo libcurlu_la-amigaos.lo \
  	libcurlu_la-uint-bset.lo libcurlu_la-uint-hash.lo \
  	libcurlu_la-uint-spbset.lo libcurlu_la-uint-table.lo \
  	libcurlu_la-url.lo libcurlu_la-urlapi.lo \
@@ -144,7 +165,7 @@ index 8e8b5070cc..05c3d71944 100644
  am__objects_14 = vauth/libcurlu_la-cleartext.lo \
  	vauth/libcurlu_la-cram.lo vauth/libcurlu_la-digest.lo \
  	vauth/libcurlu_la-digest_sspi.lo vauth/libcurlu_la-gsasl.lo \
-@@ -942,6 +948,9 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
+@@ -954,6 +960,9 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
  	vtls/$(DEPDIR)/libcurl_la-rustls.Plo \
  	vtls/$(DEPDIR)/libcurl_la-schannel.Plo \
  	vtls/$(DEPDIR)/libcurl_la-schannel_verify.Plo \
@@ -154,7 +175,7 @@ index 8e8b5070cc..05c3d71944 100644
  	vtls/$(DEPDIR)/libcurl_la-vtls.Plo \
  	vtls/$(DEPDIR)/libcurl_la-vtls_scache.Plo \
  	vtls/$(DEPDIR)/libcurl_la-vtls_spack.Plo \
-@@ -957,6 +966,9 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
+@@ -969,6 +978,9 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-rustls.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-schannel.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-schannel_verify.Plo \
@@ -164,7 +185,7 @@ index 8e8b5070cc..05c3d71944 100644
  	vtls/$(DEPDIR)/libcurlu_la-vtls.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-vtls_scache.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-vtls_spack.Plo \
-@@ -1285,7 +1297,10 @@ LIB_VTLS_CFILES = \
+@@ -1296,7 +1308,10 @@ LIB_VTLS_CFILES = \
    vtls/vtls_scache.c        \
    vtls/vtls_spack.c         \
    vtls/wolfssl.c            \
@@ -176,7 +197,7 @@ index 8e8b5070cc..05c3d71944 100644
  
  LIB_VTLS_HFILES = \
    vtls/apple.h              \
-@@ -1303,7 +1318,10 @@ LIB_VTLS_HFILES = \
+@@ -1314,7 +1329,10 @@ LIB_VTLS_HFILES = \
    vtls/vtls_scache.h        \
    vtls/vtls_spack.h         \
    vtls/wolfssl.h            \
@@ -188,7 +209,7 @@ index 8e8b5070cc..05c3d71944 100644
  
  LIB_VQUIC_CFILES = \
    vquic/curl_ngtcp2.c   \
-@@ -1818,6 +1836,12 @@ vtls/libcurl_la-wolfssl.lo: vtls/$(am__dirstamp) \
+@@ -1838,6 +1856,12 @@ vtls/libcurl_la-wolfssl.lo: vtls/$(am__dirstamp) \
  	vtls/$(DEPDIR)/$(am__dirstamp)
  vtls/libcurl_la-x509asn1.lo: vtls/$(am__dirstamp) \
  	vtls/$(DEPDIR)/$(am__dirstamp)
@@ -201,7 +222,7 @@ index 8e8b5070cc..05c3d71944 100644
  vquic/$(am__dirstamp):
  	@$(MKDIR_P) vquic
  	@: > vquic/$(am__dirstamp)
-@@ -1947,6 +1971,12 @@ vtls/libcurlu_la-wolfssl.lo: vtls/$(am__dirstamp) \
+@@ -1967,6 +1991,12 @@ vtls/libcurlu_la-wolfssl.lo: vtls/$(am__dirstamp) \
  	vtls/$(DEPDIR)/$(am__dirstamp)
  vtls/libcurlu_la-x509asn1.lo: vtls/$(am__dirstamp) \
  	vtls/$(DEPDIR)/$(am__dirstamp)
@@ -214,7 +235,7 @@ index 8e8b5070cc..05c3d71944 100644
  vquic/libcurlu_la-curl_ngtcp2.lo: vquic/$(am__dirstamp) \
  	vquic/$(DEPDIR)/$(am__dirstamp)
  vquic/libcurlu_la-curl_quiche.lo: vquic/$(am__dirstamp) \
-@@ -2358,6 +2388,9 @@ distclean-compile:
+@@ -2386,6 +2416,9 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-keylog.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-mbedtls.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-openssl.Plo@am__quote@ # am--include-marker
@@ -224,7 +245,7 @@ index 8e8b5070cc..05c3d71944 100644
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-rustls.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-schannel.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-schannel_verify.Plo@am__quote@ # am--include-marker
-@@ -2373,6 +2406,9 @@ distclean-compile:
+@@ -2401,6 +2434,9 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-keylog.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-mbedtls.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-openssl.Plo@am__quote@ # am--include-marker
@@ -234,7 +255,7 @@ index 8e8b5070cc..05c3d71944 100644
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-rustls.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-schannel.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-schannel_verify.Plo@am__quote@ # am--include-marker
-@@ -3483,6 +3519,27 @@ vtls/libcurl_la-x509asn1.lo: vtls/x509asn1.c
+@@ -3539,6 +3575,27 @@ vtls/libcurl_la-x509asn1.lo: vtls/x509asn1.c
  @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
  @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurl_la-x509asn1.lo `test -f 'vtls/x509asn1.c' || echo '$(srcdir)/'`vtls/x509asn1.c
  
@@ -262,7 +283,7 @@ index 8e8b5070cc..05c3d71944 100644
  vquic/libcurl_la-curl_ngtcp2.lo: vquic/curl_ngtcp2.c
  @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT vquic/libcurl_la-curl_ngtcp2.lo -MD -MP -MF vquic/$(DEPDIR)/libcurl_la-curl_ngtcp2.Tpo -c -o vquic/libcurl_la-curl_ngtcp2.lo `test -f 'vquic/curl_ngtcp2.c' || echo '$(srcdir)/'`vquic/curl_ngtcp2.c
  @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vquic/$(DEPDIR)/libcurl_la-curl_ngtcp2.Tpo vquic/$(DEPDIR)/libcurl_la-curl_ngtcp2.Plo
-@@ -4750,6 +4807,27 @@ vtls/libcurlu_la-x509asn1.lo: vtls/x509asn1.c
+@@ -4834,6 +4891,27 @@ vtls/libcurlu_la-x509asn1.lo: vtls/x509asn1.c
  @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
  @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o vtls/libcurlu_la-x509asn1.lo `test -f 'vtls/x509asn1.c' || echo '$(srcdir)/'`vtls/x509asn1.c
  
@@ -290,7 +311,7 @@ index 8e8b5070cc..05c3d71944 100644
  vquic/libcurlu_la-curl_ngtcp2.lo: vquic/curl_ngtcp2.c
  @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT vquic/libcurlu_la-curl_ngtcp2.lo -MD -MP -MF vquic/$(DEPDIR)/libcurlu_la-curl_ngtcp2.Tpo -c -o vquic/libcurlu_la-curl_ngtcp2.lo `test -f 'vquic/curl_ngtcp2.c' || echo '$(srcdir)/'`vquic/curl_ngtcp2.c
  @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vquic/$(DEPDIR)/libcurlu_la-curl_ngtcp2.Tpo vquic/$(DEPDIR)/libcurlu_la-curl_ngtcp2.Plo
-@@ -5920,7 +5998,9 @@ uninstall-am: uninstall-libLTLIBRARIES
+@@ -6019,7 +6097,9 @@ uninstall-am: uninstall-libLTLIBRARIES
  @HAVE_WINDRES_TRUE@@USE_CPPFLAG_CURL_STATICLIB_FALSE@$(LIB_RCFILES): $(top_srcdir)/include/curl/curlver.h
  
  checksrc:
@@ -302,10 +323,10 @@ index 8e8b5070cc..05c3d71944 100644
  all-local: $(CHECKSOURCES)
  
 diff --git a/deps/curl/lib/Makefile.inc b/deps/curl/lib/Makefile.inc
-index 84b4e5425b..d33ea569ad 100644
+index d762f72e42..c7f70d214b 100644
 --- a/deps/curl/lib/Makefile.inc
 +++ b/deps/curl/lib/Makefile.inc
-@@ -100,7 +100,10 @@ LIB_VTLS_CFILES =           \
+@@ -99,7 +99,10 @@ LIB_VTLS_CFILES =           \
    vtls/vtls_scache.c        \
    vtls/vtls_spack.c         \
    vtls/wolfssl.c            \
@@ -317,7 +338,7 @@ index 84b4e5425b..d33ea569ad 100644
  
  LIB_VTLS_HFILES =           \
    vtls/apple.h              \
-@@ -118,7 +121,10 @@ LIB_VTLS_HFILES =           \
+@@ -117,7 +120,10 @@ LIB_VTLS_HFILES =           \
    vtls/vtls_scache.h        \
    vtls/vtls_spack.h         \
    vtls/wolfssl.h            \
@@ -330,14 +351,14 @@ index 84b4e5425b..d33ea569ad 100644
  LIB_VQUIC_CFILES =      \
    vquic/curl_ngtcp2.c   \
 diff --git a/deps/curl/lib/curl_addrinfo.c b/deps/curl/lib/curl_addrinfo.c
-index 43d398d119..1e89f5a87a 100644
+index fd26c5f0bc..38c79131d7 100644
 --- a/deps/curl/lib/curl_addrinfo.c
 +++ b/deps/curl/lib/curl_addrinfo.c
 @@ -44,6 +44,10 @@
  #  include <inet.h>
  #endif
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +#include <pthread.h>
 +#endif
 +
@@ -348,7 +369,7 @@ index 43d398d119..1e89f5a87a 100644
    }
  }
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +static void Curl_print_pthread_error(int error)
 +{
 +  printf("pthread mutex_raw error no is: %d\n", error);
@@ -371,7 +392,7 @@ index 43d398d119..1e89f5a87a 100644
 + * libnss_file.so being loaded before the pthread and SEGFAULT when
 + * calling getaddrinfo().
 + */
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +static pthread_mutex_t sf_getaddrinfo_mutex = PTHREAD_MUTEX_INITIALIZER;
 +char sf_enable_getaddrinfo_lock = 0;
 +#endif
@@ -383,13 +404,13 @@ index 43d398d119..1e89f5a87a 100644
    struct Curl_addrinfo *ca;
    size_t ss_size;
    int error;
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +  int mutex_error;
 +#endif
  
    *result = NULL; /* assume failure */
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +  if(sf_enable_getaddrinfo_lock == 1) {
 +    mutex_error = pthread_mutex_lock(&sf_getaddrinfo_mutex);
 +    if(mutex_error) {
@@ -406,7 +427,7 @@ index 43d398d119..1e89f5a87a 100644
    if(aihead)
      CURL_FREEADDRINFO(aihead);
  
-+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
++#if defined(HAVE_THREADS_POSIX)
 +  if(sf_enable_getaddrinfo_lock == 1) {
 +    mutex_error = pthread_mutex_unlock(&sf_getaddrinfo_mutex);
 +    if(mutex_error) {
@@ -420,10 +441,10 @@ index 43d398d119..1e89f5a87a 100644
    if(error) {
      Curl_freeaddrinfo(cafirst);
 diff --git a/deps/curl/lib/setopt.c b/deps/curl/lib/setopt.c
-index 84f3e02b7b..161253d80c 100644
+index b8a632748c..5de2d73b55 100644
 --- a/deps/curl/lib/setopt.c
 +++ b/deps/curl/lib/setopt.c
-@@ -1289,6 +1289,55 @@ static CURLcode setopt_long_misc(struct Curl_easy *data, CURLoption option,
+@@ -1290,6 +1290,55 @@ static CURLcode setopt_long_misc(struct Curl_easy *data, CURLoption option,
        (CURLGSSAPI_DELEGATION_POLICY_FLAG | CURLGSSAPI_DELEGATION_FLAG);
      break;
  #endif
@@ -480,11 +501,11 @@ index 84f3e02b7b..161253d80c 100644
      return CURLE_UNKNOWN_OPTION;
    }
 diff --git a/deps/curl/lib/url.c b/deps/curl/lib/url.c
-index ec0457bcdd..3c96b4820c 100644
+index 5fe68033d9..1ed0c16d3a 100644
 --- a/deps/curl/lib/url.c
 +++ b/deps/curl/lib/url.c
-@@ -1423,6 +1423,36 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
-   conn->connect_only = (bool)data->set.connect_only;
+@@ -1401,6 +1401,36 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
+   conn->bits.connect_only = (bool)data->set.connect_only;
    conn->transport_wanted = TRNSPRT_TCP; /* most of them are TCP streams */
  
 +  conn->ssl_config.sf_ocsp_check = data->set.ssl.primary.sf_ocsp_check;
@@ -521,10 +542,10 @@ index ec0457bcdd..3c96b4820c 100644
    if(data->set.str[STRING_DEVICE]) {
      conn->localdev = curlx_strdup(data->set.str[STRING_DEVICE]);
 diff --git a/deps/curl/lib/urldata.h b/deps/curl/lib/urldata.h
-index 5ae148054b..53c0382713 100644
+index f35bfee053..f578259fc0 100644
 --- a/deps/curl/lib/urldata.h
 +++ b/deps/curl/lib/urldata.h
-@@ -221,6 +221,18 @@ typedef CURLcode (Curl_recv)(struct Curl_easy *data,   /* transfer */
+@@ -139,6 +139,18 @@ typedef CURLcode (Curl_recv)(struct Curl_easy *data,   /* transfer */
  #endif
  
  struct ssl_primary_config {
@@ -544,19 +565,19 @@ index 5ae148054b..53c0382713 100644
    char *CAfile;          /* certificate to verify peer against */
    char *issuercert;      /* optional issuer certificate filename */
 diff --git a/deps/curl/lib/vtls/openssl.c b/deps/curl/lib/vtls/openssl.c
-index 50bf1e0476..e9c870209d 100644
+index 4629ca4444..0ae0255882 100644
 --- a/deps/curl/lib/vtls/openssl.c
 +++ b/deps/curl/lib/vtls/openssl.c
-@@ -84,6 +84,8 @@
+@@ -52,6 +52,8 @@
  #include "curlx/strcopy.h"
  #include "curlx/strdup.h"
  #include "vtls/apple.h"
 +#include "sf_ocsp.h"
 +#include "sf_crl.h"
- 
- #include <openssl/rand.h>
- #include <openssl/x509v3.h>
-@@ -142,6 +144,39 @@
+ #ifdef USE_ECH
+ #include "curlx/base64.h"
+ #endif
+@@ -113,6 +115,39 @@
  #include <openssl/ui.h>
  #endif
  
@@ -596,7 +617,7 @@ index 50bf1e0476..e9c870209d 100644
  #ifdef HAVE_OPENSSL3
  #define HAVE_EVP_PKEY_GET_PARAMS 1
  #endif
-@@ -1674,6 +1709,12 @@ static int ossl_init(void)
+@@ -1641,6 +1676,12 @@ static int ossl_init(void)
    Curl_tls_keylog_open();
  #endif
  
@@ -609,7 +630,7 @@ index 50bf1e0476..e9c870209d 100644
    return 1;
  }
  
-@@ -3360,6 +3401,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3307,6 +3348,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
    if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
      SSL_CTX_set_cert_store(octx->ssl_ctx, cached_store);
      octx->store_is_empty = is_empty;
@@ -629,7 +650,7 @@ index 50bf1e0476..e9c870209d 100644
    }
    else {
      X509_STORE *store = SSL_CTX_get_cert_store(octx->ssl_ctx);
-@@ -3368,6 +3422,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3315,6 +3369,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
      if(result == CURLE_OK && cache_criteria_met) {
        ossl_set_cached_x509_store(cf, data, store, (bool)octx->store_is_empty);
      }
@@ -648,7 +669,7 @@ index 50bf1e0476..e9c870209d 100644
    }
  
    ERR_pop_to_mark();
-@@ -4455,8 +4521,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
+@@ -4414,8 +4480,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
  }
  
  #ifdef CURLVERBOSE
@@ -658,7 +679,7 @@ index 50bf1e0476..e9c870209d 100644
  static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
  {
    STACK_OF(X509) *certstack;
-@@ -4802,6 +4867,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
+@@ -4771,6 +4836,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
    infof_certstack(data, octx->ssl);
  #endif
  
@@ -713,10 +734,10 @@ index 50bf1e0476..e9c870209d 100644
      result = ossl_verifyhost(data, conn, peer, server_cert);
      if(result)
 diff --git a/deps/curl/lib/vtls/vtls.c b/deps/curl/lib/vtls/vtls.c
-index f7201d18d6..a51566a278 100644
+index 891facfabb..72336956a8 100644
 --- a/deps/curl/lib/vtls/vtls.c
 +++ b/deps/curl/lib/vtls/vtls.c
-@@ -432,6 +432,16 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
+@@ -433,6 +433,16 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
      dest->verifyhost = src->verifyhost;
      dest->verifypeer = src->verifypeer;
      dest->verifystatus = src->verifystatus;
