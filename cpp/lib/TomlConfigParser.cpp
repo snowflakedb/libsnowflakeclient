@@ -68,7 +68,7 @@ namespace
             SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
         return true;
     }
-    else if (!boost::iequals(skipPermVerification, "false"))
+    else if (skipPermVerification.empty())
     {
         skipPermVerification = getEnvironmentVariableValue(ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
         if (boost::iequals(skipPermVerification, "true"))
