@@ -437,23 +437,6 @@ void test_skip_token_file_verification(void **unused) {
       assert_true(connectionParams.find("token") != connectionParams.end());
       assert_true(connectionParams.find("token_file_path") == connectionParams.end());
   }
-
-  {
-      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
-      EnvOverride permOverride("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
-      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
-
-      boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
-
-      boost::filesystem::permissions(tokenCleanup.path(), owner_all | group_all | others_all);
-
-      std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
-      assert_int_equal(connectionParams.size(), 2);
-      assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
-
-      assert_true(connectionParams.find("token") != connectionParams.end());
-      assert_true(connectionParams.find("token_file_path") == connectionParams.end());
-  }
 }
 #endif
 

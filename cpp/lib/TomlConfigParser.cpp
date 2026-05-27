@@ -60,20 +60,21 @@ namespace
 
   sf_bool checkTokenFilePermissions(const boost::filesystem::path &filePath)
   {
-    std::string skipPermVerification = getEnvironmentVariableValue(ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
+
+    std::string skipPermVerification = getEnvironmentVariableValue(SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
     if (boost::iequals(skipPermVerification, "true"))
     {
         CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
-            ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
+            SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
         return true;
     }
-    else
+    else if (!boost::iequals(skipPermVerification, "false"))
     {
-        skipPermVerification = getEnvironmentVariableValue(SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
+        skipPermVerification = getEnvironmentVariableValue(ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
         if (boost::iequals(skipPermVerification, "true"))
         {
             CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
-                SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
+                ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
             return true;
         }
     }
