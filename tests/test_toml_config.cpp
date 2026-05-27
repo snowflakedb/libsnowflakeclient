@@ -395,7 +395,6 @@ void test_token_priority(void **unused) {
 void test_skip_token_file_verification_helper(FileCleanup& tomlCleanup, FileCleanup& tokenCleanup)
 {
     boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
-
     boost::filesystem::permissions(tokenCleanup.path(), owner_all | group_all | others_all);
 
     std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
