@@ -13,7 +13,7 @@
 
 namespace Snowflake::Client {
   namespace {
-    // SNOW-2919437: opt-in env var that switches AWS WIF from the legacy
+    // opt-in env var that switches AWS WIF from the legacy
     // base64(GetCallerIdentity-presigned-URL) format to a JWT obtained via
     // STS:GetWebIdentityToken. Will be removed once the new flow is GA.
     constexpr const char* AWS_OUTBOUND_TOKEN_ENV_VAR =
