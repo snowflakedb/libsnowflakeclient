@@ -5,12 +5,32 @@
 #include "logger/SFLogger.hpp"
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/sts/STSClient.h>
-#include <aws/sts/model/AssumeRoleRequest.h>
-#include <aws/core/utils/UUID.h>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <sstream>
+#include <string>
 
 namespace Snowflake::Client {
+  namespace {
+    // SNOW-2919437: opt-in env var that switches AWS WIF from the legacy
+    // base64(GetCallerIdentity-presigned-URL) format to a JWT obtained via
+    // STS:GetWebIdentityToken. Will be removed once the new flow is GA.
+    constexpr const char* AWS_OUTBOUND_TOKEN_ENV_VAR =
+        "SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN";
+    constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
+    constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
+
+    bool isAwsOutboundTokenEnabled() {
+      const char* raw = std::getenv(AWS_OUTBOUND_TOKEN_ENV_VAR);
+      if (!raw) return false;
+      std::string s(raw);
+      std::transform(s.begin(), s.end(), s.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+      return s == "true";
+    }
+  }
+
   // We don't need x-amz-content-sha256 header, because there is no payload to be signed.
   // If x-amz-content-sha256 contain EMPTY_STRING_SHA256, the server responds with
   // "The AWS STS request contained unacceptable headers."
@@ -39,41 +59,11 @@ namespace Snowflake::Client {
     return result;
   }
 
-  // Assumes a single AWS role and returns temporary credentials
-  boost::optional<Aws::Auth::AWSCredentials> assumeAwsRole(
-    const Aws::Auth::AWSCredentials &currentCreds,
-    const std::string &roleArn) {
-
-    CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
-
-    const Aws::STS::STSClient stsClient(currentCreds);
-
-    Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
-    assumeRoleRequest.SetRoleArn(roleArn.c_str());
-
-    const std::string sessionName = "snowflake-wif-" + std::string(Aws::Utils::UUID::PseudoRandomUUID());
-    assumeRoleRequest.SetRoleSessionName(sessionName.c_str());
-    assumeRoleRequest.SetDurationSeconds(3600);
-
-    const auto outcome = stsClient.AssumeRole(assumeRoleRequest);
-
-    if (!outcome.IsSuccess()) {
-      CXX_LOG_ERROR("Failed to assume role %s: %s",
-                    roleArn.c_str(),
-                    outcome.GetError().GetMessage().c_str());
-      return boost::none;
-    }
-
-    const auto &credentials = outcome.GetResult().GetCredentials();
-    return Aws::Auth::AWSCredentials(
-      credentials.GetAccessKeyId(),
-      credentials.GetSecretAccessKey(),
-      credentials.GetSessionToken()
-    );
-  }
-
-  // Assumes a chain of AWS roles sequentially
+  // Assumes a chain of AWS roles sequentially via the injected SDK wrapper.
+  // Routing through ISdkWrapper (instead of constructing an STSClient inline)
+  // is what makes the impersonation path hermetically testable.
   boost::optional<Aws::Auth::AWSCredentials> assumeAwsRoleChain(
+    AwsUtils::ISdkWrapper &sdkWrapper,
     const Aws::Auth::AWSCredentials &initialCreds,
     const std::vector<std::string> &roleArnChain) {
 
@@ -85,7 +75,7 @@ namespace Snowflake::Client {
     Aws::Auth::AWSCredentials currentCreds = initialCreds;
 
     for (const auto &roleArn: roleArnChain) {
-      auto assumedCredsOpt = assumeAwsRole(currentCreds, roleArn);
+      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role in chain: %s", roleArn.c_str());
         return boost::none;
@@ -126,13 +116,28 @@ namespace Snowflake::Client {
 
       CXX_LOG_DEBUG("Role ARN chain size: %zu", roleArnChain.size());
 
-      auto assumedCredsOpt = assumeAwsRoleChain(creds, roleArnChain);
+      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role chain");
         return boost::none;
       }
 
       creds = assumedCredsOpt.get();
+    }
+
+    if (isAwsOutboundTokenEnabled()) {
+      CXX_LOG_INFO(
+          "Using AWS WIF outbound JWT token (STS:GetWebIdentityToken) in region %s",
+          region.c_str());
+      auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
+          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM);
+      if (!jwtOpt) {
+        CXX_LOG_ERROR("Failed to obtain AWS outbound WIF JWT token");
+        return boost::none;
+      }
+      const auto &jwt = jwtOpt.get();
+      CXX_LOG_DEBUG("AWS outbound token prefix: %.10s", jwt.c_str());
+      return Attestation::makeAws(jwt);
     }
 
     const std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
