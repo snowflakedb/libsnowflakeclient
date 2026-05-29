@@ -3,8 +3,8 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_src_version=1.11.500
-set aws_build_version=5
+set aws_src_version=1.11.806
+set aws_build_version=1
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
