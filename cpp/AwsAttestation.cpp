@@ -1,25 +1,18 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/WifAttestation.hpp"
-#include <picojson.h>
-#include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/sts/STSClient.h>
-#include <aws/sts/model/AssumeRoleRequest.h>
-#include <aws/core/utils/UUID.h>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace Snowflake::Client {
-  // We don't need x-amz-content-sha256 header, because there is no payload to be signed.
-  // If x-amz-content-sha256 contain EMPTY_STRING_SHA256, the server responds with
-  // "The AWS STS request contained unacceptable headers."
-  class AWS_CORE_API AWSAuthV4SignerNoPayload : public Aws::Client::AWSAuthV4Signer
-  {
-  public:
-    AWSAuthV4SignerNoPayload(const std::shared_ptr<Aws::Auth::AWSCredentialsProvider>& credentialsProvider, const char* serviceName, const Aws::String& region)
-        : AWSAuthV4Signer(credentialsProvider, serviceName, region) { m_includeSha256HashHeader = false; }
-  };
+  namespace {
+    // AWS WIF (SNOW-2919437): the JWT obtained from STS:GetWebIdentityToken is
+    // bound to this audience and signed with this algorithm. GS verifies both
+    // when validating the inbound JWT.
+    constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
+    constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
+  }
 
   // Splits comma-separated role ARN impersonation path
   std::vector<std::string> parseRoleArnChain(const std::string &path) {
@@ -39,41 +32,11 @@ namespace Snowflake::Client {
     return result;
   }
 
-  // Assumes a single AWS role and returns temporary credentials
-  boost::optional<Aws::Auth::AWSCredentials> assumeAwsRole(
-    const Aws::Auth::AWSCredentials &currentCreds,
-    const std::string &roleArn) {
-
-    CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
-
-    const Aws::STS::STSClient stsClient(currentCreds);
-
-    Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
-    assumeRoleRequest.SetRoleArn(roleArn.c_str());
-
-    const std::string sessionName = "snowflake-wif-" + std::string(Aws::Utils::UUID::PseudoRandomUUID());
-    assumeRoleRequest.SetRoleSessionName(sessionName.c_str());
-    assumeRoleRequest.SetDurationSeconds(3600);
-
-    const auto outcome = stsClient.AssumeRole(assumeRoleRequest);
-
-    if (!outcome.IsSuccess()) {
-      CXX_LOG_ERROR("Failed to assume role %s: %s",
-                    roleArn.c_str(),
-                    outcome.GetError().GetMessage().c_str());
-      return boost::none;
-    }
-
-    const auto &credentials = outcome.GetResult().GetCredentials();
-    return Aws::Auth::AWSCredentials(
-      credentials.GetAccessKeyId(),
-      credentials.GetSecretAccessKey(),
-      credentials.GetSessionToken()
-    );
-  }
-
-  // Assumes a chain of AWS roles sequentially
+  // Assumes a chain of AWS roles sequentially via the injected SDK wrapper.
+  // Routing through ISdkWrapper (instead of constructing an STSClient inline)
+  // is what makes the impersonation path hermetically testable.
   boost::optional<Aws::Auth::AWSCredentials> assumeAwsRoleChain(
+    AwsUtils::ISdkWrapper &sdkWrapper,
     const Aws::Auth::AWSCredentials &initialCreds,
     const std::vector<std::string> &roleArnChain) {
 
@@ -85,7 +48,7 @@ namespace Snowflake::Client {
     Aws::Auth::AWSCredentials currentCreds = initialCreds;
 
     for (const auto &roleArn: roleArnChain) {
-      auto assumedCredsOpt = assumeAwsRole(currentCreds, roleArn);
+      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role in chain: %s", roleArn.c_str());
         return boost::none;
@@ -111,7 +74,6 @@ namespace Snowflake::Client {
     }
     const std::string &region = regionOpt.get();
 
-    // Check if role assumption chain is configured
     if (config.workloadIdentityImpersonationPath &&
         !config.workloadIdentityImpersonationPath.get().empty()) {
 
@@ -126,7 +88,7 @@ namespace Snowflake::Client {
 
       CXX_LOG_DEBUG("Role ARN chain size: %zu", roleArnChain.size());
 
-      auto assumedCredsOpt = assumeAwsRoleChain(creds, roleArnChain);
+      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role chain");
         return boost::none;
@@ -135,39 +97,17 @@ namespace Snowflake::Client {
       creds = assumedCredsOpt.get();
     }
 
-    const std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
-    const std::string host = std::string("sts") + "." + region + "." + domain;
-    const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
-
-    auto request = Aws::Http::CreateHttpRequest(
-      Aws::String(url),
-      Aws::Http::HttpMethod::HTTP_POST,
-      Aws::Utils::Stream::DefaultResponseStreamFactoryMethod
-    );
-
-    request->SetHeaderValue("Host", host);
-    request->SetHeaderValue("X-Snowflake-Audience", "snowflakecomputing.com");
-
-    auto simpleCredProvider = std::make_shared<Aws::Auth::SimpleAWSCredentialsProvider>(creds);
-    AWSAuthV4SignerNoPayload signer(simpleCredProvider, "sts", region);
-
-    // Sign the request
-    if (!signer.SignRequest(*request)) {
-      CXX_LOG_ERROR("Failed to sign request");
+    CXX_LOG_INFO(
+        "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
+        region.c_str());
+    auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
+        creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM);
+    if (!jwtOpt) {
+      CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
       return boost::none;
     }
-
-    picojson::object obj;
-    obj["url"] = picojson::value(request->GetURIString());
-    obj["method"] = picojson::value(Aws::Http::HttpMethodMapper::GetNameForHttpMethod(request->GetMethod()));
-    picojson::object headers;
-    for (const auto &h: request->GetHeaders()) {
-      headers[h.first] = picojson::value(h.second);
-    }
-    obj["headers"] = picojson::value(headers);
-    std::string json = picojson::value(obj).serialize(true);
-    std::string base64;
-    Util::Base64::encodePadding(json.begin(), json.end(), std::back_inserter(base64));
-    return Attestation::makeAws(base64);
+    const auto &jwt = jwtOpt.get();
+    CXX_LOG_DEBUG("AWS WIF JWT token prefix: %.10s", jwt.c_str());
+    return Attestation::makeAws(jwt);
   }
 }
