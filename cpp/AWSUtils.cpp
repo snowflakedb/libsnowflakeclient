@@ -68,12 +68,35 @@ namespace Snowflake {
       }
 
       namespace {
+        // Bound the GetWebIdentityToken response body we materialize into
+        // memory. Real STS responses for this API are ~1-5 KiB (a JWT plus
+        // XML wrapping). The cap is defense in depth so a misbehaving
+        // intermediary returning a runaway body can't OOM the process.
+        constexpr size_t MAX_STS_RESPONSE_BODY_BYTES = 64 * 1024;
+
+        // Connect / request timeouts for the STS GetWebIdentityToken HTTP
+        // call. Mirrors the values used by SnowflakeS3Client for AWS HTTP
+        // clients so users get a uniform, bounded failure mode when STS is
+        // unreachable or the network blackholes.
+        constexpr long STS_CONNECT_TIMEOUT_MS = 30000;
+        constexpr long STS_REQUEST_TIMEOUT_MS = 40000;
+
         // Truncate a string for safe error logging. STS error responses are not
         // sensitive themselves, but bodies of unexpected non-error responses
         // might contain unexpected data; truncate as defense in depth.
         std::string truncateForLog(const std::string &s, size_t max = 256) {
           if (s.size() <= max) return s;
           return s.substr(0, max) + "...(truncated)";
+        }
+
+        // Read up to maxBytes from a response body stream into a string.
+        // Pairs with MAX_STS_RESPONSE_BODY_BYTES to bound peak memory.
+        std::string readBoundedResponseBody(std::istream &stream, size_t maxBytes) {
+          std::string buf;
+          buf.resize(maxBytes);
+          stream.read(&buf[0], static_cast<std::streamsize>(maxBytes));
+          buf.resize(static_cast<size_t>(stream.gcount()));
+          return buf;
         }
       }
 
@@ -181,6 +204,8 @@ namespace Snowflake {
 
           Aws::Client::ClientConfiguration clientConfig;
           clientConfig.region = region;
+          clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
+          clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
           auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
           auto response = httpClient->MakeRequest(request);
           if (!response) {
@@ -189,11 +214,10 @@ namespace Snowflake {
           }
 
           const auto status = response->GetResponseCode();
-          // Drain the response body once into a string so we can both inspect
-          // it on failure and parse it on success.
-          std::ostringstream bodyBuf;
-          bodyBuf << response->GetResponseBody().rdbuf();
-          const std::string responseBody = bodyBuf.str();
+          // Read the body once, bounded, so we can both log it on failure
+          // and parse it on success without risk of unbounded materialization.
+          const std::string responseBody = readBoundedResponseBody(
+              response->GetResponseBody(), MAX_STS_RESPONSE_BODY_BYTES);
 
           if (status != Aws::Http::HttpResponseCode::OK) {
             CXX_LOG_ERROR(

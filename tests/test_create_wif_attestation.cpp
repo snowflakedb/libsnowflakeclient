@@ -12,8 +12,6 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
-#include "util/Base64.hpp"
-#include <curl/curl.h>
 #include <jwt/Jwt.hpp>
 
 using namespace Snowflake::Client;
@@ -113,116 +111,9 @@ private:
 };
 
 
-long run_request_curl(
-    const std::string &url,
-    const std::string &method,
-    const std::map<std::string, std::string> &headers) {
-  CURL *curl = curl_easy_init();
-  assert_true(curl != nullptr);
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
-
-  // Configure CA bundle for SSL verification
-  const char *ca_bundle = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-  if (ca_bundle) {
-    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle);
-  }
-
-  struct curl_slist *header_list = nullptr;
-  for (const auto &h: headers) {
-    std::string hdr = h.first + ": " + h.second;
-    header_list = curl_slist_append(header_list, hdr.c_str());
-  }
-  if (header_list) {
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
-  }
-
-  CURLcode res = curl_easy_perform(curl);
-  long response_code = 0;
-  if (res == CURLE_OK) {
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  }
-
-  if (header_list) {
-    curl_slist_free_all(header_list);
-  }
-  curl_easy_cleanup(curl);
-  return response_code;
-}
-
 const std::string AWS_TEST_REGION = "us-east-1";
 const Aws::Auth::AWSCredentials AWS_TEST_CREDS = Aws::Auth::AWSCredentials("AKIAEXAMPLE12345678",
                                                                            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
-
-void test_integration_aws_attestation(void **) {
-  if (std::getenv("GITHUB_ACTIONS")) {
-    std::cerr << "Skipping test_aws_attestation on GitHub Actions since it requires AWS credentials" << std::endl;
-    return;
-  }
-
-  EnvOverride awsRegion("AWS_REGION", AWS_TEST_REGION);
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  auto attestationOpt = Snowflake::Client::createAttestation(config);
-  assert_true(attestationOpt.has_value());
-  auto &attestation = attestationOpt.value();
-  assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
-  assert_false(attestation.credential.empty());
-  std::string json_string;
-  Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
-                                                 std::back_inserter(json_string));
-  picojson::value json;
-  picojson::parse(json, json_string);
-  assert_true(json.is<picojson::object>());
-  assert_true(json.get("url").is<std::string>());
-  assert_true(json.get("method").is<std::string>());
-  std::string method = json.get("method").get<std::string>();
-  assert_true(json.get("headers").is<picojson::object>());
-  std::map<std::string, std::string> headers;
-  for (auto &header: json.get("headers").get<picojson::object>()) {
-    assert_true(header.second.is<std::string>());
-    headers[header.first] = header.second.get<std::string>();
-  }
-  assert_true(
-      run_request_curl(json.get("url").get<std::string>(), method, headers) ==
-      200
-  );
-}
-
-void test_attestation_success(const char* region, const char *expectedHost) {
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  auto awsSdkWrapper = FakeAwsSdkWrapper(std::string(region), AWS_TEST_CREDS);
-  config.awsSdkWrapper = &awsSdkWrapper;
-
-  auto attestationOpt = Snowflake::Client::createAttestation(config);
-  assert_true(attestationOpt.has_value());
-  auto &attestation = attestationOpt.value();
-  assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
-  assert_true(!attestation.credential.empty());
-  assert_true(!attestation.subject);
-  assert_true(!attestation.issuer);
-
-  std::string json_string;
-  Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
-                                                 std::back_inserter(json_string));
-  picojson::value json;
-  picojson::parse(json, json_string);
-  assert_true(json.is<picojson::object>());
-
-  auto headers = json.get("headers").get<picojson::object>();
-  auto host = headers["host"].get<std::string>();
-  assert_true(host == expectedHost);
-}
-
-void test_unit_aws_attestation_success(void **) {
-  test_attestation_success("us-east-1", "sts.us-east-1.amazonaws.com");
-}
-
-void test_unit_aws_attestation_china_region_success(void **) {
-  test_attestation_success("cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
-}
 
 void test_unit_aws_attestation_failed(FakeAwsSdkWrapper *awsSdkWrapper) {
   AttestationConfig config;
@@ -243,11 +134,9 @@ void test_unit_aws_attestation_cred_missing(void **) {
   test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
-const std::string AWS_OUTBOUND_TOKEN_ENV = "SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN";
 const std::string FAKE_WEB_IDENTITY_TOKEN = "fake.jwt.token-for-testing-only";
 
-void test_unit_aws_attestation_outbound_jwt_success(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "true");
+void test_unit_aws_attestation_jwt_success(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
 
@@ -260,7 +149,7 @@ void test_unit_aws_attestation_outbound_jwt_success(void **) {
   const auto &attestation = attestationOpt.get();
 
   assert_true(attestation.type == AttestationType::AWS);
-  // The JWT is sent as-is, NOT wrapped in base64(JSON) like the legacy path.
+  // The JWT is the credential — not wrapped in base64(JSON).
   assert_true(attestation.credential == FAKE_WEB_IDENTITY_TOKEN);
   // GS resolves issuer/subject from the JWT claims; driver leaves them unset.
   assert_true(!attestation.issuer);
@@ -279,71 +168,7 @@ void test_unit_aws_attestation_outbound_jwt_success(void **) {
                      AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
-void test_unit_aws_attestation_outbound_jwt_case_insensitive(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "TRUE");
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
-
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-
-  const auto attestationOpt = createAttestation(config);
-  assert_true(attestationOpt.has_value());
-  assert_true(attestationOpt.get().credential == FAKE_WEB_IDENTITY_TOKEN);
-  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
-}
-
-// Helper: assert the attestation falls back to the legacy base64(JSON) path.
-void assertAwsLegacyPresignedAttestation(const boost::optional<Attestation> &attestationOpt,
-                                         const std::string &expectedHost) {
-  assert_true(attestationOpt.has_value());
-  const auto &attestation = attestationOpt.get();
-  assert_true(attestation.type == AttestationType::AWS);
-  assert_true(!attestation.credential.empty());
-
-  std::string json_string;
-  Snowflake::Client::Util::Base64::decodePadding(
-      attestation.credential.begin(), attestation.credential.end(),
-      std::back_inserter(json_string));
-  picojson::value json;
-  picojson::parse(json, json_string);
-  assert_true(json.is<picojson::object>());
-  auto headers = json.get("headers").get<picojson::object>();
-  assert_true(headers["host"].get<std::string>() == expectedHost);
-}
-
-void test_unit_aws_attestation_outbound_jwt_env_false(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "false");
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
-
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-
-  const auto attestationOpt = createAttestation(config);
-  assertAwsLegacyPresignedAttestation(attestationOpt, "sts." + AWS_TEST_REGION + ".amazonaws.com");
-  // getWebIdentityToken must NOT have been called in legacy mode.
-  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
-}
-
-void test_unit_aws_attestation_outbound_jwt_env_unset(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, boost::none);
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
-
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-
-  const auto attestationOpt = createAttestation(config);
-  assertAwsLegacyPresignedAttestation(attestationOpt, "sts." + AWS_TEST_REGION + ".amazonaws.com");
-  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
-}
-
-void test_unit_aws_attestation_outbound_jwt_sdk_failure(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "true");
+void test_unit_aws_attestation_jwt_sdk_failure(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   // STS call returns no token (e.g. HTTP error, malformed response).
   awsSdkWrapper.webIdentityTokenResult = boost::none;
@@ -353,16 +178,15 @@ void test_unit_aws_attestation_outbound_jwt_sdk_failure(void **) {
   config.awsSdkWrapper = &awsSdkWrapper;
 
   const auto attestationOpt = createAttestation(config);
-  // Must fail closed: no fallback to legacy presigned-URL path on JWT failure.
+  // Must fail closed: no silent fallback to a different credential format.
   assert_false(attestationOpt.has_value());
   assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
 }
 
-// With env=true + impersonation set, the assumed (impersonated) credentials
-// MUST be the ones handed to getWebIdentityToken. Otherwise we'd bypass
-// impersonation and use the initial creds for the JWT — a security bug.
-void test_unit_aws_attestation_outbound_jwt_with_impersonation(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "true");
+// With impersonation set, the assumed credentials MUST be the ones handed to
+// getWebIdentityToken. Otherwise we'd bypass impersonation and use the
+// initial creds for the JWT — a security bug.
+void test_unit_aws_attestation_jwt_with_impersonation(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   const std::string roleArn = "arn:aws:iam::123456789012:role/TestRole";
   const Aws::Auth::AWSCredentials assumedCreds(
@@ -402,8 +226,7 @@ void test_unit_aws_attestation_outbound_jwt_with_impersonation(void **) {
 
 // Chain variant: each step's output feeds the next step's input, and the
 // final step's output is what reaches getWebIdentityToken.
-void test_unit_aws_attestation_outbound_jwt_with_impersonation_chain(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "true");
+void test_unit_aws_attestation_jwt_with_impersonation_chain(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   const std::string arn1 = "arn:aws:iam::111111111111:role/Role1";
   const std::string arn2 = "arn:aws:iam::222222222222:role/Role2";
@@ -442,8 +265,7 @@ void test_unit_aws_attestation_outbound_jwt_with_impersonation_chain(void **) {
 // If the impersonation chain fails (e.g. STS error on one step), no JWT is
 // fetched and the attestation fails — we never silently fall back to the
 // initial creds.
-void test_unit_aws_attestation_outbound_jwt_impersonation_failure(void **) {
-  EnvOverride envOverride(AWS_OUTBOUND_TOKEN_ENV, "true");
+void test_unit_aws_attestation_jwt_impersonation_failure(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   // No entry in assumeRoleResults -> assumeRole returns boost::none.
   awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
@@ -459,81 +281,52 @@ void test_unit_aws_attestation_outbound_jwt_impersonation_failure(void **) {
   assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
 }
 
-//  These tests only verify the impersonation path parsing and configuration handling
-// not the actual STS calls, which requires valid AWS setup.
-
-void test_unit_aws_attestation_impersonation_single_role(void **) {
+// Whitespace around comma-separated ARNs is trimmed before being passed to
+// assumeRole. The other JWT-impersonation tests already cover ordering,
+// chaining, cross-account ARNs, and end-to-end success / failure paths; this
+// one only verifies the trimming property.
+void test_unit_aws_attestation_impersonation_whitespace_trimming(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  
+  const std::string arn1 = "arn:aws:iam::123456789012:role/Role1";
+  const std::string arn2 = "arn:aws:iam::123456789012:role/Role2";
+  awsSdkWrapper.assumeRoleResults[arn1] = Aws::Auth::AWSCredentials("AK1", "SK1", "ST1");
+  awsSdkWrapper.assumeRoleResults[arn2] = Aws::Auth::AWSCredentials("AK2", "SK2", "ST2");
+  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
   AttestationConfig config;
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
-  config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
-  
-  // Will fail at actual STS call, but validates path parsing and code path
+  config.workloadIdentityImpersonationPath = "  " + arn1 + "  , " + arn2 + " ";
+
   const auto attestationOpt = createAttestation(config);
-  assert_true(!attestationOpt || attestationOpt.has_value());
+  assert_true(attestationOpt.has_value());
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 2);
+  assert_string_equal(awsSdkWrapper.assumeRoleArns[0].c_str(), arn1.c_str());
+  assert_string_equal(awsSdkWrapper.assumeRoleArns[1].c_str(), arn2.c_str());
 }
 
-void test_unit_aws_attestation_impersonation_role_chain(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-  config.workloadIdentityImpersonationPath = 
-      "arn:aws:iam::123456789012:role/Role1,"
-      "arn:aws:iam::123456789012:role/Role2,"
-      "arn:aws:iam::123456789012:role/Role3";
-  
-  // Will fail at STS, but validates chain parsing
-  const auto attestationOpt = createAttestation(config);
-  assert_true(!attestationOpt || attestationOpt.has_value());
-}
-
-void test_unit_aws_attestation_impersonation_whitespace_handling(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-  config.workloadIdentityImpersonationPath = 
-      "  arn:aws:iam::123456789012:role/Role1  , "
-      " arn:aws:iam::123456789012:role/Role2 ";
-  
-  // Will fail at STS, but validates whitespace trimming
-  const auto attestationOpt = createAttestation(config);
-  assert_true(!attestationOpt || attestationOpt.has_value());
-}
-
-void test_unit_aws_attestation_impersonation_cross_account(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  config.awsSdkWrapper = &awsSdkWrapper;
-  config.workloadIdentityImpersonationPath = 
-      "arn:aws:iam::111111111111:role/SourceRole,"
-      "arn:aws:iam::222222222222:role/TargetRole";
-  
-  // Will fail at STS, but validates cross-account ARN parsing
-  const auto attestationOpt = createAttestation(config);
-  assert_true(!attestationOpt || attestationOpt.has_value());
-}
-
+// An empty impersonation path is treated as "no impersonation": no
+// assumeRole calls, and getWebIdentityToken receives the initial creds
+// unchanged.
 void test_unit_aws_attestation_impersonation_empty_path_fallback(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
-  
+  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
   AttestationConfig config;
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
-  config.workloadIdentityImpersonationPath = "";
-  
+  config.workloadIdentityImpersonationPath = std::string("");
+
   auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
-  
-  const auto& attestation = attestationOpt.get();
-  assert_true(attestation.type == AttestationType::AWS);
+  assert_true(attestationOpt.get().type == AttestationType::AWS);
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 0);
+  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
+  assert_string_equal(
+      awsSdkWrapper.lastGetWebIdentityTokenCreds.GetAWSAccessKeyId().c_str(),
+      AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
 void test_unit_aws_attestation_impersonation_with_missing_region(void **) {
@@ -1241,26 +1034,14 @@ void test_unit_oidc_attestation_missing_token(void **) {
 
 int main() {
   const struct CMUnitTest tests[] = {
-#ifndef _WIN32
-//       Disabled on Windows because we don't have AWS credentials set up in the CI
-      cmocka_unit_test(test_integration_aws_attestation),
-#endif
-      cmocka_unit_test(test_unit_aws_attestation_success),
-      cmocka_unit_test(test_unit_aws_attestation_china_region_success),
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_success),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_case_insensitive),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_env_false),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_env_unset),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_sdk_failure),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_with_impersonation),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_with_impersonation_chain),
-      cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_impersonation_failure),
-      cmocka_unit_test(test_unit_aws_attestation_impersonation_single_role),
-      cmocka_unit_test(test_unit_aws_attestation_impersonation_role_chain),
-      cmocka_unit_test(test_unit_aws_attestation_impersonation_whitespace_handling),
-      cmocka_unit_test(test_unit_aws_attestation_impersonation_cross_account),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_success),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_impersonation_failure),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_whitespace_trimming),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_fallback),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_region),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_credentials),
