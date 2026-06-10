@@ -284,6 +284,52 @@ void test_toml_skip_read_warning(void **unused) {
   assert_int_equal(connectionParams.size(), 0);
 }
 
+void test_token_file_permissions_helper(FileCleanup& tomlCleanup, FileCleanup& tokenCleanup)
+{
+    boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
+    std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 2);
+    assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_read);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_write);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_exe);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_read);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_write);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_exe);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 1);
+    assert_true(connectionParams.find("token") == connectionParams.end());
+
+    boost::filesystem::permissions(tokenCleanup.path(), owner_read);
+    connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 2);
+    assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+}
+
 void test_token_file_permissions(void **unused) {
   SF_UNUSED(unused);
   
@@ -301,49 +347,7 @@ void test_token_file_permissions(void **unused) {
   file.close();
 
   EnvOverride override("SNOWFLAKE_HOME", "./");
-
-  boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
-  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 2);
-  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_read);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_write);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | group_exe);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_read);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_write);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read | owner_write | others_exe);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 1);
-  assert_true(connectionParams.find("token") == connectionParams.end());
-
-  boost::filesystem::permissions(tokenCleanup.path(), owner_read);
-  connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 2);
-  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+  test_token_file_permissions_helper(tomlCleanup, tokenCleanup);
 }
 
 void test_token_priority(void **unused) {
@@ -388,6 +392,19 @@ void test_token_priority(void **unused) {
   assert_true(connectionParams.find("token_file_path") == connectionParams.end());
 }
 
+void test_skip_token_file_verification_helper(FileCleanup& tomlCleanup, FileCleanup& tokenCleanup)
+{
+    boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
+    boost::filesystem::permissions(tokenCleanup.path(), owner_all | group_all | others_all);
+
+    std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+    assert_int_equal(connectionParams.size(), 2);
+    assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+
+    assert_true(connectionParams.find("token") != connectionParams.end());
+    assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+}
+
 void test_skip_token_file_verification(void **unused) {
   SF_UNUSED(unused);
   
@@ -404,19 +421,40 @@ void test_skip_token_file_verification(void **unused) {
   file << tomlConfig;
   file.close();
 
-  EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
-  EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+  {
+      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+      test_skip_token_file_verification_helper(tomlCleanup, tokenCleanup);
+  }
 
-  boost::filesystem::permissions(tomlCleanup.path(), owner_read | owner_write);
-  
-  boost::filesystem::permissions(tokenCleanup.path(), owner_all | group_all | others_all);
+  {
+      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+      test_skip_token_file_verification_helper(tomlCleanup, tokenCleanup);
+  }
 
-  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 2);
-  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
-  
-  assert_true(connectionParams.find("token") != connectionParams.end());
-  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+  {
+      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "");
+      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+      test_skip_token_file_verification_helper(tomlCleanup, tokenCleanup);
+  }
+
+  {
+      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "false");
+      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+      test_token_file_permissions_helper(tomlCleanup, tokenCleanup);
+  }
+
+  {
+      EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+      EnvOverride permOverride2("SF_SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "wrong setting");
+      EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+      test_token_file_permissions_helper(tomlCleanup, tokenCleanup);
+  }
 }
 #endif
 
