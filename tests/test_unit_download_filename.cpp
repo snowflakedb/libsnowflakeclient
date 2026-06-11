@@ -16,7 +16,7 @@ using Snowflake::Client::Util::isUnsafeDownloadFileName;
  * Plain, single-component file names must always be accepted, including names
  * with dots, spaces, dashes, non-ASCII bytes and unusual but valid characters.
  */
-void test_download_filename_valid_names(void **unused)
+void test_download_filename_valid_names(void **)
 {
   const std::vector<std::string> validNames = {
     "file.csv",
@@ -52,7 +52,7 @@ void test_download_filename_valid_names(void **unused)
  * Empty names and current/parent directory references must be rejected on
  * every platform.
  */
-void test_download_filename_dot_and_empty(void **unused)
+void test_download_filename_dot_and_empty(void **)
 {
   assert_true(isUnsafeDownloadFileName(""));
   assert_true(isUnsafeDownloadFileName("."));
@@ -64,7 +64,7 @@ void test_download_filename_dot_and_empty(void **unused)
  * bytes after the NUL would be dropped by downstream C-string handling and the
  * validated name would differ from the opened name.
  */
-void test_download_filename_embedded_nul(void **unused)
+void test_download_filename_embedded_nul(void **)
 {
   assert_true(isUnsafeDownloadFileName(std::string("ab\0junk", 7)));   // middle
   assert_true(isUnsafeDownloadFileName(std::string("\0abc", 4)));      // leading
@@ -79,7 +79,7 @@ void test_download_filename_embedded_nul(void **unused)
  * containing one (leading, trailing, middle, repeated) must be rejected
  * regardless of OS.
  */
-void test_download_filename_forward_slash(void **unused)
+void test_download_filename_forward_slash(void **)
 {
   const std::vector<std::string> rejectedNames = {
     "/",
@@ -106,7 +106,7 @@ void test_download_filename_forward_slash(void **unused)
  * alternate data stream specifier, so names containing them are rejected
  * there. On POSIX both are legal file name bytes and are accepted.
  */
-void test_download_filename_backslash_and_drive(void **unused)
+void test_download_filename_backslash_and_drive(void **)
 {
   const std::vector<std::string> windowsRejectedNames = {
     "\\",                            // lone backslash
@@ -148,7 +148,7 @@ void test_download_filename_backslash_and_drive(void **unused)
  * A forward slash is rejected on every platform even when combined with
  * characters that are only separators on Windows.
  */
-void test_download_filename_mixed_separators(void **unused)
+void test_download_filename_mixed_separators(void **)
 {
   // Contains '/', so unsafe everywhere.
   assert_true(isUnsafeDownloadFileName("a/b\\c"));
