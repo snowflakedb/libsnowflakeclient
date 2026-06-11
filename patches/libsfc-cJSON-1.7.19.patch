@@ -1,5 +1,5 @@
 diff --git a/cJSON.c b/cJSON.c
-index 61483d9..58da5e8 100644
+index 6e4fb0d..465c02b 100644
 --- a/cJSON.c
 +++ b/cJSON.c
 @@ -57,6 +57,7 @@
@@ -56,7 +56,7 @@ index 61483d9..58da5e8 100644
 +}
 +
  /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
- #if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 7) || (CJSON_VERSION_PATCH != 18)
+ #if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 7) || (CJSON_VERSION_PATCH != 19)
      #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
  #endif
  
@@ -120,7 +120,7 @@ index 61483d9..58da5e8 100644
          }
          if (!(item->type & cJSON_IsReference) && (item->valuestring != NULL))
          {
-@@ -374,14 +386,20 @@ loop_end:
+@@ -399,6 +411,12 @@ loop_end:
          item->valueint = (int)number;
      }
  
@@ -133,6 +133,7 @@ index 61483d9..58da5e8 100644
      item->type = cJSON_Number;
  
      input_buffer->offset += (size_t)(after_end - number_c_string);
+@@ -407,8 +425,8 @@ loop_end:
      return true;
  }
  
@@ -143,7 +144,7 @@ index 61483d9..58da5e8 100644
  {
      if (number >= INT_MAX)
      {
-@@ -399,8 +417,8 @@ CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
+@@ -426,8 +444,8 @@ CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
      return object->valuedouble = number;
  }
  
@@ -153,11 +154,11 @@ index 61483d9..58da5e8 100644
 +CJSON_PUBLIC(char*) snowflake_cJSON_SetValuestring(cJSON *object, const char *valuestring)
  {
      char *copy = NULL;
-     /* if object's type is not cJSON_String or is cJSON_IsReference, it should not set valuestring */
-@@ -415,17 +433,17 @@ CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)
-     }
-     if (strlen(valuestring) <= strlen(object->valuestring))
-     {
+     size_t v1_len;
+@@ -453,17 +471,17 @@ CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)
+         {
+             return NULL;
+         }
 -        strcpy(object->valuestring, valuestring);
 +        sf_strcpy(object->valuestring, strlen(object->valuestring), valuestring);
          return object->valuestring;
@@ -175,7 +176,7 @@ index 61483d9..58da5e8 100644
      }
      object->valuestring = copy;
  
-@@ -520,7 +538,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed)
+@@ -558,7 +576,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed)
              return NULL;
          }
  
@@ -184,7 +185,7 @@ index 61483d9..58da5e8 100644
          p->hooks.deallocate(p->buffer);
      }
      p->length = newsize;
-@@ -565,25 +583,30 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
+@@ -603,25 +621,34 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
          return false;
      }
  
@@ -204,10 +205,11 @@ index 61483d9..58da5e8 100644
 -        length = sprintf((char*)number_buffer, "null");
 +        length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "%d", item->valueint);
      }
--	else if(d == (double)item->valueint)
--	{
--		length = sprintf((char*)number_buffer, "%d", item->valueint);
--	}
+     else if(d == (double)item->valueint)
+     {
+-        length = sprintf((char*)number_buffer, "%d", item->valueint);
++        length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "%d", item->valueint);
+     }
      else
      {
          /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
@@ -224,7 +226,7 @@ index 61483d9..58da5e8 100644
          }
      }
  
-@@ -930,7 +953,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
+@@ -968,7 +995,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
          {
              return false;
          }
@@ -233,7 +235,7 @@ index 61483d9..58da5e8 100644
  
          return true;
      }
-@@ -971,7 +994,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
+@@ -1009,7 +1036,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
      if (escape_characters == 0)
      {
          output[0] = '\"';
@@ -242,7 +244,7 @@ index 61483d9..58da5e8 100644
          output[output_length + 1] = '\"';
          output[output_length + 2] = '\0';
  
-@@ -1017,7 +1040,9 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
+@@ -1055,7 +1082,9 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                      break;
                  default:
                      /* escape and print as unicode codepoint */
@@ -253,7 +255,7 @@ index 61483d9..58da5e8 100644
                      output_pointer += 4;
                      break;
              }
-@@ -1085,7 +1110,7 @@ static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
+@@ -1123,7 +1152,7 @@ static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
      return buffer;
  }
  
@@ -262,7 +264,7 @@ index 61483d9..58da5e8 100644
  {
      size_t buffer_length;
  
-@@ -1097,11 +1122,11 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return
+@@ -1135,11 +1164,11 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return
      /* Adding null character size due to require_null_terminated. */
      buffer_length = strlen(value) + sizeof("");
  
@@ -276,7 +278,7 @@ index 61483d9..58da5e8 100644
  {
      parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
      cJSON *item = NULL;
-@@ -1120,7 +1145,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
+@@ -1158,7 +1187,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
      buffer.offset = 0;
      buffer.hooks = global_hooks;
  
@@ -285,7 +287,7 @@ index 61483d9..58da5e8 100644
      if (item == NULL) /* memory fail */
      {
          goto fail;
-@@ -1151,7 +1176,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
+@@ -1189,7 +1218,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
  fail:
      if (item != NULL)
      {
@@ -294,7 +296,7 @@ index 61483d9..58da5e8 100644
      }
  
      if (value != NULL)
-@@ -1181,14 +1206,14 @@ fail:
+@@ -1219,14 +1248,14 @@ fail:
  }
  
  /* Default options for cJSON_Parse */
@@ -313,7 +315,7 @@ index 61483d9..58da5e8 100644
  }
  
  #define cjson_min(a, b) (((a) < (b)) ? (a) : (b))
-@@ -1234,7 +1259,7 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
+@@ -1272,7 +1301,7 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
          {
              goto fail;
          }
@@ -322,7 +324,7 @@ index 61483d9..58da5e8 100644
          printed[buffer->offset] = '\0'; /* just to be sure */
  
          /* free the buffer */
-@@ -1261,17 +1286,17 @@ fail:
+@@ -1299,17 +1328,17 @@ fail:
  }
  
  /* Render a cJSON item/entity/structure to text. */
@@ -343,7 +345,7 @@ index 61483d9..58da5e8 100644
  {
      printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
  
-@@ -1302,7 +1327,7 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
+@@ -1340,7 +1369,7 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
      return (char*)p.buffer;
  }
  
@@ -352,7 +354,7 @@ index 61483d9..58da5e8 100644
  {
      printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
  
-@@ -1394,7 +1419,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
+@@ -1432,7 +1461,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
              {
                  return false;
              }
@@ -361,7 +363,7 @@ index 61483d9..58da5e8 100644
              return true;
  
          case cJSON_False:
-@@ -1403,7 +1428,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
+@@ -1441,7 +1470,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
              {
                  return false;
              }
@@ -370,7 +372,7 @@ index 61483d9..58da5e8 100644
              return true;
  
          case cJSON_True:
-@@ -1412,7 +1437,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
+@@ -1450,7 +1479,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
              {
                  return false;
              }
@@ -379,7 +381,7 @@ index 61483d9..58da5e8 100644
              return true;
  
          case cJSON_Number:
-@@ -1432,7 +1457,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
+@@ -1470,7 +1499,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
              {
                  return false;
              }
@@ -388,7 +390,7 @@ index 61483d9..58da5e8 100644
              return true;
          }
  
-@@ -1489,7 +1514,7 @@ static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buf
+@@ -1527,7 +1556,7 @@ static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buf
      do
      {
          /* allocate next item */
@@ -397,7 +399,7 @@ index 61483d9..58da5e8 100644
          if (new_item == NULL)
          {
              goto fail; /* allocation failure */
-@@ -1542,7 +1567,7 @@ success:
+@@ -1580,7 +1609,7 @@ success:
  fail:
      if (head != NULL)
      {
@@ -406,7 +408,7 @@ index 61483d9..58da5e8 100644
      }
  
      return false;
-@@ -1647,7 +1672,7 @@ static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_bu
+@@ -1685,7 +1714,7 @@ static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_bu
      do
      {
          /* allocate next item */
@@ -415,7 +417,7 @@ index 61483d9..58da5e8 100644
          if (new_item == NULL)
          {
              goto fail; /* allocation failure */
-@@ -1722,7 +1747,7 @@ success:
+@@ -1760,7 +1789,7 @@ success:
  fail:
      if (head != NULL)
      {
@@ -424,7 +426,7 @@ index 61483d9..58da5e8 100644
      }
  
      return false;
-@@ -1843,7 +1868,7 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
+@@ -1881,7 +1910,7 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
  }
  
  /* Get Array size/item / object item. */
@@ -433,7 +435,7 @@ index 61483d9..58da5e8 100644
  {
      cJSON *child = NULL;
      size_t size = 0;
-@@ -1885,7 +1910,7 @@ static cJSON* get_array_item(const cJSON *array, size_t index)
+@@ -1923,7 +1952,7 @@ static cJSON* get_array_item(const cJSON *array, size_t index)
      return current_child;
  }
  
@@ -442,7 +444,7 @@ index 61483d9..58da5e8 100644
  {
      if (index < 0)
      {
-@@ -1927,19 +1952,19 @@ static cJSON *get_object_item(const cJSON * const object, const char * const nam
+@@ -1965,19 +1994,19 @@ static cJSON *get_object_item(const cJSON * const object, const char * const nam
      return current_element;
  }
  
@@ -466,7 +468,7 @@ index 61483d9..58da5e8 100644
  }
  
  /* Utility for array list handling. */
-@@ -1958,13 +1983,13 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
+@@ -1996,13 +2025,13 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
          return NULL;
      }
  
@@ -482,7 +484,7 @@ index 61483d9..58da5e8 100644
      reference->string = NULL;
      reference->type |= cJSON_IsReference;
      reference->next = reference->prev = NULL;
-@@ -2005,7 +2030,7 @@ static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
+@@ -2043,7 +2072,7 @@ static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
  }
  
  /* Add item to array/object. */
@@ -491,7 +493,7 @@ index 61483d9..58da5e8 100644
  {
      return add_item_to_array(array, item);
  }
-@@ -2043,7 +2068,7 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
+@@ -2081,7 +2110,7 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
      }
      else
      {
@@ -500,7 +502,7 @@ index 61483d9..58da5e8 100644
          if (new_key == NULL)
          {
              return false;
-@@ -2063,18 +2088,18 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
+@@ -2101,18 +2130,18 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
      return add_item_to_array(object, item);
  }
  
@@ -522,7 +524,7 @@ index 61483d9..58da5e8 100644
  {
      if (array == NULL)
      {
-@@ -2084,7 +2109,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item
+@@ -2122,7 +2151,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item
      return add_item_to_array(array, create_reference(item, &global_hooks));
  }
  
@@ -531,7 +533,7 @@ index 61483d9..58da5e8 100644
  {
      if ((object == NULL) || (string == NULL))
      {
-@@ -2094,115 +2119,127 @@ CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToObject(cJSON *object, const cha
+@@ -2132,115 +2161,127 @@ CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToObject(cJSON *object, const cha
      return add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
  }
  
@@ -685,9 +687,9 @@ index 61483d9..58da5e8 100644
 -CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
 +CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
  {
-     if ((parent == NULL) || (item == NULL))
+     if ((parent == NULL) || (item == NULL) || (item != parent->child && item->prev == NULL))
      {
-@@ -2238,47 +2275,47 @@ CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const it
+@@ -2276,47 +2317,47 @@ CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const it
      return item;
  }
  
@@ -750,7 +752,7 @@ index 61483d9..58da5e8 100644
  {
      cJSON *after_inserted = NULL;
  
-@@ -2312,7 +2349,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON
+@@ -2350,7 +2391,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON
      return true;
  }
  
@@ -759,7 +761,7 @@ index 61483d9..58da5e8 100644
  {
      if ((parent == NULL) || (parent->child == NULL) || (replacement == NULL) || (item == NULL))
      {
-@@ -2356,19 +2393,19 @@ CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON
+@@ -2394,19 +2435,19 @@ CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON
  
      item->next = NULL;
      item->prev = NULL;
@@ -782,7 +784,7 @@ index 61483d9..58da5e8 100644
  }
  
  static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJSON_bool case_sensitive)
-@@ -2381,9 +2418,9 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
+@@ -2419,9 +2460,9 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
      /* replace the name in the replacement */
      if (!(replacement->type & cJSON_StringIsConst) && (replacement->string != NULL))
      {
@@ -794,7 +796,7 @@ index 61483d9..58da5e8 100644
      if (replacement->string == NULL)
      {
          return false;
-@@ -2391,23 +2428,23 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
+@@ -2429,23 +2470,23 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
  
      replacement->type &= ~cJSON_StringIsConst;
  
@@ -823,7 +825,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type = cJSON_NULL;
-@@ -2416,9 +2453,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void)
+@@ -2454,9 +2495,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void)
      return item;
  }
  
@@ -835,7 +837,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type = cJSON_True;
-@@ -2427,9 +2464,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void)
+@@ -2465,9 +2506,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void)
      return item;
  }
  
@@ -847,7 +849,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type = cJSON_False;
-@@ -2438,9 +2475,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void)
+@@ -2476,9 +2517,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void)
      return item;
  }
  
@@ -859,7 +861,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type = boolean ? cJSON_True : cJSON_False;
-@@ -2449,9 +2486,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean)
+@@ -2487,9 +2528,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean)
      return item;
  }
  
@@ -871,7 +873,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type = cJSON_Number;
-@@ -2470,21 +2507,39 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
+@@ -2508,21 +2549,39 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
          {
              item->valueint = (int)num;
          }
@@ -915,7 +917,7 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
      }
-@@ -2492,9 +2547,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
+@@ -2530,9 +2589,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
      return item;
  }
  
@@ -927,7 +929,7 @@ index 61483d9..58da5e8 100644
      if (item != NULL)
      {
          item->type = cJSON_String | cJSON_IsReference;
-@@ -2504,9 +2559,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string)
+@@ -2542,9 +2601,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string)
      return item;
  }
  
@@ -939,7 +941,7 @@ index 61483d9..58da5e8 100644
      if (item != NULL) {
          item->type = cJSON_Object | cJSON_IsReference;
          item->child = (cJSON*)cast_away_const(child);
-@@ -2515,8 +2570,8 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child)
+@@ -2553,8 +2612,8 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child)
      return item;
  }
  
@@ -950,7 +952,7 @@ index 61483d9..58da5e8 100644
      if (item != NULL) {
          item->type = cJSON_Array | cJSON_IsReference;
          item->child = (cJSON*)cast_away_const(child);
-@@ -2525,16 +2580,16 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child) {
+@@ -2563,16 +2622,16 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child) {
      return item;
  }
  
@@ -971,7 +973,7 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
      }
-@@ -2542,9 +2597,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw)
+@@ -2580,9 +2639,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw)
      return item;
  }
  
@@ -983,7 +985,7 @@ index 61483d9..58da5e8 100644
      if(item)
      {
          item->type=cJSON_Array;
-@@ -2553,9 +2608,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void)
+@@ -2591,9 +2650,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void)
      return item;
  }
  
@@ -995,7 +997,7 @@ index 61483d9..58da5e8 100644
      if (item)
      {
          item->type = cJSON_Object;
-@@ -2565,7 +2620,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void)
+@@ -2603,7 +2662,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void)
  }
  
  /* Create Arrays: */
@@ -1004,7 +1006,7 @@ index 61483d9..58da5e8 100644
  {
      size_t i = 0;
      cJSON *n = NULL;
-@@ -2577,14 +2632,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
+@@ -2615,14 +2674,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
          return NULL;
      }
  
@@ -1022,7 +1024,7 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
          if(!i)
-@@ -2605,7 +2660,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
+@@ -2643,7 +2702,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
      return a;
  }
  
@@ -1031,7 +1033,7 @@ index 61483d9..58da5e8 100644
  {
      size_t i = 0;
      cJSON *n = NULL;
-@@ -2617,14 +2672,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
+@@ -2655,14 +2714,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
          return NULL;
      }
  
@@ -1049,7 +1051,7 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
          if(!i)
-@@ -2645,7 +2700,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
+@@ -2683,7 +2742,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
      return a;
  }
  
@@ -1058,7 +1060,7 @@ index 61483d9..58da5e8 100644
  {
      size_t i = 0;
      cJSON *n = NULL;
-@@ -2657,14 +2712,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
+@@ -2695,14 +2754,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
          return NULL;
      }
  
@@ -1076,7 +1078,7 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
          if(!i)
-@@ -2685,7 +2740,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
+@@ -2723,7 +2782,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
      return a;
  }
  
@@ -1085,7 +1087,7 @@ index 61483d9..58da5e8 100644
  {
      size_t i = 0;
      cJSON *n = NULL;
-@@ -2697,14 +2752,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
+@@ -2735,14 +2794,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
          return NULL;
      }
  
@@ -1103,16 +1105,26 @@ index 61483d9..58da5e8 100644
              return NULL;
          }
          if(!i)
-@@ -2726,7 +2781,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
+@@ -2764,14 +2823,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
  }
  
  /* Duplication */
+-cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse);
++cJSON * snowflake_cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse);
+ 
 -CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
 +CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
  {
+-    return cJSON_Duplicate_rec(item, 0, recurse );
++    return snowflake_cJSON_Duplicate_rec(item, 0, recurse );
+ }
+ 
+-cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
++cJSON * snowflake_cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
+ {
      cJSON *newitem = NULL;
      cJSON *child = NULL;
-@@ -2739,7 +2794,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+@@ -2784,7 +2843,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
          goto fail;
      }
      /* Create new item */
@@ -1121,7 +1133,7 @@ index 61483d9..58da5e8 100644
      if (!newitem)
      {
          goto fail;
-@@ -2750,7 +2805,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+@@ -2795,7 +2854,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
      newitem->valuedouble = item->valuedouble;
      if (item->valuestring)
      {
@@ -1130,7 +1142,7 @@ index 61483d9..58da5e8 100644
          if (!newitem->valuestring)
          {
              goto fail;
-@@ -2758,7 +2813,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+@@ -2803,7 +2862,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
      }
      if (item->string)
      {
@@ -1139,16 +1151,16 @@ index 61483d9..58da5e8 100644
          if (!newitem->string)
          {
              goto fail;
-@@ -2773,7 +2828,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
-     child = item->child;
-     while (child != NULL)
-     {
--        newchild = cJSON_Duplicate(child, true); /* Duplicate (with recurse) each item in the ->next chain */
-+        newchild = snowflake_cJSON_Duplicate(child, true); /* Duplicate (with recurse) each item in the ->next chain */
+@@ -2821,7 +2880,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
+         if(depth >= CJSON_CIRCULAR_LIMIT) {
+             goto fail;
+         }
+-        newchild = cJSON_Duplicate_rec(child, depth + 1, true); /* Duplicate (with recurse) each item in the ->next chain */
++        newchild = snowflake_cJSON_Duplicate_rec(child, depth + 1, true); /* Duplicate (with recurse) each item in the ->next chain */
          if (!newchild)
          {
              goto fail;
-@@ -2803,7 +2858,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+@@ -2851,7 +2910,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
  fail:
      if (newitem != NULL)
      {
@@ -1157,7 +1169,7 @@ index 61483d9..58da5e8 100644
      }
  
      return NULL;
-@@ -2858,7 +2913,7 @@ static void minify_string(char **input, char **output) {
+@@ -2906,7 +2965,7 @@ static void minify_string(char **input, char **output) {
      }
  }
  
@@ -1166,7 +1178,7 @@ index 61483d9..58da5e8 100644
  {
      char *into = json;
  
-@@ -2906,7 +2961,7 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json)
+@@ -2954,7 +3013,7 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json)
      *into = '\0';
  }
  
@@ -1175,7 +1187,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2916,7 +2971,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item)
+@@ -2964,7 +3023,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_Invalid;
  }
  
@@ -1184,7 +1196,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2926,7 +2981,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item)
+@@ -2974,7 +3033,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_False;
  }
  
@@ -1193,7 +1205,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2937,7 +2992,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item)
+@@ -2985,7 +3044,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item)
  }
  
  
@@ -1202,7 +1214,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2946,7 +3001,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item)
+@@ -2994,7 +3053,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item)
  
      return (item->type & (cJSON_True | cJSON_False)) != 0;
  }
@@ -1211,7 +1223,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2956,7 +3011,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item)
+@@ -3004,7 +3063,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_NULL;
  }
  
@@ -1220,7 +1232,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2966,7 +3021,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item)
+@@ -3014,7 +3073,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_Number;
  }
  
@@ -1229,7 +1241,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2976,7 +3031,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item)
+@@ -3024,7 +3083,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_String;
  }
  
@@ -1238,7 +1250,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2986,7 +3041,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item)
+@@ -3034,7 +3093,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_Array;
  }
  
@@ -1247,7 +1259,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -2996,7 +3051,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item)
+@@ -3044,7 +3103,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_Object;
  }
  
@@ -1256,7 +1268,7 @@ index 61483d9..58da5e8 100644
  {
      if (item == NULL)
      {
-@@ -3006,7 +3061,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item)
+@@ -3054,7 +3113,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item)
      return (item->type & 0xFF) == cJSON_Raw;
  }
  
@@ -1265,7 +1277,7 @@ index 61483d9..58da5e8 100644
  {
      if ((a == NULL) || (b == NULL) || ((a->type & 0xFF) != (b->type & 0xFF)))
      {
-@@ -3071,7 +3126,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3119,7 +3178,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
  
              for (; (a_element != NULL) && (b_element != NULL);)
              {
@@ -1274,7 +1286,7 @@ index 61483d9..58da5e8 100644
                  {
                      return false;
                  }
-@@ -3092,7 +3147,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3140,7 +3199,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
          {
              cJSON *a_element = NULL;
              cJSON *b_element = NULL;
@@ -1283,7 +1295,7 @@ index 61483d9..58da5e8 100644
              {
                  /* TODO This has O(n^2) runtime, which is horrible! */
                  b_element = get_object_item(b, a_element->string, case_sensitive);
-@@ -3101,7 +3156,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3149,7 +3208,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
                      return false;
                  }
  
@@ -1292,7 +1304,7 @@ index 61483d9..58da5e8 100644
                  {
                      return false;
                  }
-@@ -3109,7 +3164,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3157,7 +3216,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
  
              /* doing this twice, once on a and b to prevent true comparison if a subset of b
               * TODO: Do this the proper way, this is just a fix for now */
@@ -1301,7 +1313,7 @@ index 61483d9..58da5e8 100644
              {
                  a_element = get_object_item(a, b_element->string, case_sensitive);
                  if (a_element == NULL)
-@@ -3117,7 +3172,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3165,7 +3224,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
                      return false;
                  }
  
@@ -1310,7 +1322,7 @@ index 61483d9..58da5e8 100644
                  {
                      return false;
                  }
-@@ -3131,12 +3186,12 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+@@ -3179,12 +3238,12 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
      }
  }
  
@@ -1326,11 +1338,11 @@ index 61483d9..58da5e8 100644
      global_hooks.deallocate(object);
      object = NULL;
 diff --git a/cJSON.h b/cJSON.h
-index 88cf0bc..393ca4b 100644
+index cab5feb..7b58e3a 100644
 --- a/cJSON.h
 +++ b/cJSON.h
 @@ -84,6 +84,7 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
- #define CJSON_VERSION_PATCH 18
+ #define CJSON_VERSION_PATCH 19
  
  #include <stddef.h>
 +#include "snowflake/basic_types.h"
@@ -1346,7 +1358,7 @@ index 88cf0bc..393ca4b 100644
      /* The item's number, if type==cJSON_Number */
      double valuedouble;
  
-@@ -138,160 +141,164 @@ typedef int cJSON_bool;
+@@ -144,160 +147,164 @@ typedef int cJSON_bool;
  #endif
  
  /* returns the version of cJSON as a string */
