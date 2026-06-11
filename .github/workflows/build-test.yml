@@ -112,6 +112,14 @@ jobs:
                 tar -xf cmake.zip
                 echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
                 cmake --version
+            - name: Enable long paths
+              # Enable long-path support so the recursive aws-sdk-cpp clone, which
+              # has deeply nested submodule paths, can be checked out and built on
+              # Windows without hitting the 260-char path limit.
+              shell: cmd
+              run: |
+                git config --system core.longpaths true
+                reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4

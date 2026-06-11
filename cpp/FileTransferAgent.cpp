@@ -806,6 +806,23 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
 {
    char strerr_buf[SF_ERROR_BUFSIZE];
 
+   // The destination file name comes from the server response. Make sure it is
+   // a plain file name before using it as a local download target. It is
+   // checked both as the raw UTF-8 string and after conversion to the platform
+   // string, since that conversion is overridden by some consumers of this
+   // library (e.g. the ODBC driver).
+   std::string destFileNamePlatform =
+     m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destFileName);
+   if (Util::isUnsafeDownloadFileName(fileMetadata->destFileName) ||
+       Util::isUnsafeDownloadFileName(destFileNamePlatform))
+   {
+     CXX_LOG_ERROR("Refusing to download \"%s\": invalid destination file name \"%s\".",
+                   fileMetadata->srcFileName.c_str(),
+                   fileMetadata->destFileName.c_str());
+     m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, resultIndex);
+     return RemoteStorageRequestOutcome::FAILED;
+   }
+
    fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
    std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);

@@ -306,6 +306,43 @@ void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
   }
 }
 
+bool Snowflake::Client::Util::isUnsafeDownloadFileName(std::string const& fileName)
+{
+  // An empty name or an explicit current/parent directory reference is not a
+  // usable file name.
+  if (fileName.empty() || fileName == "." || fileName == "..")
+  {
+    return true;
+  }
+
+  // A NUL byte would be truncated by downstream C-string APIs, so the name that
+  // is validated would differ from the name that is opened.
+  if (fileName.find('\0') != std::string::npos)
+  {
+    return true;
+  }
+
+  // '/' is a directory separator on every supported platform, so it must not
+  // appear in a single-component file name.
+  if (fileName.find('/') != std::string::npos)
+  {
+    return true;
+  }
+
+#ifdef _WIN32
+  // On Windows the backslash is also a path separator and the colon introduces
+  // a drive / alternate data stream specifier. On POSIX both are legal file
+  // name bytes and are left untouched to avoid rejecting valid downloads.
+  if (fileName.find('\\') != std::string::npos ||
+      fileName.find(':') != std::string::npos)
+  {
+    return true;
+  }
+#endif
+
+  return false;
+}
+
 void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerString,
                                                    std::map<std::string, std::string>& headers)
 {
