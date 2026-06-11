@@ -1283,9 +1283,14 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
       stopwatch_elapsedMillis(&stopwatch));
 
     return SF_STATUS_SUCCESS;
-}
+} 
 
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
+    if (sf == NULL)
+    {
+        sf = snowflake_load_toml_config();
+    }
+
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     if (!sf) {

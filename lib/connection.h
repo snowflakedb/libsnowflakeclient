@@ -706,6 +706,14 @@ sf_bool is_password_required(AuthenticatorType auth);
 sf_bool is_secure_storage_auth(AuthenticatorType auth);
 
 void append_spcs_token(cJSON* data, const char* spcs_token_path);
+
+/*
+* Parse TOML config to SF_CONNECT object. Return the input connection object with updated fields if success, otherwise return NULL.
+*/
+SF_CONNECT* STDCALL snowflake_load_toml_config();
+
+void handle_single_param(SF_CONNECT* sf, const char* key, const char* value);
+
 #ifdef __cplusplus
 }
 #endif

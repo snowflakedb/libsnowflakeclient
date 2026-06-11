@@ -17,6 +17,12 @@ sf_bool ends_with(char* str, char* suffix);
  */
 void sf_sleep_ms(int sleep_ms);
 
+sf_bool parse_bool(const char* value, sf_bool* out);
+
+sf_bool parse_int64(const char* value, int64* out);
+
+sf_bool parse_int8(const char* value, int8* out);
+
 #ifdef __cplusplus
 }
 #endif

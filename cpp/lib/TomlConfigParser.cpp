@@ -246,3 +246,16 @@ std::map<std::string, boost::variant<std::string, int, bool, double>> load_toml_
   }
   return params;
 }
+
+std::string load_toml_config_as_dsn()
+{
+    std::map<std::string, boost::variant<std::string, int, bool, double>> tomlConfig = load_toml_config();
+    std::string dsn, key, value;
+    for (auto i = tomlConfig.begin(); i != tomlConfig.end(); i++)
+    {
+        key = i->first;
+        value = boost::apply_visitor(StringVisitor(), i->second);
+        dsn += key + "=" + value + ";";
+    }
+    return dsn;
+}

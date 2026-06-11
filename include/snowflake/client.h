@@ -812,6 +812,10 @@ SF_STATUS STDCALL snowflake_global_get_attribute(
  */
 SF_CONNECT *STDCALL snowflake_init();
 
+
+
+char* STDCALL snowflake_load_toml_as_dsn();
+
 /**
  * Purge a SNOWFLAKE connection context
  *

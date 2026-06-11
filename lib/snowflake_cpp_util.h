@@ -3,6 +3,7 @@
 
 #include "picojson.h"
 #include "cJSON.h"
+#include "snowflake/client.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,6 +11,8 @@ extern "C" {
 	typedef picojson::value jsonValue_t;
 	typedef std::map<std::string, picojson::value> jsonObject_t;
 	typedef std::vector<picojson::value> jsonArray_t;
+
+	void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn);
 
 	/*
 	* Convert the cJSON to picoJSON
