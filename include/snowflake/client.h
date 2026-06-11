@@ -813,9 +813,6 @@ SF_STATUS STDCALL snowflake_global_get_attribute(
 SF_CONNECT *STDCALL snowflake_init();
 
 
-
-char* STDCALL snowflake_load_toml_as_dsn();
-
 /**
  * Purge a SNOWFLAKE connection context
  *
@@ -879,6 +876,14 @@ SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *q
  * @return The query status.
  */
 SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
+
+/**
+ * Load TOML file for configuration and parse it as a DSN string.
+ * Wrapper for load_toml_config_as_dsn in SnowflakeCommon.cpp.
+ *
+ * @return char* DSN string if success, NULL otherwise.
+ */
+char* STDCALL snowflake_load_toml_as_dsn();
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.

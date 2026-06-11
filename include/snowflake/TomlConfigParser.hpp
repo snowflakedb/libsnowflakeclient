@@ -20,6 +20,11 @@ struct StringVisitor : public boost::static_visitor<std::string>
     */
   std::map<std::string, boost::variant<std::string, int, bool, double>> load_toml_config();
 
+  /*
+  *  Load TOML configuration and parse it as a DSN string.
+  * 
+  * @return DSN string if success, empty string otherwise.
+  */
   std::string load_toml_config_as_dsn();
 
 #endif //SNOWFLAKE_TOMLCONFIGPARSER_HPP

@@ -221,7 +221,7 @@ void append_spcs_token(cJSON* data, const char* spcs_token_path)
 }
 
 
-SF_CONNECT* snowflake_load_toml_config()
+SF_CONNECT* STDCALL snowflake_load_toml_config()
 {
     std::string dsn = load_toml_config_as_dsn();
     if (dsn.empty())

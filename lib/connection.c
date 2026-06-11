@@ -1412,7 +1412,6 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth)
     }
 }
 
-
 void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
 {
     sf_bool v = SF_BOOLEAN_FALSE;

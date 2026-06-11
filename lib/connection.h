@@ -701,17 +701,29 @@ uint64 sf_get_current_time_millis();
 */
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 
+/*
+*  Validate if the authenticator requires password.
+*/
 sf_bool is_password_required(AuthenticatorType auth);
 
+/*
+* Validate if the authenticator is a secure storage authenticator.
+*/
 sf_bool is_secure_storage_auth(AuthenticatorType auth);
 
+/*
+* Append SPCS token to the cJSON body for login request when SPCS token is required.
+*/
 void append_spcs_token(cJSON* data, const char* spcs_token_path);
 
 /*
-* Parse TOML config to SF_CONNECT object. Return the input connection object with updated fields if success, otherwise return NULL.
+* Load config from toml file and return a SF_CONNECT struct pointer.
 */
 SF_CONNECT* STDCALL snowflake_load_toml_config();
 
+/*
+* Handle a single parameter from the TOML configuration and update the SF_CONNECT object.
+*/
 void handle_single_param(SF_CONNECT* sf, const char* key, const char* value);
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@ namespace
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
+    std::string skipPermVerification = getEnvironmentVariableValue(SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
     std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);
     if (permissions & boost::filesystem::group_write ||
       permissions & boost::filesystem::others_write)
@@ -46,7 +47,14 @@ namespace
         filePath.c_str());
       return false;
     }
-    if (!boost::iequals(skipWarningForReadPermission, "true"))
+    if (boost::iequals(skipPermVerification, "true"))
+    {
+        CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
+            SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
+        return true;
+    }
+    
+    if (!(boost::iequals(skipPermVerification, "true") || boost::iequals(skipWarningForReadPermission, "true")))
     {
       if (permissions & boost::filesystem::group_read ||
         permissions & boost::filesystem::others_read)
@@ -77,7 +85,6 @@ namespace
             return true;
         }
     }
-   
 
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();

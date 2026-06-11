@@ -12,6 +12,9 @@ extern "C" {
 	typedef std::map<std::string, picojson::value> jsonObject_t;
 	typedef std::vector<picojson::value> jsonArray_t;
 
+    /*
+    *  Parse the DSN string and update the SF_CONNECT struct.
+	*/
 	void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn);
 
 	/*
