@@ -812,6 +812,10 @@ SF_STATUS STDCALL snowflake_global_get_attribute(
  */
 SF_CONNECT *STDCALL snowflake_init();
 
+/**
+* Load config from toml file and return a SF_CONNECT struct pointer.
+*/
+SF_CONNECT* STDCALL snowflake_load_toml_config();
 
 /**
  * Purge a SNOWFLAKE connection context

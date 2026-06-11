@@ -717,11 +717,6 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth);
 void append_spcs_token(cJSON* data, const char* spcs_token_path);
 
 /*
-* Load config from toml file and return a SF_CONNECT struct pointer.
-*/
-SF_CONNECT* STDCALL snowflake_load_toml_config();
-
-/*
 * Handle a single parameter from the TOML configuration and update the SF_CONNECT object.
 */
 void handle_single_param(SF_CONNECT* sf, const char* key, const char* value);

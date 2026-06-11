@@ -5,6 +5,8 @@
 
 
 void test_parse_bool(void** unused) {
+    SF_UNUSED(unused);
+
     sf_bool out;
     assert_true(parse_bool("true", &out));
     assert_true(out);
@@ -18,6 +20,8 @@ void test_parse_bool(void** unused) {
 }
 
 void test_parse_int64(void** unused) {
+    SF_UNUSED(unused);
+
     int64 out;
     assert_true(parse_int64("123", &out));
     assert_int_equal(out, 123);
@@ -30,6 +34,8 @@ void test_parse_int64(void** unused) {
 }
 
 void test_parse_int8(void** unused) {
+    SF_UNUSED(unused);
+
     int8 out;
     assert_true(parse_int8("123", &out));
     assert_int_equal(out, 123);
