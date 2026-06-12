@@ -1496,11 +1496,11 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_AUTHORIZATION_URL", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "OAUTH_AUTHORIZATION_ENDPOINT", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_AUTHORIZATION_ENDPOINT, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_TOKEN_REQUEST_URL", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "OAUTH_TOKEN_ENDPOINT", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, value);
     }
@@ -1520,7 +1520,7 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_SCOPE, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "SINGLE_USE_REFRESH_TOKENS", strlen(key)) == 0)
     {
         if (parse_bool(value, &v))
         {
@@ -1531,14 +1531,15 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_PAT, value);
     }
-    else if (sf_strncasecmp(key, "DISABLEOCSPCHECK", strlen(key)) == 0)
+    //In ODBC DISABLEOCSPCHECK
+    else if (sf_strncasecmp(key, "INSECURE_MODE", strlen(key)) == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &v);
         }
     }
-    else if (sf_strncasecmp(key, "OCSP_FAIL_OPEN", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "OCSPFAILOPEN", strlen(key)) == 0)
     {
         if (parse_bool(value, &v))
         {
@@ -1566,35 +1567,35 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
             snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &v);
         }
     }
-    else if (sf_strncasecmp(key, "SF_CON_CRL_DISK_CACHING", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "CRL_DISK_CACHING", strlen(key)) == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DISK_CACHING, &v);
         }
     }
-    else if (sf_strncasecmp(key, "SF_CON_CRL_MEMORY_CACHING", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "CRL_MEMORY_CACHING", strlen(key)) == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_MEMORY_CACHING, &v);
         }
     }
-    else if (sf_strncasecmp(key, "SF_CON_CRL_DOWNLOAD_TIMEOUT", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "CRL_DOWNLOAD_TIMEOUT", strlen(key)) == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "SF_CON_CRL_DOWNLOAD_MAX_SIZE", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "CRL_DOWNLOAD_MAX_SIZE", strlen(key)) == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &i);
         }
     }
-    else if (sf_strncasecmp(key, "LOGIN_TIMEOUT", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "LOGINTIMEOUT", strlen(key)) == 0)
     {
         if (parse_int64(value, &i))
         {
@@ -1669,6 +1670,14 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
             snowflake_set_attribute(sf, SF_CON_JWT_TIMEOUT, &i);
         }
     }
+    else if (sf_strncasecmp(key, "MAXHTTPRETRIES", strlen(key)) == 0)
+    {
+        if (parse_int8(value, &c))
+        {
+            snowflake_set_attribute(sf, SF_CON_MAX_RETRY, &c);
+        }
+    }
+
     else if (sf_strncasecmp(key, "PROXY", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PROXY, value);
