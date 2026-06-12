@@ -66,6 +66,7 @@ SET(TESTS_CXX
         test_unit_cred_renew
         test_unit_encryption
         test_unit_file_metadata_init
+        test_unit_download_filename
         test_unit_file_type_detect
         test_unit_stream_splitter
         test_unit_put_retry
