@@ -142,6 +142,7 @@ namespace
     // Check in SNOWFLAKE_HOME
     std::string snowflakeHomeEnv = getEnvironmentVariableValue(ENV_SNOWFLAKE_HOME);
     if (!snowflakeHomeEnv.empty()) {
+      CXX_LOG_ERROR("Snowflake_HOME is defined: %s", snowflakeHomeEnv.c_str());
       tomlFilePath = snowflakeHomeEnv;
       tomlFilePath.append(TOML_FILENAME);
     } else {

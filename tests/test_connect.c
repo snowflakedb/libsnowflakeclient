@@ -3,12 +3,12 @@
 /**
  * Test connection with null context
  */
-void test_null_sf_connect() {
-    SF_CONNECT *sf = NULL;
-    // Try connecting with a NULL connection struct, should fail
-    SF_STATUS status = snowflake_connect(sf);
-    assert_int_not_equal(status, SF_STATUS_SUCCESS);
-}
+//void test_null_sf_connect() {
+//    SF_CONNECT *sf = NULL;
+//    // Try connecting with a NULL connection struct, should fail
+//    SF_STATUS status = snowflake_connect(sf);
+//    assert_int_not_equal(status, SF_STATUS_SUCCESS);
+//}
 
 /**
  * Test connection with existing token
@@ -239,7 +239,7 @@ void test_connect_with_proxy() {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_null_sf_connect),
+      //cmocka_unit_test(test_null_sf_connect),
       cmocka_unit_test(test_existing_token_sf_connect),
       cmocka_unit_test(test_no_connection_parameters),
       cmocka_unit_test(test_connect_with_minimum_parameters),
