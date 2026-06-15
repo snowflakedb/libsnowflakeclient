@@ -167,6 +167,7 @@ static bool loadPublicKey(KeyPairHolder &keyPairHolder) {
 void test_missing_private_key(void **unused) {
   SF_CONNECT *sf = setup_snowflake_connection();
   snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_JWT);
+  snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, NULL);
 
   SF_STATUS status = snowflake_connect(sf);
   assert_int_not_equal(status, SF_STATUS_SUCCESS);
