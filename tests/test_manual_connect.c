@@ -567,16 +567,16 @@ int main(void)
     initialize_test(SF_BOOLEAN_FALSE);
     struct CMUnitTest tests[] = {
         cmocka_unit_test(test_toml_connect),
-        //cmocka_unit_test(test_oauth_connect),
-        //cmocka_unit_test(test_mfa_connect_with_duo_passcode),
-        //cmocka_unit_test(test_mfa_connect_with_duo_push),
-        //cmocka_unit_test(test_mfa_connect_with_duo_passcodeInPassword),
-        //cmocka_unit_test(test_external_browser),
-        //cmocka_unit_test(test_okta_connect),
-        //cmocka_unit_test(test_sso_token_auth),
-        //cmocka_unit_test(test_sso_token_auth_renew),
-        //cmocka_unit_test(test_oauth_authorization_code),
-        //cmocka_unit_test(test_oauth_client_credentials),
+        cmocka_unit_test(test_oauth_connect),
+        cmocka_unit_test(test_mfa_connect_with_duo_passcode),
+        cmocka_unit_test(test_mfa_connect_with_duo_push),
+        cmocka_unit_test(test_mfa_connect_with_duo_passcodeInPassword),
+        cmocka_unit_test(test_external_browser),
+        cmocka_unit_test(test_okta_connect),
+        cmocka_unit_test(test_sso_token_auth),
+        cmocka_unit_test(test_sso_token_auth_renew),
+        cmocka_unit_test(test_oauth_authorization_code),
+        cmocka_unit_test(test_oauth_client_credentials),
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

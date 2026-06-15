@@ -47,13 +47,6 @@ namespace
         filePath.c_str());
       return false;
     }
-    if (boost::iequals(skipPermVerification, "true"))
-    {
-        CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
-            SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
-        return true;
-    }
-    
     if (!(boost::iequals(skipPermVerification, "true") || boost::iequals(skipWarningForReadPermission, "true")))
     {
       if (permissions & boost::filesystem::group_read ||
@@ -142,7 +135,6 @@ namespace
     // Check in SNOWFLAKE_HOME
     std::string snowflakeHomeEnv = getEnvironmentVariableValue(ENV_SNOWFLAKE_HOME);
     if (!snowflakeHomeEnv.empty()) {
-      CXX_LOG_ERROR("Snowflake_HOME is defined: %s", snowflakeHomeEnv.c_str());
       tomlFilePath = snowflakeHomeEnv;
       tomlFilePath.append(TOML_FILENAME);
     } else {

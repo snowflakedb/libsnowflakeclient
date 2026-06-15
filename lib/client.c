@@ -1283,7 +1283,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
       stopwatch_elapsedMillis(&stopwatch));
 
     return SF_STATUS_SUCCESS;
-} 
+}
 
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     if (sf == NULL)
