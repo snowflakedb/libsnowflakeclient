@@ -47,15 +47,17 @@ namespace
         filePath.c_str());
       return false;
     }
-    if (!(boost::iequals(skipPermVerification, "true") || boost::iequals(skipWarningForReadPermission, "true")))
-    {
-      if (permissions & boost::filesystem::group_read ||
-        permissions & boost::filesystem::others_read)
-      {
+
+    bool skipVerification =
+        boost::iequals(skipPermVerification, "true") ||
+        (skipPermVerification.empty() && boost::iequals(skipWarningForReadPermission, "true"));
+
+    if (!skipVerification &&
+        (permissions & (boost::filesystem::group_read | boost::filesystem::others_read))) {
         CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
-          filePath.c_str());
-      }
+            filePath.c_str());
     }
+   
     return true;
   }
 
