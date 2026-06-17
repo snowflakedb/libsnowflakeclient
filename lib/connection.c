@@ -1425,7 +1425,7 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_REGION, value);
     }
-    else if (sf_strncasecmp(key, "USER", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "USER", strlen(key)) == 0 || sf_strncasecmp(key, "UID", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_USER, value);
     }
@@ -1449,7 +1449,7 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_ROLE, value);
     }
-    else if (sf_strncasecmp(key, "HOST", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "HOST", strlen(key)) == 0 || sf_strncasecmp(key, "SERVER", strlen(key) == 0))
     {
         snowflake_set_attribute(sf, SF_CON_HOST, value);
     }
@@ -1655,11 +1655,11 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
             snowflake_set_attribute(sf, SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT, &c);
         }
     }
-    else if (sf_strncasecmp(key, "PRIV_KEY_FILE", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "PRIV_KEY_FILE", strlen(key)) == 0 || sf_strncasecmp(key, "PRIVATE_KEY_FILE", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, value);
     }
-    else if (sf_strncasecmp(key, "PRIV_KEY_FILE_PWD", strlen(key)) == 0)
+    else if (sf_strncasecmp(key, "PRIV_KEY_FILE_PWD", strlen(key)) == 0 || sf_strncasecmp(key, "PRIVATE_KEY_FILE_PWD", strlen(key)) == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE_PWD, value);
     }

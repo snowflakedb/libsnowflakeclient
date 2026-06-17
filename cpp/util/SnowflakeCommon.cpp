@@ -263,15 +263,19 @@ void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn)
     std::stringstream ss(dsn);
     std::string param;
 
-    while (std::getline(ss, param, ';')) {
+    while (std::getline(ss, param, ';')) 
+    {
         if (!param.empty())
             connectionParams.push_back(param);
     }
 
-    for (const auto& params : connectionParams) {
+    for (const auto& params : connectionParams) 
+    {
         size_t pos = params.find('=');
-        if (pos == std::string::npos) continue;
-
+        if (pos == std::string::npos)
+        {
+            continue;
+        }
         std::string key = params.substr(0, pos);
         std::string value = params.substr(pos + 1);
 

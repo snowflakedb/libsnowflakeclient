@@ -174,7 +174,7 @@ void test_snowflake_parse_dsn(void** unused)
     assert_int_equal(sf->put_compress_level, 5);
     assert_int_equal(sf->put_maxretries, 5);
     assert_int_equal(sf->get_maxretries, 5);
-  snowflake_term(sf);
+    snowflake_term(sf);
 }
 
 void test_valid_toml_file(void** unused) {

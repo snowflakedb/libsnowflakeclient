@@ -554,7 +554,8 @@ void test_toml_connect(void** unused)
     SF_STATUS status = snowflake_connect(sf);
 
     assert_non_null(sf);
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS) 
+    {
         dump_error(&(sf->error));
     }
 

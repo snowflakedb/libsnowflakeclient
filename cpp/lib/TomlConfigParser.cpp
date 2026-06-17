@@ -48,16 +48,15 @@ namespace
       return false;
     }
 
-    bool skipVerification =
+    bool skipWarning =
         boost::iequals(skipPermVerification, "true") ||
         (skipPermVerification.empty() && boost::iequals(skipWarningForReadPermission, "true"));
 
-    if (!skipVerification &&
+    if (!skipWarning &&
         (permissions & (boost::filesystem::group_read | boost::filesystem::others_read))) {
         CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
             filePath.c_str());
     }
-   
     return true;
   }
 
