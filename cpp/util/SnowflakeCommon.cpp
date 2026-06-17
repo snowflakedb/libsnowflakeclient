@@ -16,8 +16,11 @@
 #include <chrono>
 #include "SnowflakeCommon.hpp"
 #include "log_file_util.h"
+#include "../lib/snowflake_cpp_util.h"
 #include "cJSON.h"
 #include "snowflake/PlatformDetection.hpp"
+#include "snowflake/TomlConfigParser.hpp"
+#include "memory.h"
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
@@ -217,7 +220,70 @@ void append_spcs_token(cJSON* data, const char* spcs_token_path)
     }
 }
 
-} // extern "C"
+
+SF_CONNECT* STDCALL snowflake_load_toml_config()
+{
+    std::string dsn = load_toml_config_as_dsn();
+    if (dsn.empty())
+    {
+        return NULL;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_parse_dsn(sf, dsn);
+    return sf;
+}
+
+char* STDCALL snowflake_load_toml_as_dsn()
+{
+    std::string dsn = load_toml_config_as_dsn();
+    char* dsn_cstr = (char*)SF_MALLOC(dsn.size() + 1);
+    std::memcpy(dsn_cstr, dsn.c_str(), dsn.size() + 1);
+    return dsn_cstr;
+}
+
+void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn)
+{
+    if (dsn.empty())
+    {
+        return;
+    }
+
+    if (dsn.back() == ';')
+    {
+        dsn.pop_back();
+    }
+
+    if (sf == NULL)
+    {
+        sf = snowflake_init();
+    }
+
+    std::vector<std::string> connectionParams;
+    std::stringstream ss(dsn);
+    std::string param;
+
+    while (std::getline(ss, param, ';')) 
+    {
+        if (!param.empty())
+            connectionParams.push_back(param);
+    }
+
+    for (const auto& params : connectionParams) 
+    {
+        size_t pos = params.find('=');
+        if (pos == std::string::npos)
+        {
+            continue;
+        }
+        std::string key = params.substr(0, pos);
+        std::string value = params.substr(pos + 1);
+
+        handle_single_param(sf, key.c_str(), value.c_str());
+    }
+}
+
+}// extern "C"
 
 void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
   std::string const& oldValue,
