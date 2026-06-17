@@ -3,7 +3,6 @@
 #include "../lib/snowflake_util.h"
 #include <stdint.h>
 
-
 void test_parse_bool(void** unused) {
     SF_UNUSED(unused);
 
@@ -30,7 +29,6 @@ void test_parse_int64(void** unused) {
     assert_false(parse_int64("notanint", &out));
     assert_false(parse_int64("123abc", &out));
     assert_false(parse_int64("", &out));
-
 }
 
 void test_parse_int8(void** unused) {
