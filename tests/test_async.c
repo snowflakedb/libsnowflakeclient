@@ -196,7 +196,8 @@ void test_fake_table() {
   status = snowflake_fetch(sfstmt);
   assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
   SF_ERROR_STRUCT* error = snowflake_error(sf);
-  assert_string_equal(error->msg, "SQL compilation error:\nObject 'MY_FAKE_TABLE' does not exist or not authorized.");
+  /* Error message could change just check the table name is mentioned. */
+  assert_true(strstr(error->msg, "MY_FAKE_TABLE") != NULL);
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);

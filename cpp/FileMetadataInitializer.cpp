@@ -249,7 +249,14 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                size_t getThreshold)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
+  // The stage object key is delimited by '/'. On Windows the backslash is also
+  // a directory separator, so split on it as well when extracting the local
+  // file name. On POSIX the backslash is a legal file name byte.
+#ifdef _WIN32
+  size_t dirSep = fullPath.find_last_of("/\\");
+#else
   size_t dirSep = fullPath.find_last_of('/');
+#endif
   std::string dstFileName = fullPath.substr(dirSep + 1);
 
   FileMetadata fileMetadata;
