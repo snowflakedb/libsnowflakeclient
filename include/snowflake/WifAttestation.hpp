@@ -4,6 +4,7 @@
 
 #include <string>
 #include <boost/optional.hpp>
+#include "snowflake/client.h"
 
 namespace Snowflake {
 
@@ -79,8 +80,11 @@ namespace Client {
     boost::optional<std::string> token;
     boost::optional<std::string> snowflakeEntraResource;
     boost::optional<std::string> workloadIdentityImpersonationPath;
+    boost::optional<std::string> audience;
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
+
+    void configureWIFAttestation(SF_CONNECT* conn);
   };
 
   boost::optional<Attestation> createAttestation(AttestationConfig& config);

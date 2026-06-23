@@ -20,6 +20,53 @@ namespace Snowflake {
       };
     }
 
+    void AttestationConfig::configureWIFAttestation(SF_CONNECT* conn)
+    {
+        // Populate config from SF_CONNECT fields
+        if (conn->wif_provider) {
+            auto typeOpt = attestationTypeFromString(conn->wif_provider);
+            if (typeOpt) {
+                type = typeOpt;
+                log_debug("Using explicit WIF provider: %s", conn->wif_provider);
+            }
+            else {
+                log_error("Invalid WIF provider specified: %s. Valid values: AWS, AZURE, GCP, OIDC", conn->wif_provider);
+                return;
+            }
+        }
+        else {
+            log_error("WIF provider is required but not specified");
+            return;
+        }
+
+        if (conn->wif_token) {
+            token = std::string(conn->wif_token);
+            log_debug("Using explicit WIF token");
+        }
+
+        if (conn->wif_azure_resource) {
+            snowflakeEntraResource = std::string(conn->wif_azure_resource);
+            log_debug("Using Azure resource: %s", conn->wif_azure_resource);
+        }
+
+        // Pass workload identity impersonation path
+        if (conn->workload_identity_impersonation_path)
+        {
+            workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
+        }
+
+        if (conn->wif_audience)
+        {
+            audience = std::string(conn->wif_audience);
+            log_debug("Using explicit WIF audience: %s", conn->wif_audience);
+        }
+        else
+        {
+            audience = SF_SNOWFLAKE_WIF_AUDIENCE;
+            log_debug("Using default WIF audience: %s", SF_SNOWFLAKE_WIF_AUDIENCE);
+        }
+    }
+
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
       if (config.httpClient == NULL)
         config.httpClient = IHttpClient::getInstance();

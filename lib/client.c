@@ -1163,6 +1163,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->wif_provider = NULL;
         sf->wif_token = NULL;
         sf->wif_azure_resource = NULL;
+        sf->wif_audience = NULL;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -1904,6 +1905,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_AZURE_RESOURCE:
             alloc_buffer_and_copy(&sf->wif_azure_resource, value);
             break;
+        case SF_CON_WIF_AUDIENCE:
+            alloc_buffer_and_copy(&sf->wif_audience, value);
+            break;
         case SF_CON_LOG_QUERY_TEXT:
             sf->log_query_text = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
@@ -2160,6 +2164,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_WIF_AZURE_RESOURCE:
             *value = sf->wif_azure_resource;
+            break;
+        case SF_CON_WIF_AUDIENCE:
+            *value = sf->wif_audience;
             break;
         case SF_CON_LOG_QUERY_TEXT:
             *value = &sf->log_query_text;

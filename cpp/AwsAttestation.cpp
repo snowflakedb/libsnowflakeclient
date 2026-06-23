@@ -10,7 +10,6 @@ namespace Snowflake::Client {
     // AWS WIF (SNOW-2919437): the JWT obtained from STS:GetWebIdentityToken is
     // bound to this audience and signed with this algorithm. GS verifies both
     // when validating the inbound JWT.
-    constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
     constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
   }
 
@@ -101,7 +100,7 @@ namespace Snowflake::Client {
         "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
         region.c_str());
     auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-        creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM);
+        creds, region, config.audience.get(), AWS_WIF_SIGNING_ALGORITHM);
     if (!jwtOpt) {
       CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
       return boost::none;

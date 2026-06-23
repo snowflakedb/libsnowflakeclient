@@ -128,6 +128,11 @@ extern "C" {
 #define SF_SPCS_ENV_VAR "SNOWFLAKE_RUNNING_INSIDE_SPCS"
 
 /**
+* 
+*/
+#define SF_SNOWFLAKE_WIF_AUDIENCE "snowflakecomputing.com"
+
+/**
  * CRL configuration parameters.
  */
 typedef struct SF_CRL_CONFIG {
@@ -388,6 +393,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_WIF_PROVIDER,
     SF_CON_WIF_TOKEN,
     SF_CON_WIF_AZURE_RESOURCE,
+    SF_CON_WIF_AUDIENCE,
     SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH,
     SF_CON_APPLICATION_PATH,
     SF_CON_LOG_QUERY_TEXT,
@@ -582,6 +588,7 @@ typedef struct SF_CONNECT {
     char *wif_provider;
     char *wif_token;
     char *wif_azure_resource;
+    char *wif_audience;
 
     // WIF impersonation path
     char *workload_identity_impersonation_path;
