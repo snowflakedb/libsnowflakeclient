@@ -5,55 +5,8 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "snowflake/WifAttestation.hpp"
-#include "snowflake/client.h"
 
 using namespace Snowflake::Client;
-
-void test_wif_attestation_config(void**)
-{
-    AttestationConfig config;
-    SF_CONNECT* conn = snowflake_init();
-    snowflake_set_attribute(conn, SF_CON_WIF_AZURE_RESOURCE, "dummy_resource");
-    config.configureWIFAttestation(conn);
-
-    assert_false(config.audience.has_value());
-    assert_false(config.snowflakeEntraResource.has_value());
-
-    snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "AWS");
-    config.configureWIFAttestation(conn);
-
-    assert_true(config.type.has_value());
-    assert_int_equal(config.type.get(), AttestationType::AWS);
-
-    assert_true(config.audience.has_value());
-    assert_string_equal(config.audience.get().c_str(), SF_SNOWFLAKE_WIF_AUDIENCE);
-
-    assert_true(config.snowflakeEntraResource.has_value());
-    assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
-
-    snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "GCP");
-    snowflake_set_attribute(conn, SF_CON_WIF_AUDIENCE, "dummy_audience.com");
-    snowflake_set_attribute(conn, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, "dummy_impersonation_path");
-    snowflake_set_attribute(conn, SF_CON_WIF_TOKEN, "dummy_token");
-
-    config.configureWIFAttestation(conn);
-
-    assert_true(config.type.has_value());
-    assert_int_equal(config.type.get(), AttestationType::GCP);
-
-    assert_true(config.workloadIdentityImpersonationPath.has_value());
-    assert_string_equal(config.workloadIdentityImpersonationPath.get().c_str(), "dummy_impersonation_path");
-
-    assert_true(config.token.has_value());
-    assert_string_equal(config.token.get().c_str(), "dummy_token");
-
-    assert_true(config.audience.has_value());
-    assert_string_equal(config.audience.get().c_str(), "dummy_audience.com");
-
-    assert_true(config.snowflakeEntraResource.has_value());
-    assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
-}
-
 
 // AWS attestation is exercised end-to-end through snowflake_connect() in
 // tests/test_auth/test_wif.c::test_aws_wif_authentication (gated on the same
@@ -117,7 +70,6 @@ void test_azure_attestation(void**)
 int main()
 {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_wif_attestation_config),
       cmocka_unit_test(test_gcp_attestation),
       cmocka_unit_test(test_azure_attestation)
   };

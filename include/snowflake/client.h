@@ -128,7 +128,7 @@ extern "C" {
 #define SF_SPCS_ENV_VAR "SNOWFLAKE_RUNNING_INSIDE_SPCS"
 
 /**
-* 
+* DEFAULT WIF AUDIENCE
 */
 #define SF_SNOWFLAKE_WIF_AUDIENCE "snowflakecomputing.com"
 
