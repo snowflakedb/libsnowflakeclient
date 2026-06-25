@@ -143,7 +143,6 @@ void test_unit_aws_attestation_jwt_success(void **) {
   AttestationConfig config;
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
@@ -177,7 +176,6 @@ void test_unit_aws_attestation_jwt_sdk_failure(void **) {
   AttestationConfig config;
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   // Must fail closed: no silent fallback to a different credential format.
@@ -200,7 +198,6 @@ void test_unit_aws_attestation_jwt_with_impersonation(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = roleArn;
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
@@ -243,7 +240,6 @@ void test_unit_aws_attestation_jwt_with_impersonation_chain(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = arn1 + "," + arn2;
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
@@ -278,7 +274,6 @@ void test_unit_aws_attestation_jwt_impersonation_failure(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_false(attestationOpt.has_value());
@@ -302,7 +297,6 @@ void test_unit_aws_attestation_impersonation_whitespace_trimming(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = "  " + arn1 + "  , " + arn2 + " ";
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
@@ -323,7 +317,6 @@ void test_unit_aws_attestation_impersonation_empty_path_fallback(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = std::string("");
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   auto attestationOpt = createAttestation(config);
   assert_true(attestationOpt.has_value());
@@ -343,7 +336,6 @@ void test_unit_aws_attestation_impersonation_with_missing_region(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_false(attestationOpt.has_value());
@@ -356,7 +348,6 @@ void test_unit_aws_attestation_impersonation_with_missing_credentials(void **) {
   config.type = AttestationType::AWS;
   config.awsSdkWrapper = &awsSdkWrapper;
   config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
-  config.audience = std::string(SF_SNOWFLAKE_WIF_AUDIENCE);
 
   const auto attestationOpt = createAttestation(config);
   assert_false(attestationOpt.has_value());
@@ -1048,7 +1039,6 @@ void test_unit_wif_attestation_config(void**)
     snowflake_set_attribute(conn, SF_CON_WIF_AZURE_RESOURCE, "dummy_resource");
     config.configureWIFAttestation(conn);
 
-    assert_false(config.audience.has_value());
     assert_false(config.snowflakeEntraResource.has_value());
 
     snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "AWS");
