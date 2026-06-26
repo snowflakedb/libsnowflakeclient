@@ -80,7 +80,7 @@ namespace Client {
     boost::optional<std::string> token;
     boost::optional<std::string> snowflakeEntraResource;
     boost::optional<std::string> workloadIdentityImpersonationPath;
-    boost::optional<std::string> audience = SF_SNOWFLAKE_WIF_AUDIENCE;
+    boost::optional<std::string> audience = std::string("snowflakecomputing.com");
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
