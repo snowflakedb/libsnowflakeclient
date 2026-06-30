@@ -168,6 +168,39 @@ void test_unit_aws_attestation_jwt_success(void **) {
                      AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
+void test_unit_aws_attestation_jwt_success_with_custom_audience(void**) {
+    auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+    awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+    AttestationConfig config;
+    config.type = AttestationType::AWS;
+    config.awsSdkWrapper = &awsSdkWrapper;
+    config.audience = "custom-audience-for-testing";
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    const auto& attestation = attestationOpt.get();
+
+    assert_true(attestation.type == AttestationType::AWS);
+    // The JWT is the credential — not wrapped in base64(JSON).
+    assert_true(attestation.credential == FAKE_WEB_IDENTITY_TOKEN);
+    // GS resolves issuer/subject from the JWT claims; driver leaves them unset.
+    assert_true(!attestation.issuer);
+    assert_true(!attestation.subject);
+
+    // STS call shape matches the Python implementation.
+    assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAudience.c_str(),
+        "custom-audience-for-testing");
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAlgorithm.c_str(),
+        "ES384");
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenRegion.c_str(),
+        AWS_TEST_REGION.c_str());
+    // No impersonation -> creds passed through unchanged.
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenCreds.GetAWSAccessKeyId().c_str(),
+        AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
+}
+
 void test_unit_aws_attestation_jwt_sdk_failure(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   // STS call returns no token (e.g. HTTP error, malformed response).
@@ -469,7 +502,8 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
     const std::vector<char>& accessToken,
     const std::vector<char>& idToken,
     const std::vector<std::string>& expectedDelegates,
-    const std::string& expectedTargetServiceAccount) {
+    const std::string& expectedTargetServiceAccount,
+    const std::string& expectedAudience = GCP_TEST_AUDIENCE) {
   return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     HttpResponse response;
     response.code = 200;
@@ -502,7 +536,7 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
         assert_true(bodyJson.is<picojson::object>());
 
         auto bodyObj = bodyJson.get<picojson::object>();
-        assert_true(bodyObj["audience"].get<std::string>() == GCP_TEST_AUDIENCE);
+        assert_true(bodyObj["audience"].get<std::string>() == expectedAudience);
         assert_true(bodyObj["includeEmail"].get<bool>() == true);
 
         if (!expectedDelegates.empty()) {
@@ -554,6 +588,34 @@ void test_unit_gcp_impersonation_single_account_success(void **) {
   assert_true(credential == std::string(idToken.data(), idToken.size()));
   assert_true(subject == GCP_TEST_SUBJECT);
   assert_true(issuer == GCP_TEST_ISSUER);
+}
+
+void test_unit_gcp_impersonation_single_account_success_with_custom_audience(void**) {
+    const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+    const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+    const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
+    const std::string testingAudience = "custom-audience-for-testing";
+
+    auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
+        accessToken,
+        idToken,
+        {},
+        targetServiceAccount,
+        testingAudience);
+
+    AttestationConfig config;
+    config.type = AttestationType::GCP;
+    config.httpClient = &fakeHttpClient;
+    config.workloadIdentityImpersonationPath = targetServiceAccount;
+    config.audience = testingAudience;
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    const auto& [type, credential, issuer, subject] = attestationOpt.get();
+    assert_true(type == AttestationType::GCP);
+    assert_true(credential == std::string(idToken.data(), idToken.size()));
+    assert_true(subject == GCP_TEST_SUBJECT);
+    assert_true(issuer == GCP_TEST_ISSUER);
 }
 
 void test_unit_gcp_impersonation_chain_success(void **) {
@@ -1081,6 +1143,7 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_audience),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
@@ -1095,6 +1158,7 @@ int main() {
       cmocka_unit_test(test_unit_gcp_attestation_failed_request),
       cmocka_unit_test(test_unit_gcp_attestation_bad_request),
       cmocka_unit_test(test_unit_gcp_impersonation_single_account_success),
+      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_custom_audience),
       cmocka_unit_test(test_unit_gcp_impersonation_chain_success),
       cmocka_unit_test(test_unit_gcp_impersonation_whitespace_in_path),
       cmocka_unit_test(test_unit_gcp_impersonation_access_token_failed),
