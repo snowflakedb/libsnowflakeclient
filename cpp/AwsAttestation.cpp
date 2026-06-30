@@ -100,7 +100,7 @@ namespace Snowflake::Client {
         "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
         region.c_str());
     auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-        creds, region, config.audience.get(), AWS_WIF_SIGNING_ALGORITHM);
+        creds, region, config.getAudience(), AWS_WIF_SIGNING_ALGORITHM);
     if (!jwtOpt) {
       CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
       return boost::none;

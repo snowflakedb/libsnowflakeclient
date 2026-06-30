@@ -1109,8 +1109,8 @@ void test_unit_wif_attestation_config(void**)
     assert_true(config.type.has_value());
     assert_int_equal(config.type.get(), AttestationType::AWS);
 
-    assert_true(config.audience.has_value());
-    assert_string_equal(config.audience.get().c_str(), SF_SNOWFLAKE_WIF_AUDIENCE);
+    assert_false(config.audience.has_value());
+    assert_string_equal(config.getAudience().c_str(), SF_SNOWFLAKE_WIF_AUDIENCE);
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
@@ -1132,7 +1132,7 @@ void test_unit_wif_attestation_config(void**)
     assert_string_equal(config.token.get().c_str(), "dummy_token");
 
     assert_true(config.audience.has_value());
-    assert_string_equal(config.audience.get().c_str(), "dummy_audience.com");
+    assert_string_equal(config.getAudience().c_str(), "dummy_audience.com");
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");

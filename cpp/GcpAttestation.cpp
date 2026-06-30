@@ -182,7 +182,7 @@ namespace Snowflake::Client {
         config.httpClient,
         accessTokenOpt.get(),
         serviceAccountChain,
-        config.audience.get());
+        config.getAudience());
       if (!idTokenOpt) {
         CXX_LOG_ERROR("Failed to get identity token with delegation");
         return boost::none;
@@ -194,7 +194,7 @@ namespace Snowflake::Client {
       CXX_LOG_INFO("Using direct GCP identity token from metadata server");
 
       auto url = boost::urls::url(std::string(GCP_METADATA_SERVER_BASE_URL) + "identity");
-      url.params().append({"audience", config.audience.get()});
+      url.params().append({"audience", config.getAudience()});
 
       HttpRequest req{
         HttpRequest::Method::GET,
