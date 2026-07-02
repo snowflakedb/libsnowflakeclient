@@ -50,7 +50,7 @@ namespace Client
         bool IDPAuthenticator::getIDPInfo(jsonObject_t& dataMap)
         {
             bool ret = true;
-            SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
+            SFURL connectURL = getServerURLSync().path(AUTHENTICATOR_URL);
             dataMap["ACCOUNT_NAME"] = value(m_account);
             dataMap["AUTHENTICATOR"] = value(m_authenticator);
             dataMap["PORT"] = value(m_port);
@@ -82,11 +82,7 @@ namespace Client
 
         SFURL IDPAuthenticator::getServerURLSync()
         {
-            SFURL url = SFURL().scheme(m_protocol)
-                .host(m_host)
-                .port(m_port);
-
-            return url;
+            return SFURL(m_protocol, m_host, m_port);
         }
 
         IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer, IDPAuthenticator* idp, IAuthenticationWebBrowserRunner* webBrowserRunner) :
