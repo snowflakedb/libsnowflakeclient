@@ -1277,6 +1277,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->wif_azure_resource);
     SF_FREE(sf->programmatic_access_token);
     SF_FREE(sf->workload_identity_impersonation_path);
+    SF_FREE(sf->wif_audience);
     SF_FREE(sf);
 
     stopwatch_stop(&stopwatch);
