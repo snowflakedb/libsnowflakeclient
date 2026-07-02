@@ -205,7 +205,12 @@ extern "C" {
       if (AUTH_WIF == authenticator)
       {
           Snowflake::Client::AttestationConfig config;
-          config.configureWIFAttestation(conn);
+          
+          if (config.configureWIFAttestation(conn) != SF_STATUS_SUCCESS)
+          {
+              log_error("Failed to configure WIF attestation");
+              return;
+          }
 
           if (auto attestationOpt = Snowflake::Client::createAttestation(config))
           {

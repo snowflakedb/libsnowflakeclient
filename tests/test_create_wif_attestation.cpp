@@ -1099,12 +1099,12 @@ void test_unit_wif_attestation_config(void**)
     AttestationConfig config;
     SF_CONNECT* conn = snowflake_init();
     snowflake_set_attribute(conn, SF_CON_WIF_AZURE_RESOURCE, "dummy_resource");
-    config.configureWIFAttestation(conn);
-
+    
+    assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_ERROR_GENERAL);
     assert_false(config.snowflakeEntraResource.has_value());
 
     snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "AWS");
-    config.configureWIFAttestation(conn);
+    assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
 
     assert_true(config.type.has_value());
     assert_int_equal(config.type.get(), AttestationType::AWS);
@@ -1120,7 +1120,7 @@ void test_unit_wif_attestation_config(void**)
     snowflake_set_attribute(conn, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, "dummy_impersonation_path");
     snowflake_set_attribute(conn, SF_CON_WIF_TOKEN, "dummy_token");
 
-    config.configureWIFAttestation(conn);
+    assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
 
     assert_true(config.type.has_value());
     assert_int_equal(config.type.get(), AttestationType::GCP);
@@ -1136,6 +1136,8 @@ void test_unit_wif_attestation_config(void**)
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
+
+    snowflake_term(conn);
 }
 
 int main() {

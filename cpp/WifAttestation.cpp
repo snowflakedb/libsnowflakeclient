@@ -20,7 +20,7 @@ namespace Snowflake {
       };
     }
 
-    void AttestationConfig::configureWIFAttestation(SF_CONNECT* conn)
+    SF_STATUS AttestationConfig::configureWIFAttestation(SF_CONNECT* conn)
     {
         // Populate config from SF_CONNECT fields
         if (conn->wif_provider) 
@@ -34,13 +34,13 @@ namespace Snowflake {
             else 
             {
                 log_error("Invalid WIF provider specified: %s. Valid values: AWS, AZURE, GCP, OIDC", conn->wif_provider);
-                return;
+                return SF_STATUS_ERROR_GENERAL;
             }
         }
         else 
         {
             log_error("WIF provider is required but not specified");
-            return;
+            return SF_STATUS_ERROR_GENERAL;
         }
 
         if (conn->wif_token) 
@@ -66,6 +66,8 @@ namespace Snowflake {
             audience = std::string(conn->wif_audience);
             log_debug("Using explicit WIF audience: %s", conn->wif_audience);
         }
+
+        return SF_STATUS_SUCCESS;
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {

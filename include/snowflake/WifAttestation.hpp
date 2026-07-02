@@ -84,7 +84,7 @@ namespace Client {
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
-    void configureWIFAttestation(SF_CONNECT* conn);
+    SF_STATUS configureWIFAttestation(SF_CONNECT* conn);
 
     std::string getAudience() const {
       return audience.value_or(SF_SNOWFLAKE_WIF_AUDIENCE);
