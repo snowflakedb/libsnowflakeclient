@@ -588,7 +588,6 @@ typedef struct SF_CONNECT {
     char *wif_provider;
     char *wif_token;
     char *wif_azure_resource;
-    char *wif_audience;
 
     // WIF impersonation path
     char *workload_identity_impersonation_path;
@@ -619,6 +618,8 @@ typedef struct SF_CONNECT {
     //the option to enable capturing the query info in the logs
     sf_bool log_query_text;
     sf_bool log_query_parameters;
+
+    char* wif_audience;
 } SF_CONNECT;
 
 /**
