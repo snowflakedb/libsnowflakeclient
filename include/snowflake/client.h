@@ -128,6 +128,11 @@ extern "C" {
 #define SF_SPCS_ENV_VAR "SNOWFLAKE_RUNNING_INSIDE_SPCS"
 
 /**
+* DEFAULT WIF AUDIENCE
+*/
+#define SF_SNOWFLAKE_WIF_AUDIENCE "snowflakecomputing.com"
+
+/**
  * CRL configuration parameters.
  */
 typedef struct SF_CRL_CONFIG {
@@ -392,6 +397,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_APPLICATION_PATH,
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
+    SF_CON_WIF_AUDIENCE,
 } SF_ATTRIBUTE;
 
 /**
@@ -612,6 +618,8 @@ typedef struct SF_CONNECT {
     //the option to enable capturing the query info in the logs
     sf_bool log_query_text;
     sf_bool log_query_parameters;
+
+    char* wif_audience;
 } SF_CONNECT;
 
 /**
