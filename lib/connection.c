@@ -9,6 +9,11 @@
 #include "curl_desc_pool.h"
 #include "snowflake_util.h"
 
+#ifdef _WIN32
+#include <Shellapi.h>
+#define strcasecmp _stricmp
+#endif
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
 #define REQUEST_GUID_KEY_SIZE 13
@@ -1417,260 +1422,260 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     sf_bool v = SF_BOOLEAN_FALSE;
     int64 i = 0;
     int8 c = 0;
-    if (sf_strncasecmp(key, "ACCOUNT", strlen(key)) == 0)
+    if (strcasecmp(key, "ACCOUNT") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_ACCOUNT, value);
     }
-    else if (sf_strncasecmp(key, "REGION", strlen(key)) == 0)
+    else if (strcasecmp(key, "REGION") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_REGION, value);
     }
-    else if (sf_strncasecmp(key, "USER", strlen(key)) == 0 || sf_strncasecmp(key, "UID", strlen(key)) == 0)
+    else if (strcasecmp(key, "USER") == 0 || strcasecmp(key, "UID") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_USER, value);
     }
-    else if (sf_strncasecmp(key, "PASSWORD", strlen(key)) == 0 || sf_strncasecmp(key, "PWD", strlen(key)) == 0)
+    else if (strcasecmp(key, "PASSWORD") == 0 || strcasecmp(key, "PWD") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PASSWORD, value);
     }
-    else if (sf_strncasecmp(key, "DATABASE", strlen(key)) == 0)
+    else if (strcasecmp(key, "DATABASE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_DATABASE, value);
     }
-    else if (sf_strncasecmp(key, "SCHEMA", strlen(key)) == 0)
+    else if (strcasecmp(key, "SCHEMA") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_SCHEMA, value);
     }
-    else if (sf_strncasecmp(key, "WAREHOUSE", strlen(key)) == 0)
+    else if (strcasecmp(key, "WAREHOUSE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_WAREHOUSE, value);
     }
-    else if (sf_strncasecmp(key, "ROLE", strlen(key)) == 0)
+    else if (strcasecmp(key, "ROLE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_ROLE, value);
     }
-    else if (sf_strncasecmp(key, "HOST", strlen(key)) == 0 || sf_strncasecmp(key, "SERVER", strlen(key) == 0))
+    else if (strcasecmp(key, "HOST") == 0 || strcasecmp(key, "SERVER") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_HOST, value);
     }
-    else if (sf_strncasecmp(key, "PORT", strlen(key)) == 0)
+    else if (strcasecmp(key, "PORT") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PORT, value);
     }
-    else if (sf_strncasecmp(key, "PROTOCOL", strlen(key)) == 0)
+    else if (strcasecmp(key, "PROTOCOL") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, value);
     }
-    else if (sf_strncasecmp(key, "PASSCODE", strlen(key)) == 0)
+    else if (strcasecmp(key, "PASSCODE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PASSCODE, value);
     }
-    else if (sf_strncasecmp(key, "PASSCODEINPASSWORD", strlen(key)) == 0)
+    else if (strcasecmp(key, "PASSCODEINPASSWORD") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_PASSCODE_IN_PASSWORD, &v);
         }
     }
-    else if (sf_strncasecmp(key, "APPLICATION", strlen(key)) == 0)
+    else if (strcasecmp(key, "APPLICATION") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_APPLICATION, value);
     }
-    else if (sf_strncasecmp(key, "APPLICATIONNAME", strlen(key)) == 0)
+    else if (strcasecmp(key, "APPLICATIONNAME") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_APPLICATION_NAME, value);
     }
-    else if (sf_strncasecmp(key, "APPLICATIONVERSION", strlen(key)) == 0)
+    else if (strcasecmp(key, "APPLICATIONVERSION") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_APPLICATION_VERSION, value);
     }
-    else if (sf_strncasecmp(key, "APPLICATIONPATH", strlen(key)) == 0)
+    else if (strcasecmp(key, "APPLICATIONPATH") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_APPLICATION_PATH, value);
     }
-    else if (sf_strncasecmp(key, "AUTHENTICATOR", strlen(key)) == 0)
+    else if (strcasecmp(key, "AUTHENTICATOR") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, value);
     }
-    else if (sf_strncasecmp(key, "TOKEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "TOKEN") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_AUTHORIZATION_ENDPOINT", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_AUTHORIZATION_ENDPOINT") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_AUTHORIZATION_ENDPOINT, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_TOKEN_ENDPOINT", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_TOKEN_ENDPOINT") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_REDIRECT_URI", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_REDIRECT_URI") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_CLIENT_ID", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_CLIENT_ID") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_CLIENT_SECRET", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_CLIENT_SECRET") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, value);
     }
-    else if (sf_strncasecmp(key, "OAUTH_SCOPE", strlen(key)) == 0)
+    else if (strcasecmp(key, "OAUTH_SCOPE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_OAUTH_SCOPE, value);
     }
-    else if (sf_strncasecmp(key, "SINGLE_USE_REFRESH_TOKENS", strlen(key)) == 0)
+    else if (strcasecmp(key, "SINGLE_USE_REFRESH_TOKENS") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_SINGLE_USE_REFRESH_TOKEN, &v);
         }
     }
-    else if (sf_strncasecmp(key, "PROGRAMMATIC_ACCESS_TOKEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "PROGRAMMATIC_ACCESS_TOKEN") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PAT, value);
     }
     //In ODBC DISABLEOCSPCHECK
-    else if (sf_strncasecmp(key, "INSECURE_MODE", strlen(key)) == 0)
+    else if (strcasecmp(key, "INSECURE_MODE") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &v);
         }
     }
-    else if (sf_strncasecmp(key, "OCSPFAILOPEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "OCSPFAILOPEN") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_CHECK", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_CHECK") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_ADVISORY", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_ADVISORY") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_ALLOW_NO_CRL", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_ALLOW_NO_CRL") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_DISK_CACHING", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_DISK_CACHING") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DISK_CACHING, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_MEMORY_CACHING", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_MEMORY_CACHING") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_MEMORY_CACHING, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_DOWNLOAD_TIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_DOWNLOAD_TIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "CRL_DOWNLOAD_MAX_SIZE", strlen(key)) == 0)
+    else if (strcasecmp(key, "CRL_DOWNLOAD_MAX_SIZE") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &i);
         }
     }
-    else if (sf_strncasecmp(key, "LOGINTIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "LOGINTIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "NETWORK_TIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "NETWORK_TIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "BROWSER_RESPONSE_TIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "BROWSER_RESPONSE_TIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "RETRYTIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "RETRYTIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "AUTOCOMMIT", strlen(key)) == 0)
+    else if (strcasecmp(key, "AUTOCOMMIT") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_AUTOCOMMIT, &v);
         }
     }
-    else if (sf_strncasecmp(key, "TIMEZONE", strlen(key)) == 0)
+    else if (strcasecmp(key, "TIMEZONE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_TIMEZONE, value);
     }
 
     //libsnowflake specific connection parameters
-    else if (sf_strncasecmp(key, "DIRECTURL", strlen(key)) == 0)
+    else if (strcasecmp(key, "DIRECTURL") == 0)
     {
         snowflake_set_attribute(sf, SF_DIR_QUERY_URL, value);
     }
-    else if (sf_strncasecmp(key, "DIRECTURL_PARAM", strlen(key)) == 0)
+    else if (strcasecmp(key, "DIRECTURL_PARAM") == 0)
     {
         snowflake_set_attribute(sf, SF_DIR_QUERY_URL_PARAM, value);
     }
-    else if (sf_strncasecmp(key, "DIRECT_QUERY_TOKEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "DIRECT_QUERY_TOKEN") == 0)
     {
         snowflake_set_attribute(sf, SF_DIR_QUERY_TOKEN, value);
     }
-    else if (sf_strncasecmp(key, "RETRY_ON_CURLE_COULDNT_CONNECT_COUNT", strlen(key)) == 0)
+    else if (strcasecmp(key, "RETRY_ON_CURLE_COULDNT_CONNECT_COUNT") == 0)
     {
         if (parse_int8(value, &c))
         {
             snowflake_set_attribute(sf, SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT, &c);
         }
     }
-    else if (sf_strncasecmp(key, "PRIV_KEY_FILE", strlen(key)) == 0 || sf_strncasecmp(key, "PRIVATE_KEY_FILE", strlen(key)) == 0)
+    else if (strcasecmp(key, "PRIV_KEY_FILE") == 0 || strcasecmp(key, "PRIVATE_KEY_FILE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, value);
     }
-    else if (sf_strncasecmp(key, "PRIV_KEY_FILE_PWD", strlen(key)) == 0 || sf_strncasecmp(key, "PRIVATE_KEY_FILE_PWD", strlen(key)) == 0)
+    else if (strcasecmp(key, "PRIV_KEY_FILE_PWD") == 0 || strcasecmp(key, "PRIVATE_KEY_FILE_PWD") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE_PWD, value);
     }
-    else if (sf_strncasecmp(key, "JWT_TIMEOUT", strlen(key)) == 0)
+    else if (strcasecmp(key, "JWT_TIMEOUT") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_JWT_TIMEOUT, &i);
         }
     }
-    else if (sf_strncasecmp(key, "MAXHTTPRETRIES", strlen(key)) == 0)
+    else if (strcasecmp(key, "MAXHTTPRETRIES") == 0)
     {
         if (parse_int8(value, &c))
         {
@@ -1678,61 +1683,61 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
         }
     }
 
-    else if (sf_strncasecmp(key, "PROXY", strlen(key)) == 0)
+    else if (strcasecmp(key, "PROXY") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PROXY, value);
     }
-    else if (sf_strncasecmp(key, "NO_PROXY", strlen(key)) == 0)
+    else if (strcasecmp(key, "NO_PROXY") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_NO_PROXY, value);
     }
-    else if (sf_strncasecmp(key, "DISABLEQUERYCONTEXTCACHE", strlen(key)) == 0)
+    else if (strcasecmp(key, "DISABLEQUERYCONTEXTCACHE") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_DISABLE_QUERY_CONTEXT_CACHE, &v);
         }
     }
-    else if (sf_strncasecmp(key, "INCLUDERETRYREASON", strlen(key)) == 0)
+    else if (strcasecmp(key, "INCLUDERETRYREASON") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_INCLUDE_RETRY_REASON, &v);
         }
     }
-    else if (sf_strncasecmp(key, "DISABLECONSOLELOGIN", strlen(key)) == 0)
+    else if (strcasecmp(key, "DISABLECONSOLELOGIN") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &v);
         }
     }
-    else if (sf_strncasecmp(key, "DISABLESAMLURLCHECK", strlen(key)) == 0)
+    else if (strcasecmp(key, "DISABLESAMLURLCHECK") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_DISABLE_SAML_URL_CHECK, &v);
         }
     }
-    else if (sf_strncasecmp(key, "PUT_TEMPDIR", strlen(key)) == 0)
+    else if (strcasecmp(key, "PUT_TEMPDIR") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_PUT_TEMPDIR, value);
     }
-    else if (sf_strncasecmp(key, "PUT_COMPRESSLV", strlen(key)) == 0)
+    else if (strcasecmp(key, "PUT_COMPRESSLV") == 0)
     {
         if (parse_int8(value, &c))
         {
             snowflake_set_attribute(sf, SF_CON_PUT_COMPRESSLV, &c);
         }
     }
-    else if (sf_strncasecmp(key, "PUT_FASTFAIL", strlen(key)) == 0)
+    else if (strcasecmp(key, "PUT_FASTFAIL") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_PUT_FASTFAIL, &v);
         }
     }
-    else if (sf_strncasecmp(key, "PUT_MAXRETRIES", strlen(key)) == 0)
+    else if (strcasecmp(key, "PUT_MAXRETRIES") == 0)
     {
         if (parse_int8(value, &c))
         {
@@ -1740,91 +1745,99 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
         }
     }
     //libsnowflake specific put parameters
-    else if (sf_strncasecmp(key, "PUT_USE_URAND_DEV", strlen(key)) == 0)
+    else if (strcasecmp(key, "PUT_USE_URAND_DEV") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_PUT_USE_URANDOM_DEV, &v);
         }
     }
-    else if (sf_strncasecmp(key, "GET_FASTFAIL", strlen(key)) == 0)
+    else if (strcasecmp(key, "GET_FASTFAIL") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_GET_FASTFAIL, &v);
         }
     }
-    else if (sf_strncasecmp(key, "GET_MAXRETRIES", strlen(key)) == 0)
+    else if (strcasecmp(key, "GET_MAXRETRIES") == 0)
     {
         if (parse_int8(value, &c))
         {
             snowflake_set_attribute(sf, SF_CON_GET_MAXRETRIES, &c);
         }
     }
-    else if (sf_strncasecmp(key, "GET_SIZE_THRESHOLD", strlen(key)) == 0)
+    else if (strcasecmp(key, "GET_SIZE_THRESHOLD") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_GET_THRESHOLD, &i);
         }
     }
-    else if (sf_strncasecmp(key, "CLIENT_REQUEST_MFA_TOKEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "CLIENT_REQUEST_MFA_TOKEN") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &v);
         }
     }
-    else if (sf_strncasecmp(key, "CLIENT_STORE_TEMPORARY_CREDENTIAL", strlen(key)) == 0)
+    else if (strcasecmp(key, "CLIENT_STORE_TEMPORARY_CREDENTIAL") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &v);
         }
     }
-    else if (sf_strncasecmp(key, "STAGEBINDTHRESHOLD", strlen(key)) == 0)
+    else if (strcasecmp(key, "STAGEBINDTHRESHOLD") == 0)
     {
         if (parse_int64(value, &i))
         {
             snowflake_set_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, &i);
         }
     }
-    else if (sf_strncasecmp(key, "DISABLESTAGEBIND", strlen(key)) == 0)
+    else if (strcasecmp(key, "DISABLESTAGEBIND") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &v);
         }
     }
-    else if (sf_strncasecmp(key, "WORKLOAD_IDENTITY_PROVIDER", strlen(key)) == 0)
+    else if (strcasecmp(key, "WORKLOAD_IDENTITY_PROVIDER") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, value);
     }
-    else if (sf_strncasecmp(key, "WORKLOAD_IDENTITY_ENTRA_RESOURCE", strlen(key)) == 0)
+    else if (strcasecmp(key, "WORKLOAD_IDENTITY_ENTRA_RESOURCE") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_WIF_AZURE_RESOURCE, value);
     }
-    else if (sf_strncasecmp(key, "WORKLOAD_IDENTITY_IMPERSONATION_PATH", strlen(key)) == 0)
+    else if (strcasecmp(key, "WORKLOAD_IDENTITY_IMPERSONATION_PATH") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, value);
     }
     //libsnowflake specific WIF bind parameters
-    else if (sf_strncasecmp(key, "WIF_TOKEN", strlen(key)) == 0)
+    else if (strcasecmp(key, "WIF_TOKEN") == 0)
     {
         snowflake_set_attribute(sf, SF_CON_WIF_TOKEN, value);
     }
-    else if (sf_strncasecmp(key, "LOG_QUERY_TEXT", strlen(key)) == 0)
+    else if (strcasecmp(key, "WIF_AUDIENCE") == 0)
+    {
+        snowflake_set_attribute(sf, SF_CON_WIF_AUDIENCE, value);
+    }
+    else if (strcasecmp(key, "LOG_QUERY_TEXT") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_LOG_QUERY_TEXT, &v);
         }
     }
-    else if (sf_strncasecmp(key, "LOG_QUERY_PARAMETERS", strlen(key)) == 0)
+    else if (strcasecmp(key, "LOG_QUERY_PARAMETERS") == 0)
     {
         if (parse_bool(value, &v))
         {
             snowflake_set_attribute(sf, SF_CON_LOG_QUERY_PARAMETERS, &v);
         }
+    }
+    else
+    {
+        log_error("Unknown connection parameter: %s", key);
     }
 }

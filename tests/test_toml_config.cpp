@@ -177,6 +177,30 @@ void test_snowflake_parse_dsn(void** unused)
     snowflake_term(sf);
 }
 
+void test_parse_dsn_no_prefix_matching(void** unused)
+{
+    SF_UNUSED(unused);
+
+    std::string dsn =
+        "ACCO=should_not_match;"
+        "APP=should_not_match;"
+        "US=should_not_match;"
+        "HO=should_not_match;"
+        "PASS=should_not_match;";
+
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_parse_dsn(sf, dsn);
+
+    assert_null(sf->account);
+    assert_null(sf->application);
+    assert_null(sf->user);
+    assert_null(sf->host);
+
+
+    snowflake_term(sf);
+}
+
 void test_valid_toml_file(void** unused) {
   SF_UNUSED(unused);
   FileCleanup tomlCleanup("./connections.toml");
@@ -629,6 +653,7 @@ int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_snowflake_parse_dsn),
+      cmocka_unit_test(test_parse_dsn_no_prefix_matching),
       cmocka_unit_test(test_missing_toml_file),
       cmocka_unit_test(test_invalid_toml_file),
       cmocka_unit_test(test_client_config_log_invalid_config_name),

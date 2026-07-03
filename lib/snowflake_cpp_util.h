@@ -15,7 +15,7 @@ extern "C" {
     /*
     *  Parse the DSN string and update the SF_CONNECT struct.
 	*/
-	void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn);
+	void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn);
 
 	/*
 	* Convert the cJSON to picoJSON

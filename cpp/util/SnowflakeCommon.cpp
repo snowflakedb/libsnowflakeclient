@@ -238,29 +238,35 @@ char* STDCALL snowflake_load_toml_as_dsn()
 {
     std::string dsn = load_toml_config_as_dsn();
     char* dsn_cstr = (char*)SF_MALLOC(dsn.size() + 1);
+    if (dsn_cstr == NULL)
+    {
+        return NULL;
+    }
     std::memcpy(dsn_cstr, dsn.c_str(), dsn.size() + 1);
     return dsn_cstr;
 }
 
-void snowflake_parse_dsn(SF_CONNECT* sf, std::string& dsn)
+void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
 {
     if (dsn.empty())
     {
         return;
     }
 
-    if (dsn.back() == ';')
+
+    std::string dsnCopy = dsn;
+    if (dsnCopy.back() == ';')
     {
-        dsn.pop_back();
+        dsnCopy.pop_back();
     }
 
     if (sf == NULL)
     {
-        sf = snowflake_init();
+        return;
     }
 
     std::vector<std::string> connectionParams;
-    std::stringstream ss(dsn);
+    std::stringstream ss(dsnCopy);
     std::string param;
 
     while (std::getline(ss, param, ';')) 
