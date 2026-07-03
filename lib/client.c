@@ -1287,6 +1287,20 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     return SF_STATUS_SUCCESS;
 }
 
+SF_CONNECT* snowflake_connect_with_toml() {
+    SF_CONNECT* sf = snowflake_load_toml_config();
+    if (!sf)
+    {
+        return NULL;
+    }
+    if (snowflake_connect(sf) != SF_STATUS_SUCCESS) 
+    {
+        snowflake_term(sf);
+        return NULL;
+    }
+    return sf;
+}
+
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     if (sf == NULL)
     {

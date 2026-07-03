@@ -607,16 +607,9 @@ void test_toml_connect(void** unused)
         return;
     }
 
-    SF_CONNECT* sf = NULL;
-    SF_STATUS status = snowflake_connect(sf);
-
+    SF_CONNECT* sf = snowflake_connect_with_toml();
     assert_non_null(sf);
-    if (status != SF_STATUS_SUCCESS) 
-    {
-        dump_error(&(sf->error));
-    }
 
-    assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
 

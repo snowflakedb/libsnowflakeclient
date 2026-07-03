@@ -188,7 +188,6 @@ void test_parse_dsn_no_prefix_matching(void** unused)
         "HO=should_not_match;"
         "PASS=should_not_match;";
 
-
     SF_CONNECT* sf = snowflake_init();
     snowflake_parse_dsn(sf, dsn);
 
@@ -196,7 +195,6 @@ void test_parse_dsn_no_prefix_matching(void** unused)
     assert_null(sf->application);
     assert_null(sf->user);
     assert_null(sf->host);
-
 
     snowflake_term(sf);
 }

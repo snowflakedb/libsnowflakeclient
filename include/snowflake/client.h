@@ -837,6 +837,13 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf);
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf);
 
 /**
+ * Creates a new session and connects to Snowflake database using TOML configuration.
+ *
+ * @return SF_CONNECT context if success, NULL otherwise.
+ */
+SF_CONNECT* STDCALL snowflake_connect_with_toml();
+
+/**
  * Sets the attribute to the session.
  *
  * @param sf SNOWFLAKE context.

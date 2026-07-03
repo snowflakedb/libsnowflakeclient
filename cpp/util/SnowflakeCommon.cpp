@@ -253,7 +253,6 @@ void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
         return;
     }
 
-
     std::string dsnCopy = dsn;
     if (dsnCopy.back() == ';')
     {
@@ -272,7 +271,9 @@ void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
     while (std::getline(ss, param, ';')) 
     {
         if (!param.empty())
+        {
             connectionParams.push_back(param);
+        }
     }
 
     for (const auto& params : connectionParams) 
