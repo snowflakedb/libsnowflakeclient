@@ -1,5 +1,62 @@
 #include "utils/test_setup.h"
 
+
+/**
+ * Test connection with JWT authentication.
+ */
+void test_jwt_connect(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_jwt_connect") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+
+    char* host, * port, * protocol, * role;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host)
+    {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port)
+    {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol)
+    {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    role = getenv("SNOWFLAKE_TEST_ROLE");
+    if (role)
+    {
+        snowflake_set_attribute(sf, SF_CON_ROLE, role);
+    }
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "snowflake_jwt");
+
+    char* private_key_file = getenv("SNOWFLAKE_TEST_PRIV_KEY_FILE");
+
+    snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, private_key_file);
+
+    char* private_key_pwd = getenv("SNOWFLAKE_TEST_PRIV_KEY_FILE_PWD");
+    snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE_PWD, private_key_pwd);
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
 /**
  * Test connection with OAuth authentication.
  */
@@ -568,6 +625,7 @@ int main(void)
     initialize_test(SF_BOOLEAN_FALSE);
     struct CMUnitTest tests[] = {
         cmocka_unit_test(test_toml_connect),
+        cmocka_unit_test(test_jwt_connect),
         cmocka_unit_test(test_oauth_connect),
         cmocka_unit_test(test_mfa_connect_with_duo_passcode),
         cmocka_unit_test(test_mfa_connect_with_duo_push),
