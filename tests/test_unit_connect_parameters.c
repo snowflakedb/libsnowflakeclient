@@ -278,6 +278,115 @@ void test_connection_parameters_including_cn_region(void **unused) {
     SF_FREE(sf);
 }
 
+void test_connection_parameters_govcloud_region(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "us-gov-west-1";
+    sf->enable_fips_endpoint = SF_BOOLEAN_FALSE;
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(sf->host,
+        "testaccount.us-gov-west-1.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_govcloud_fips(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "us-gov-west-1";
+    sf->enable_fips_endpoint = SF_BOOLEAN_TRUE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(
+        sf->host,
+        "testaccount.fips-us-gov-west-1.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_govcloud_fips_explicit_host(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->host = "testaccount.fips-us-gov-west-1.snowflakecomputing.com";
+    sf->region = "us-gov-west-1";
+    sf->enable_fips_endpoint = SF_BOOLEAN_FALSE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(
+        sf->host,
+        "testaccount.fips-us-gov-west-1.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_azure_gov_region(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "usgovvirginia";
+    sf->enable_fips_endpoint = SF_BOOLEAN_FALSE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(sf->host,
+        "testaccount.usgovvirginia.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_azure_gov_fips(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "usgovvirginia";
+    sf->enable_fips_endpoint = SF_BOOLEAN_TRUE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(
+        sf->host,
+        "testaccount.fips-usgovvirginia.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_azure_china_region(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "cn-north-1";
+    sf->enable_fips_endpoint = SF_BOOLEAN_TRUE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(sf->host,
+        "testaccount.cn-north-1.snowflakecomputing.cn");
+    SF_FREE(sf);
+}
+
+void test_connection_parameters_fips_host_passthrough(void** unused) {
+    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->host = "testaccount.fips-us-gov-west-1.snowflakecomputing.com";
+    sf->enable_fips_endpoint = SF_BOOLEAN_TRUE;
+
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(
+        sf->host,
+        "testaccount.fips-us-gov-west-1.snowflakecomputing.com");
+    SF_FREE(sf);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -292,6 +401,13 @@ int main(void) {
         cmocka_unit_test(test_connection_parameters_application),
         cmocka_unit_test(test_connect_with_renew),
         cmocka_unit_test(test_connection_parameters_including_cn_region),
+        cmocka_unit_test(test_connection_parameters_govcloud_region),
+        cmocka_unit_test(test_connection_parameters_govcloud_fips),
+        cmocka_unit_test(test_connection_parameters_govcloud_fips_explicit_host),
+        cmocka_unit_test(test_connection_parameters_azure_gov_region),
+        cmocka_unit_test(test_connection_parameters_azure_gov_fips),
+        cmocka_unit_test(test_connection_parameters_azure_china_region),
+        cmocka_unit_test(test_connection_parameters_fips_host_passthrough),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     return ret;

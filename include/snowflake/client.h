@@ -398,6 +398,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
     SF_CON_WIF_AUDIENCE,
+    SF_CON_ENABLE_FIPS_ENDPOINT,
 } SF_ATTRIBUTE;
 
 /**
@@ -620,6 +621,7 @@ typedef struct SF_CONNECT {
     sf_bool log_query_parameters;
 
     char* wif_audience;
+    sf_bool enable_fips_endpoint;
 } SF_CONNECT;
 
 /**

@@ -789,8 +789,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             }
             else
             {
-                sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
-                         sf->account, sf->region);
+                const char* fips_prefix = sf->enable_fips_endpoint ? "fips-" : "";
+                sf_sprintf(buf, sizeof(buf), "%s.%s%s.snowflakecomputing.com",
+                         sf->account, fips_prefix, sf->region);
             }
         } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
@@ -1193,6 +1194,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         
         sf->log_query_text = SF_BOOLEAN_FALSE;
         sf->log_query_parameters = SF_BOOLEAN_FALSE;
+        sf->enable_fips_endpoint = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1915,6 +1917,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_ENABLE_FIPS_ENDPOINT:
+            sf->enable_fips_endpoint = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2174,6 +2179,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_LOG_QUERY_PARAMETERS:
             *value = &sf->log_query_parameters;
+            break;
+        case SF_CON_ENABLE_FIPS_ENDPOINT:
+            *value = &sf->enable_fips_endpoint;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
