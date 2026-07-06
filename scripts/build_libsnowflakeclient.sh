@@ -87,6 +87,9 @@ mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
+# copy openssl for FIPS testing
+cp -pfr $DEPENDENCY_DIR/openssl $DIR/../$CMAKE_DIR/tests/openssl
+
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")

@@ -12,39 +12,39 @@ function usage() {
 }
 set -o pipefail
 
-OPENSSL_SRC_VERSION=3.5.7
-OPENSSL_BUILD_VERSION=2
-OPENSSL_VERSION=$OPENSSL_SRC_VERSION.$OPENSSL_BUILD_VERSION
+OPENSSL_FIPS_SRC_VERSION=3.1.2
+OPENSSL_FIPS_BUILD_VERSION=1
+OPENSSL_FIPS_VERSION=$OPENSSL_FIPS_SRC_VERSION.$OPENSSL_FIPS_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
+[[ -n "$GET_VERSION" ]] && echo $OPENSSL_FIPS_VERSION && exit 0
 
-OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl/
+OPENSSL_FIPS_SOURCE_DIR=$DEPS_DIR/openssl_fips/
 
-rm -rf $OPENSSL_SOURCE_DIR
-git clone --single-branch --branch openssl-$OPENSSL_SRC_VERSION --recursive https://github.com/openssl/openssl.git $OPENSSL_SOURCE_DIR
+rm -rf $OPENSSL_FIPS_SOURCE_DIR
+git clone --single-branch --branch openssl-$OPENSSL_FIPS_SRC_VERSION --recursive https://github.com/openssl/openssl.git $OPENSSL_FIPS_SOURCE_DIR
 
 # build openssl
-OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
-rm -rf $OPENSSL_BUILD_DIR
-mkdir -p $OPENSSL_BUILD_DIR
+OPENSSL_FIPS_BUILD_DIR=$DEPENDENCY_DIR/openssl_fips
+rm -rf $OPENSSL_FIPS_BUILD_DIR
+mkdir -p $OPENSSL_FIPS_BUILD_DIR
 
 openssl_config_opts=()
 openssl_config_opts+=(
     "no-shared"
     "enable-fips"
-    "--prefix=$OPENSSL_BUILD_DIR"
-    "--openssldir=$OPENSSL_BUILD_DIR"
+    "--prefix=$OPENSSL_FIPS_BUILD_DIR"
+    "--openssldir=$OPENSSL_FIPS_BUILD_DIR"
     "--libdir=lib"
 )
 if [[ "$target" != "Release" ]]; then
     openssl_config_opts+=("--debug")
 fi
 
-cd $OPENSSL_SOURCE_DIR
+cd $OPENSSL_FIPS_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     make distclean clean &> /dev/null || true
@@ -52,8 +52,6 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make depend > /dev/null
     make > /dev/null
     make install_sw install_ssldirs install_fips > /dev/null
-    # get FIPS module from verified version
-    cp $DEPENDENCY_DIR/openssl_fips/lib/ossl-modules/fips.so $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.so
 elif [[ "$PLATFORM" == "darwin" ]]; then
     openssl_config_opts+=("-mmacosx-version-min=${MACOSX_VERSION_MIN}")
     # Check to see if we are doing a universal build or not.
@@ -66,26 +64,28 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         perl ./Configure darwin64-arm64-cc "${openssl_config_opts[@]}"
         make build_libs > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
-        mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
+        mv $OPENSSL_FIPS_BUILD_DIR/lib $OPENSSL_FIPS_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
         make install_sw install_ssldirs install_fips > /dev/null
-        lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/../legacy.dylib
-        mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
-        mv $OPENSSL_BUILD_DIR/lib/../libcrypto.a $OPENSSL_BUILD_DIR/lib/libcrypto.a
-        mv $OPENSSL_BUILD_DIR/lib/../legacy.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
-        rm -rf $OPENSSL_BUILD_DIR/libarm64
-        lipo -info $OPENSSL_BUILD_DIR/lib/libssl.a
-        lipo -info $OPENSSL_BUILD_DIR/lib/libcrypto.a
-        lipo -info $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
+        lipo -create $OPENSSL_FIPS_BUILD_DIR/lib/libssl.a    $OPENSSL_FIPS_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_FIPS_BUILD_DIR/lib/../libssl.a
+        lipo -create $OPENSSL_FIPS_BUILD_DIR/lib/libcrypto.a $OPENSSL_FIPS_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_FIPS_BUILD_DIR/lib/../libcrypto.a
+        lipo -create $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_FIPS_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_FIPS_BUILD_DIR/lib/../fips.dylib
+        lipo -create $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/legacy.dylib $OPENSSL_FIPS_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_FIPS_BUILD_DIR/lib/../legacy.dylib
+        mv $OPENSSL_FIPS_BUILD_DIR/lib/../libssl.a    $OPENSSL_FIPS_BUILD_DIR/lib/libssl.a
+        mv $OPENSSL_FIPS_BUILD_DIR/lib/../libcrypto.a $OPENSSL_FIPS_BUILD_DIR/lib/libcrypto.a
+        mv $OPENSSL_FIPS_BUILD_DIR/lib/../fips.dylib $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/fips.dylib
+        mv $OPENSSL_FIPS_BUILD_DIR/lib/../legacy.dylib $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/legacy.dylib
+        rm -rf $OPENSSL_FIPS_BUILD_DIR/libarm64
+        lipo -info $OPENSSL_FIPS_BUILD_DIR/lib/libssl.a
+        lipo -info $OPENSSL_FIPS_BUILD_DIR/lib/libcrypto.a
+        lipo -info $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/fips.dylib
+        lipo -info $OPENSSL_FIPS_BUILD_DIR/lib/ossl-modules/legacy.dylib
     else
         make distclean clean &> /dev/null || true
         if [[ "$ARCH" == "x86" ]]; then
             echo "[INFO] Building x86 binary"
             perl ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
-            
         elif [[ "$ARCH" == "x64" ]]; then
             echo "[INFO] Building x64 binary"
             perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
@@ -96,18 +96,15 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
     fi
-    # get FIPS module from verified version
-    cp $DEPENDENCY_DIR/openssl_fips/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
 fi
 
-
 # openssl3 changed lib path to lib64 for 64-bit build, move it back to keep the compatibility
-if [[ ! -d "$OPENSSL_BUILD_DIR/lib" ]] && [[ -d "$OPENSSL_BUILD_DIR/lib64" ]]; then
-    mv $OPENSSL_BUILD_DIR/lib64 $OPENSSL_BUILD_DIR/lib
+if [[ ! -d "$OPENSSL_FIPS_BUILD_DIR/lib" ]] && [[ -d "$OPENSSL_FIPS_BUILD_DIR/lib64" ]]; then
+    mv $OPENSSL_FIPS_BUILD_DIR/lib64 $OPENSSL_FIPS_BUILD_DIR/lib
 fi
 
-echo === zip_file "openssl" "$OPENSSL_VERSION" "$target"
-zip_file "openssl" "$OPENSSL_VERSION" "$target"
+echo === zip_file "openssl_fips" "$OPENSSL_FIPS_VERSION" "$target"
+zip_file "openssl_fips" "$OPENSSL_FIPS_VERSION" "$target"

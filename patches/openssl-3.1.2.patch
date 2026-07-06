@@ -1,0 +1,13 @@
+diff --git a/test/build_wincrypt_test.c b/test/build_wincrypt_test.c
+index 5bd75e6a43..bb02b4ef67 100644
+--- a/test/build_wincrypt_test.c
++++ b/test/build_wincrypt_test.c
+@@ -22,7 +22,7 @@
+ # include <wincrypt.h>
+ # ifndef X509_NAME
+ #  ifndef PEDANTIC
+-#   warning "wincrypt.h no longer defining X509_NAME before OpenSSL headers"
++#    pragma message("wincrypt.h no longer defining X509_NAME before OpenSSL headers")
+ #  endif
+ # endif
+ #endif
