@@ -4,6 +4,8 @@
 #include <string.h>
 #include <errno.h>
 #include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/provider.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
 #include <snowflake/Stopwatch.h>

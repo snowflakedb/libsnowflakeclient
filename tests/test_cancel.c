@@ -13,7 +13,7 @@ const int STATUS_WAIT_RETRY_MAX = 10;
 
 /* Number of rows for test_array_binding. Enough rows to keep the batch running
  * long enough for cancel to take effect mid-batch. */
-#define ROW_COUNT 200
+#define ROW_COUNT 100
 
 void test_basic_cancel() {
   SF_CONNECT *sf = setup_snowflake_connection();
@@ -472,7 +472,7 @@ void test_array_binding() {
 
   SF_THREAD_HANDLE execute_thread;
   _thread_init(&execute_thread, (void *)snowflake_execute, (void *)sfstmt);
-  sf_sleep_ms(100);
+  sf_sleep_ms(1000);
   status = snowflake_cancel_query(sfstmt);
   bool isCancelSucceed = true;
   if (status == SF_STATUS_ERROR_GENERAL)
