@@ -472,11 +472,12 @@ void test_array_binding() {
 
   SF_THREAD_HANDLE execute_thread;
   _thread_init(&execute_thread, (void *)snowflake_execute, (void *)sfstmt);
-  sf_sleep_ms(1000);
+  sf_sleep_ms(100);
   status = snowflake_cancel_query(sfstmt);
   bool isCancelSucceed = true;
-  if (status == SF_STATUS_ERROR_GENERAL)
-  {
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+	assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     assert_int_equal(sfstmt->error.error_code, 605);
     isCancelSucceed = false;
   }
