@@ -1016,6 +1016,20 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
     return SF_STATUS_SUCCESS;
 }
 
+sf_bool STDCALL _is_fips_enabled() {
+    // check whether fips module is loaded
+    if (!OSSL_PROVIDER_available(NULL, "fips")) {
+        return SF_BOOLEAN_FALSE;
+    }
+
+    // check whether fips is enforced
+    if (!EVP_default_properties_is_fips_enabled(NULL)) {
+        return SF_BOOLEAN_FALSE;
+    }
+
+    return SF_BOOLEAN_TRUE;
+}
+
 SF_STATUS STDCALL
 snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t size) {
     switch (type) {
@@ -1038,6 +1052,9 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_OCSP_CHECK:
             *((sf_bool *) value) = SF_OCSP_CHECK;
+            break;
+        case SF_GLOBAL_FIPS_ENABLED:
+            *((sf_bool*)value) = _is_fips_enabled();
             break;
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             if (CLIENT_CONFIG_FILE) {

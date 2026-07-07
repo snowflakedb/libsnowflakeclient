@@ -89,6 +89,7 @@ cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
 # copy openssl for FIPS testing
 cp -pfr $DEPENDENCY_DIR/openssl $DIR/../$CMAKE_DIR/tests/openssl
+cp -pf $DIR/../tests/data/openssl.cnf $DIR/../$CMAKE_DIR/tests/openssl
 
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
