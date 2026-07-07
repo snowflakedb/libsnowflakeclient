@@ -230,7 +230,12 @@ SF_CONNECT* STDCALL snowflake_load_toml_config()
     }
 
     SF_CONNECT* sf = snowflake_init();
-    snowflake_parse_dsn(sf, dsn);
+    if (snowflake_parse_dsn(sf, dsn) != SF_STATUS_SUCCESS)
+    {
+        snowflake_term(sf);
+        return NULL;
+    }
+    
     return sf;
 }
 
@@ -246,11 +251,11 @@ char* STDCALL snowflake_load_toml_as_dsn()
     return dsn_cstr;
 }
 
-void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
+SF_STATUS snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
 {
     if (dsn.empty())
     {
-        return;
+        return SF_STATUS_ERROR_STRING_FORMATTING;
     }
 
     std::string dsnCopy = dsn;
@@ -261,7 +266,7 @@ void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
 
     if (sf == NULL)
     {
-        return;
+        return SF_STATUS_ERROR_NULL_POINTER;
     }
 
     std::vector<std::string> connectionParams;
@@ -288,6 +293,8 @@ void snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
 
         handle_single_param(sf, key.c_str(), value.c_str());
     }
+
+    return SF_STATUS_SUCCESS;
 }
 
 }// extern "C"
