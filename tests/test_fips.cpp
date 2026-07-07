@@ -48,6 +48,7 @@ bool fips_setup()
 }
 
 void test_fips_enabled(void **unused) {
+  SF_UNUSED(unused);
   sf_bool fips_enabled = SF_BOOLEAN_FALSE;
   snowflake_global_get_attribute(SF_GLOBAL_FIPS_ENABLED, &fips_enabled, 0);
   assert_int_equal(fips_enabled, SF_BOOLEAN_TRUE);
