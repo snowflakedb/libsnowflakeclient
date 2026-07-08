@@ -32,9 +32,9 @@ void test_concurrent_cache_writing(void **unused)
   SF_UNUSED(unused);
   const int num_threads = 10;
   // in the test data writing to file repeat with a 10 digits random number
-  const int dataseed_min = 1000000000;
-  const int dataseed_max = 9999999999;
-  const int datasize = 256000;
+  const size_t dataseed_min = 1000000000;
+  const size_t dataseed_max = 9999999999;
+  const size_t datasize = 256000;
   const std::string cacheFile("ocsp_concurrent_test.tmp");
   std::vector<std::thread> threads;
   std::vector<std::string> datastrings;
