@@ -170,6 +170,7 @@ static CURLcode checkOneCert(X509 *cert, X509 *issuer,
 static char* ensureCacheDir(char* cache_dir, struct Curl_easy* data);
 static char* mkdirIfNotExists(char* dir, struct Curl_easy* data);
 static void writeOCSPCacheFile(struct Curl_easy* data);
+static int sf_ocsp_write_file(const char* file, const char* content);
 static void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data);
 static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid,
                                         char *hostname, OCSP_REQUEST *req,
@@ -2209,6 +2210,86 @@ err:
   return NULL;
 }
 
+/* utility function for writing OCSP cache file pull out for easier testing
+ * return 0 for success, otherwise error codes for caller (writeOCSPCacheFile)
+ * to log errors.
+ */
+#define SF_OCSP_SUCCESS 0
+#define SF_OCSP_LOCKED 1
+#define SF_OCSP_DELETE_OLD_LCK_ERR 2
+#define SF_OCSP_CREATE_LCK_ERR 3
+#define SF_OCSP_CLOSE_LCK_ERR 4
+#define SF_OCSP_OPEN_ERR 5
+#define SF_OCSP_WRITE_ERR 6
+#define SF_OCSP_CLOSE_ERR 7
+#define SF_OCSP_DELETE_LCK_ERR 8
+
+int sf_ocsp_write_file(const char* file, const char* content)
+{
+  char lock_file[PATH_MAX] = "";
+  FILE *fh;
+  FILE *fp;
+
+  /* lock directory/file */
+  strcpy(lock_file, file);
+  strcat(lock_file, ".lck");
+
+  if (access(lock_file, F_OK) != -1)
+  {
+    /* lck file exists */
+    struct stat statbuf;
+    if (stat(lock_file, &statbuf) != -1)
+    {
+      if ((long)time(NULL) - (long) statbuf.st_mtime < 60*60)
+      {
+        return SF_OCSP_LOCKED;
+      }
+      else
+      {
+        if (remove(lock_file) != 0)
+        {
+          return SF_OCSP_DELETE_OLD_LCK_ERR;
+        }
+      }
+    }
+  }
+
+  /* create a new lck file */
+  fh = fopen(lock_file, "w");
+  if (fh == NULL)
+  {
+    return SF_OCSP_CREATE_LCK_ERR;
+  }
+  if (fclose(fh) != 0)
+  {
+    return SF_OCSP_CLOSE_LCK_ERR;
+  }
+
+  fp = fopen(file, "w");
+  if (fp == NULL)
+  {
+    remove(lock_file);
+    return SF_OCSP_OPEN_ERR;
+  }
+  if (fprintf(fp, "%s", content) < 0)
+  {
+    fclose(fp);
+    remove(lock_file);
+    return SF_OCSP_WRITE_ERR;
+  }
+
+  if (fclose(fp) != 0)
+  {
+    remove(lock_file);
+    return SF_OCSP_CLOSE_ERR;
+  }
+
+  if (remove(lock_file) != 0)
+  {
+    return SF_OCSP_DELETE_LCK_ERR;
+  }
+}
+
 /**
  * Write OCSP cache onto a file in the cache directory
  * @param data curl handle
@@ -2221,6 +2302,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   FILE *fh;
   FILE *fp;
   char * jsonText;
+  int res;
 
   _mutex_lock(&ocsp_response_cache_mutex);
   if (ocsp_cache_root == NULL)
@@ -2241,72 +2323,43 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
   infof(data, "OCSP Cache file: %s", cache_file);
 
-  /* cache lock directory/file */
-  strcpy(cache_lock_file, cache_file);
-  strcat(cache_lock_file, ".lck");
-
-  if (access(cache_lock_file, F_OK) != -1)
-  {
-    /* lck file exists */
-    struct stat statbuf;
-    if (stat(cache_lock_file, &statbuf) != -1)
-    {
-      if ((long)time(NULL) - (long) statbuf.st_mtime < 60*60)
-      {
-        infof(data, "Other process lock the file, ignored");
-        goto end;
-      }
-      else
-      {
-        infof(data, "Remove the old lock file");
-        if (remove(cache_lock_file) != 0)
-        {
-          infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
-          goto end;
-        }
-      }
-    }
-  }
-
-  /* create a new lck file */
-  fh = fopen(cache_lock_file, "w");
-  if (fh == NULL)
-  {
-    infof(data, "Failed to create a lock file: %s. Skipping writing OCSP cache file.",
-        cache_lock_file);
-    goto end;
-  }
-  if (fclose(fh) != 0)
-  {
-    infof(data, "Failed to close a lock file: %s. Ignored.", cache_lock_file);
-    goto end;
-  }
-
-  fp = fopen(cache_file, "w");
-  if (fp == NULL)
-  {
-    infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
-    goto end;
-  }
   jsonText = sf_curl_cJSON_PrintUnformatted(ocsp_cache_root);
-  if (fprintf(fp, "%s", jsonText) < 0)
-  {
-    infof(data, "Failed to write OCSP response cache file. Skipping");
-  }
-
-  if (fclose(fp) != 0)
-  {
-    infof(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
-  }
-  infof(data, "Write OCSP Response to cache file");
-
-  /* deallocate json string */
+  res = sf_ocsp_write_file(cache_file, jsonText);
   sf_curl_cJSON_free(jsonText);
 
-  if (remove(cache_lock_file) != 0)
+  switch (res)
   {
-    infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
+    case SF_OCSP_SUCCESS:
+      infof(data, "Write OCSP Response to cache file");
+      break;
+    case SF_OCSP_LOCKED:
+      infof(data, "Other process lock the file, ignored");
+      break;
+    case SF_OCSP_DELETE_OLD_LCK_ERR:
+      infof(data, "Failed to delete the lock file, ignored");
+      break;
+    case SF_OCSP_CREATE_LCK_ERR:
+      infof(data, "Failed to create a lock file. Skipping writing OCSP cache file.");
+      break;
+    case SF_OCSP_CLOSE_LCK_ERR:
+      infof(data, "Failed to close a lock file. Ignored.");
+      break;
+    case SF_OCSP_OPEN_ERR:
+      infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
+      break;
+    case SF_OCSP_WRITE_ERR:
+      infof(data, "Failed to write OCSP response cache file. Skipping");
+      break;
+    case SF_OCSP_CLOSE_ERR:
+      infof(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
+      break;
+    case SF_OCSP_DELETE_LCK_ERR:
+      infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
+      break;
+    default:
+      break;
   }
+
 end:
   if (ocsp_cache_root != NULL)
   {
