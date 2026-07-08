@@ -170,7 +170,7 @@ static CURLcode checkOneCert(X509 *cert, X509 *issuer,
 static char* ensureCacheDir(char* cache_dir, struct Curl_easy* data);
 static char* mkdirIfNotExists(char* dir, struct Curl_easy* data);
 static void writeOCSPCacheFile(struct Curl_easy* data);
-static int sf_ocsp_write_file(const char* file, const char* content);
+int sf_ocsp_write_file(const char* file, const char* content);
 static void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data);
 static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid,
                                         char *hostname, OCSP_REQUEST *req,
