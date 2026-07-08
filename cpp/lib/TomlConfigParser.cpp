@@ -38,6 +38,7 @@ namespace
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
+    std::string skipPermVerification = getEnvironmentVariableValue(SF_ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
     std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);
     if (permissions & boost::filesystem::group_write ||
       permissions & boost::filesystem::others_write)
@@ -46,14 +47,15 @@ namespace
         filePath.c_str());
       return false;
     }
-    if (!boost::iequals(skipWarningForReadPermission, "true"))
-    {
-      if (permissions & boost::filesystem::group_read ||
-        permissions & boost::filesystem::others_read)
-      {
+
+    bool skipWarning =
+        boost::iequals(skipPermVerification, "true") ||
+        (skipPermVerification.empty() && boost::iequals(skipWarningForReadPermission, "true"));
+
+    if (!skipWarning &&
+        (permissions & (boost::filesystem::group_read | boost::filesystem::others_read))) {
         CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
-          filePath.c_str());
-      }
+            filePath.c_str());
     }
     return true;
   }
@@ -77,7 +79,6 @@ namespace
             return true;
         }
     }
-   
 
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
@@ -257,4 +258,17 @@ std::map<std::string, boost::variant<std::string, int, bool, double>> load_toml_
     params = parseTomlFile(derivedTomlFilePath);
   }
   return params;
+}
+
+std::string load_toml_config_as_dsn()
+{
+    std::map<std::string, boost::variant<std::string, int, bool, double>> tomlConfig = load_toml_config();
+    std::string dsn, key, value;
+    for (auto i = tomlConfig.begin(); i != tomlConfig.end(); i++)
+    {
+        key = i->first;
+        value = boost::apply_visitor(StringVisitor(), i->second);
+        dsn += key + "=" + value + ";";
+    }
+    return dsn;
 }

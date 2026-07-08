@@ -837,6 +837,17 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf);
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf);
 
 /**
+ * Creates a new session and connects to Snowflake using TOML configuration.
+ *
+ * The caller owns the returned handle and is responsible for releasing it
+ * with snowflake_term(), mirroring the ownership contract of snowflake_init().
+ *
+ * @return A connected SF_CONNECT handle on success. Returns NULL if the
+ *         connection fails, or if the TOML configuration is empty or missing.
+ */
+SF_CONNECT* STDCALL snowflake_connect_with_toml();
+
+/**
  * Sets the attribute to the session.
  *
  * @param sf SNOWFLAKE context.
@@ -883,6 +894,14 @@ SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *q
  * @return The query status.
  */
 SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
+
+/**
+ * Load TOML file for configuration and parse it as a DSN string.
+ * Wrapper for load_toml_config_as_dsn in SnowflakeCommon.cpp.
+ *
+ * @return char* DSN string if success, NULL otherwise.
+ */
+char* STDCALL snowflake_load_toml_as_dsn();
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
