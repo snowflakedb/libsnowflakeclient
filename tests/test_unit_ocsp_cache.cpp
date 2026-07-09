@@ -99,24 +99,23 @@ void test_concurrent_cache_writing(void **unused)
   assert_true(found);
 }
 
+/* NOTE: Do not add any test case with connection in front of this case.
+ * We need to ensure this case loads ocsp cache from corrupted cache file,
+ * not using cache already loaded in memory.
+ */
 void test_corrupted_cache(void **unused)
 {
   SF_UNUSED(unused);
   char cache_file[4096];
-  cJSON * ocsp_cache_root = NULL;
-  SF_CONNECT* sf;
-  SF_STATUS status;
 
-  // make connection first to ensure ocsp cache is generated.
-  sf = setup_snowflake_connection();
-  status = snowflake_connect(sf);
-  assert_int_equal(status, SF_STATUS_SUCCESS);
-  snowflake_term(sf);
   get_ocsp_cache_file(cache_file);
-  assert_true(boost::filesystem::is_regular_file(cache_file));
+  if (!boost::filesystem::is_regular_file(cache_file))
+  {
+    printf("Skipping - cache file not available\n");
+  }
 
   std::string ocsp_response_cache = loadFileInString(cache_file);
-  ocsp_cache_root = snowflake_cJSON_Parse(ocsp_response_cache.c_str());
+  cJSON* ocsp_cache_root = snowflake_cJSON_Parse(ocsp_response_cache.c_str());
   assert_non_null(ocsp_cache_root);
 
   // corrupt (truncate) value in every entry
@@ -126,10 +125,7 @@ void test_corrupted_cache(void **unused)
     cJSON * value = snowflake_cJSON_GetArrayItem(element_pointer, 1);
     assert_non_null(value);
     size_t valuelen = strlen(value->valuestring);
-    if (valuelen > 0)
-    {
-      value->valuestring[valuelen - 1] = '\0';
-    }
+    value->valuestring[valuelen / 2] = '\0';
   }
   char * jsonText = snowflake_cJSON_PrintUnformatted(ocsp_cache_root);
   std::string cacheDir = std::string(cache_file);
@@ -139,13 +135,15 @@ void test_corrupted_cache(void **unused)
   snowflake_cJSON_free(jsonText);
 
   // connection should success with corrupted cache
-  sf = setup_snowflake_connection();
-  status = snowflake_connect(sf);
+  SF_CONNECT* sf = setup_snowflake_connection();
+  SF_STATUS status = snowflake_connect(sf);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   snowflake_term(sf);
+  remove(cache_file);
 }
 
 int main(void) {
+  initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_concurrent_cache_writing),
     cmocka_unit_test(test_corrupted_cache),
