@@ -170,7 +170,7 @@ static CURLcode checkOneCert(X509 *cert, X509 *issuer,
 static char* ensureCacheDir(char* cache_dir, struct Curl_easy* data);
 static char* mkdirIfNotExists(char* dir, struct Curl_easy* data);
 static void writeOCSPCacheFile(struct Curl_easy* data);
-int sf_ocsp_write_file(const char* file, const char* content);
+int sf_ocsp_write_cache(const char* cache_dir, const char* content);
 static void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data);
 static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid,
                                         char *hostname, OCSP_REQUEST *req,
@@ -2213,79 +2213,71 @@ err:
  * to log errors.
  */
 #define SF_OCSP_SUCCESS 0
-#define SF_OCSP_LOCKED 1
-#define SF_OCSP_DELETE_OLD_LCK_ERR 2
-#define SF_OCSP_CREATE_LCK_ERR 3
-#define SF_OCSP_CLOSE_LCK_ERR 4
-#define SF_OCSP_OPEN_ERR 5
-#define SF_OCSP_WRITE_ERR 6
-#define SF_OCSP_CLOSE_ERR 7
-#define SF_OCSP_DELETE_LCK_ERR 8
+#define SF_OCSP_TMP_NAME_ERR 1
+#define SF_OCSP_TMP_OPEN_ERR 2
+#define SF_OCSP_TMP_WRITE_ERR 3
+#define SF_OCSP_TMP_RENAME_ERR 4
 
-int sf_ocsp_write_file(const char* file, const char* content)
+int sf_ocsp_write_cache(const char* cache_dir, const char* content)
 {
-  char lock_file[PATH_MAX] = "";
-  FILE *fh;
+  char cache_file[PATH_MAX] = "";
+  char tmp_file[MAX_PATH];
   FILE *fp;
 
-  /* lock directory/file */
-  strcpy(lock_file, file);
-  strcat(lock_file, ".lck");
+  /* cache file */
+  strcpy(cache_file, cache_dir);
+  strcat(cache_file, PATH_SEP);
+  strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
 
-  if (access(lock_file, F_OK) != -1)
+#ifdef _WIN32
+  if (GetTempFileName(cache_dir, "sfocsp", 0, tmp_file) == 0)
   {
-    /* lck file exists */
-    struct stat statbuf;
-    if (stat(lock_file, &statbuf) != -1)
-    {
-      if ((long)time(NULL) - (long) statbuf.st_mtime < 60*60)
-      {
-        return SF_OCSP_LOCKED;
-      }
-      else
-      {
-        if (remove(lock_file) != 0)
-        {
-          return SF_OCSP_DELETE_OLD_LCK_ERR;
-        }
-      }
-    }
+    return SF_OCSP_TMP_NAME_ERR;
   }
 
-  /* create a new lck file */
-  fh = fopen(lock_file, "w");
-  if (fh == NULL)
-  {
-    return SF_OCSP_CREATE_LCK_ERR;
-  }
-  if (fclose(fh) != 0)
-  {
-    return SF_OCSP_CLOSE_LCK_ERR;
-  }
-
-  fp = fopen(file, "w");
+  fp = fopen(tmp_file, "w");
   if (fp == NULL)
   {
-    remove(lock_file);
-    return SF_OCSP_OPEN_ERR;
+    return SF_OCSP_TMP_OPEN_ERR;
   }
   if (fprintf(fp, "%s", content) < 0)
   {
     fclose(fp);
-    remove(lock_file);
-    return SF_OCSP_WRITE_ERR;
+    return SF_OCSP_TMP_WRITE_ERR;
+  }
+  fclose(fp);
+
+  if (!MoveFileEx(tmp_file, cache_file, MOVEFILE_REPLACE_EXISTING))
+  {
+    DeleteFile(tmp_file);
+    return SF_OCSP_TMP_RENAME_ERR;
+  }
+#else
+  snprintf(tmp_file, sizeof(tmp_file), "%s.tmp.XXXXXX", cache_file);
+  int tmp_fd = mkstemp(tmp_file);
+  if (tmp_fd == -1)
+  {
+    return SF_OCSP_TMP_NAME_ERR;
   }
 
-  if (fclose(fp) != 0)
+  fp = fdopen(tmp_fd, "w");
+  if (fp == NULL)
   {
-    remove(lock_file);
-    return SF_OCSP_CLOSE_ERR;
+    return SF_OCSP_TMP_OPEN_ERR;
   }
+  if (fprintf(fp, "%s", content) < 0)
+  {
+    fclose(fp);
+    return SF_OCSP_TMP_WRITE_ERR;
+  }
+  fclose(fp);
 
-  if (remove(lock_file) != 0)
+  if (rename(tmp_file, cache_file) != 0)
   {
-    return SF_OCSP_DELETE_LCK_ERR;
+    remove(tmp_file);
+    return SF_OCSP_TMP_RENAME_ERR;
   }
+#endif
 }
 
 /**
@@ -2322,7 +2314,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   infof(data, "OCSP Cache file: %s", cache_file);
 
   jsonText = sf_curl_cJSON_PrintUnformatted(ocsp_cache_root);
-  res = sf_ocsp_write_file(cache_file, jsonText);
+  res = sf_ocsp_write_cache(cache_dir, jsonText);
   sf_curl_cJSON_free(jsonText);
 
   switch (res)
@@ -2330,29 +2322,17 @@ void writeOCSPCacheFile(struct Curl_easy* data)
     case SF_OCSP_SUCCESS:
       infof(data, "Write OCSP Response to cache file");
       break;
-    case SF_OCSP_LOCKED:
-      infof(data, "Other process lock the file, ignored");
+    case SF_OCSP_TMP_NAME_ERR:
+      infof(data, "Failed to get temp file name. Skipping writing OCSP cache file.");
       break;
-    case SF_OCSP_DELETE_OLD_LCK_ERR:
-      infof(data, "Failed to delete the lock file, ignored");
+    case SF_OCSP_TMP_OPEN_ERR:
+      infof(data, "Failed to open temp file. Skipping writing OCSP cache file.");
       break;
-    case SF_OCSP_CREATE_LCK_ERR:
-      infof(data, "Failed to create a lock file. Skipping writing OCSP cache file.");
+    case SF_OCSP_TMP_WRITE_ERR:
+      infof(data, "Failed to write temp file. Skipping writing OCSP cache file.");
       break;
-    case SF_OCSP_CLOSE_LCK_ERR:
-      infof(data, "Failed to close a lock file. Ignored.");
-      break;
-    case SF_OCSP_OPEN_ERR:
-      infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
-      break;
-    case SF_OCSP_WRITE_ERR:
-      infof(data, "Failed to write OCSP response cache file. Skipping");
-      break;
-    case SF_OCSP_CLOSE_ERR:
-      infof(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
-      break;
-    case SF_OCSP_DELETE_LCK_ERR:
-      infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
+    case SF_OCSP_TMP_RENAME_ERR:
+      infof(data, "Failed to rename temp file. Skipping writing OCSP cache file.");
       break;
     default:
       break;

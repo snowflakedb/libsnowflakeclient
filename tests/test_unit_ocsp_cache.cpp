@@ -11,14 +11,14 @@
 
 /* Test hook from curl vtls (exported by sf_ocsp.c) */
 extern "C" {
-  extern int sf_ocsp_write_file(const char* file, const char* content);
+  extern int sf_ocsp_write_cache(const char* cache_dir, const char* content);
 }
 
 std::mutex mtx;
 std::condition_variable cv;
 bool ready = false;
 
-void cacheWritingThread(const std::string* filepath, size_t dataseed)
+void cacheWritingThread(size_t dataseed)
 {
   std::string data("");
   size_t datalen = 0;
@@ -31,7 +31,8 @@ void cacheWritingThread(const std::string* filepath, size_t dataseed)
   std::unique_lock<std::mutex> lock(mtx);
   cv.wait(lock, [] { return ready; });
   lock.unlock();
-  sf_ocsp_write_file(filepath->c_str(), data.c_str());
+  // write cache file in current folder
+  sf_ocsp_write_cache(".", data.c_str());
 }
 
 void test_concurrent_cache_writing(void **unused)
@@ -42,7 +43,7 @@ void test_concurrent_cache_writing(void **unused)
   const size_t dataseed_min = 1000000000;
   const size_t dataseed_max = 9999999999;
   const size_t datasize = 256000;
-  const std::string cacheFile("ocsp_concurrent_test.tmp");
+  const std::string cacheFile("ocsp_response_cache.json");
   std::vector<std::thread> threads;
   std::vector<std::string> datastrings;
 
@@ -60,7 +61,7 @@ void test_concurrent_cache_writing(void **unused)
       datalen += ramdom_str.size();
     }
     datastrings.push_back(data);
-    threads.push_back(std::thread(cacheWritingThread, &cacheFile, randnum));
+    threads.push_back(std::thread(cacheWritingThread, randnum));
   }
 
   {
