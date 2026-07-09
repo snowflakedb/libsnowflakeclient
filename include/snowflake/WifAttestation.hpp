@@ -84,10 +84,16 @@ namespace Client {
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
+    boost::optional<std::string> wifHost;
+
     SF_STATUS configureWIFAttestation(SF_CONNECT* conn);
 
     std::string getAudience() const {
       return audience.value_or(SF_SNOWFLAKE_WIF_AUDIENCE);
+    }
+
+    std::string getWifHost() const {
+      return wifHost.value_or("");
     }
   };
 

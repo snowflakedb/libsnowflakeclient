@@ -73,7 +73,8 @@ namespace Snowflake::Client {
     IHttpClient *httpClient,
     const std::string &accessToken,
     const std::vector<std::string> &serviceAccountChain,
-    const std::string& audience) {
+    const std::string& audience,
+    const std::string& wifHost) {
     if (serviceAccountChain.empty()) {
       CXX_LOG_ERROR("Service account chain is empty");
       return boost::none;
@@ -86,7 +87,7 @@ namespace Snowflake::Client {
       serviceAccountChain.end() - 1
     );
 
-    std::string idTokenUrl = std::string(GCP_IAM_CREDENTIALS_BASE_URL)
+    std::string idTokenUrl = (wifHost.empty() ? std::string(GCP_IAM_CREDENTIALS_BASE_URL) : wifHost)
                              + "/projects/-/serviceAccounts/"
                              + targetServiceAccount + ":generateIdToken";
 
@@ -182,7 +183,8 @@ namespace Snowflake::Client {
         config.httpClient,
         accessTokenOpt.get(),
         serviceAccountChain,
-        config.getAudience());
+        config.getAudience(),
+        config.getWifHost());
       if (!idTokenOpt) {
         CXX_LOG_ERROR("Failed to get identity token with delegation");
         return boost::none;

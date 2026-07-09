@@ -1929,6 +1929,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_WIF_HOST:
+            alloc_buffer_and_copy(&sf->wif_host, value);
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2188,6 +2191,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_LOG_QUERY_PARAMETERS:
             *value = &sf->log_query_parameters;
+            break;
+        case SF_CON_WIF_HOST:
+            *value = sf->wif_host;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,

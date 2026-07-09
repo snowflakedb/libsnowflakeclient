@@ -81,12 +81,14 @@ public:
       const Aws::Auth::AWSCredentials& c,
       const std::string& r,
       const std::string& aud,
-      const std::string& alg) override {
+      const std::string& alg,
+      const std::string& host) override {
     getWebIdentityTokenCallCount++;
     lastGetWebIdentityTokenCreds = c;
     lastGetWebIdentityTokenRegion = r;
     lastGetWebIdentityTokenAudience = aud;
     lastGetWebIdentityTokenAlgorithm = alg;
+    lastGetWebIdentityTokenHost = host;
     return webIdentityTokenResult;
   }
 
@@ -100,6 +102,7 @@ public:
   std::string lastGetWebIdentityTokenRegion;
   std::string lastGetWebIdentityTokenAudience;
   std::string lastGetWebIdentityTokenAlgorithm;
+  std::string lastGetWebIdentityTokenHost;
 
   int assumeRoleCallCount = 0;
   std::vector<std::string> assumeRoleArns;

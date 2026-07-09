@@ -67,6 +67,12 @@ namespace Snowflake {
             log_debug("Using explicit WIF audience: %s", conn->wif_audience);
         }
 
+        if (conn->wif_host)
+        {
+            wifHost = std::string(conn->wif_host);
+            log_debug("Using explicit WIF host: %s", conn->wif_host);
+        }
+
         return SF_STATUS_SUCCESS;
     }
 
