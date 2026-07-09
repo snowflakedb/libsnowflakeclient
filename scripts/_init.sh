@@ -14,7 +14,7 @@ mkdir -p $ARTIFACTS_DIR
 
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 CJSON_VERSION=1.7.19
-CURL_VERSION=8.20.0
+CURL_VERSION=8.21.0
 
 # Find cmake, gcc and g++ on target machine. Need cmake 3.0+, gcc/g++ 4.9+
 if which cmake3 >& /dev/null; then
