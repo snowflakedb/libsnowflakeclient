@@ -18,13 +18,20 @@ std::mutex mtx;
 std::condition_variable cv;
 bool ready = false;
 
-void cacheWritingThread(const std::string* filepath, const std::string* content)
+void cacheWritingThread(const std::string* filepath, size_t dataseed)
 {
+  std::string data("");
+  size_t datalen = 0;
+  std::string seedStr = std::to_string(dataseed);
+  while (datalen < 256000)
+  {
+    data += seedStr;
+    datalen += seedStr.size();
+  }
   std::unique_lock<std::mutex> lock(mtx);
   cv.wait(lock, [] { return ready; });
   lock.unlock();
-  int ret = sf_ocsp_write_file(filepath->c_str(), content->c_str());
-  int a = 0;
+  sf_ocsp_write_file(filepath->c_str(), data.c_str());
 }
 
 void test_concurrent_cache_writing(void **unused)
@@ -43,7 +50,8 @@ void test_concurrent_cache_writing(void **unused)
 
   for (int i = 0; i < num_threads; ++i)
   {
-    std::string ramdom_str = std::to_string(std::rand() % (dataseed_max - dataseed_min + 1) + dataseed_min);
+    size_t randnum = std::rand() % (dataseed_max - dataseed_min + 1) + dataseed_min;
+    std::string ramdom_str = std::to_string(randnum);
 	std::string data("");
     size_t datalen = 0;
     while (datalen < datasize)
@@ -52,7 +60,7 @@ void test_concurrent_cache_writing(void **unused)
       datalen += ramdom_str.size();
     }
     datastrings.push_back(data);
-    threads.push_back(std::thread(cacheWritingThread, &cacheFile, &datastrings[i]));
+    threads.push_back(std::thread(cacheWritingThread, &cacheFile, randnum));
   }
 
   {
