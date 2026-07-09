@@ -2288,9 +2288,6 @@ void writeOCSPCacheFile(struct Curl_easy* data)
 {
   char cache_dir[PATH_MAX] = "";
   char cache_file[PATH_MAX] = "";
-  char cache_lock_file[PATH_MAX] = "";
-  FILE *fh;
-  FILE *fp;
   char * jsonText;
   int res;
 
