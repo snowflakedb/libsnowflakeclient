@@ -2221,7 +2221,7 @@ err:
 int sf_ocsp_write_cache(const char* cache_dir, const char* content)
 {
   char cache_file[PATH_MAX] = "";
-  char tmp_file[MAX_PATH];
+  char tmp_file[PATH_MAX];
   FILE *fp;
 
   /* cache file */
