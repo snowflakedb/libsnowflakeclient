@@ -171,7 +171,7 @@ void test_unit_aws_attestation_jwt_success(void **) {
                      AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
-void test_unit_aws_attestation_jwt_success_with_custom_audience(void**) {
+void test_unit_aws_attestation_jwt_success_with_custom_wif_config(void**) {
     auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
     awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
 
@@ -179,6 +179,7 @@ void test_unit_aws_attestation_jwt_success_with_custom_audience(void**) {
     config.type = AttestationType::AWS;
     config.awsSdkWrapper = &awsSdkWrapper;
     config.audience = "custom-audience-for-testing";
+    config.wifHost = "custom-wif-host-for-testing";
 
     const auto attestationOpt = createAttestation(config);
     assert_true(attestationOpt.has_value());
@@ -195,6 +196,8 @@ void test_unit_aws_attestation_jwt_success_with_custom_audience(void**) {
     assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAudience.c_str(),
         "custom-audience-for-testing");
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
+        "custom-wif-host-for-testing");
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAlgorithm.c_str(),
         "ES384");
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenRegion.c_str(),
@@ -487,6 +490,7 @@ void test_unit_gcp_attestation_bad_request(void **) {
 const std::string GCP_TEST_SUBJECT_ACCESS = "107562638633288735787";
 
 const std::string GCP_TEST_IAM_ENDPOINT_HOST = "iamcredentials.googleapis.com";
+const std::string GCP_TEST_CUSTOM_ENDPOINT_HOST = "iamcredentials.privategoogleapis.com";
 
 // Multi-path fake HTTP client for GCP service account impersonation
 enum class AcceptedHosts {
@@ -497,7 +501,7 @@ enum class AcceptedHosts {
 
 auto getHost(const std::string& host) -> AcceptedHosts {
   if (host == GCP_TEST_METADATA_ENDPOINT_HOST) return AcceptedHosts::Metadata;
-  if (host == GCP_TEST_IAM_ENDPOINT_HOST) return AcceptedHosts::Iam;
+  if (host == GCP_TEST_IAM_ENDPOINT_HOST || host == GCP_TEST_CUSTOM_ENDPOINT_HOST) return AcceptedHosts::Iam;
   return AcceptedHosts::Other;
 }
 
@@ -506,7 +510,8 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
     const std::vector<char>& idToken,
     const std::vector<std::string>& expectedDelegates,
     const std::string& expectedTargetServiceAccount,
-    const std::string& expectedAudience = GCP_TEST_AUDIENCE) {
+    const std::string& expectedAudience = GCP_TEST_AUDIENCE,
+    const std::string& expectedWifHost = "") {
   return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     HttpResponse response;
     response.code = 200;
@@ -528,6 +533,7 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
         std::string expectedPath = "/v1/projects/-/serviceAccounts/" +
                                    expectedTargetServiceAccount + ":generateIdToken";
         assert_true(req.url.encoded_path() == expectedPath);
+        assert_string_equal(req.url.host().c_str(), expectedWifHost.empty() ? GCP_TEST_IAM_ENDPOINT_HOST.c_str() : GCP_TEST_CUSTOM_ENDPOINT_HOST.c_str());
         assert_true(req.method == HttpRequest::Method::POST);
         const auto accessTokenStr = std::string(accessToken.data(), accessToken.size());
         assert_true(req.headers.find("Authorization")->second == "Bearer " + accessTokenStr);
@@ -593,24 +599,27 @@ void test_unit_gcp_impersonation_single_account_success(void **) {
   assert_true(issuer == GCP_TEST_ISSUER);
 }
 
-void test_unit_gcp_impersonation_single_account_success_with_custom_audience(void**) {
+void test_unit_gcp_impersonation_single_account_success_with_custom_wif_cofig(void**) {
     const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
     const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
     const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
     const std::string testingAudience = "custom-audience-for-testing";
+    const std::string testingHost = "https://" + GCP_TEST_CUSTOM_ENDPOINT_HOST + "/v1";
 
     auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
         accessToken,
         idToken,
         {},
         targetServiceAccount,
-        testingAudience);
+        testingAudience,
+        testingHost);
 
     AttestationConfig config;
     config.type = AttestationType::GCP;
     config.httpClient = &fakeHttpClient;
     config.workloadIdentityImpersonationPath = targetServiceAccount;
     config.audience = testingAudience;
+    config.wifHost = testingHost;
 
     const auto attestationOpt = createAttestation(config);
     assert_true(attestationOpt.has_value());
@@ -1117,11 +1126,14 @@ void test_unit_wif_attestation_config(void**)
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
+    assert_string_equal(config.getWifHost().c_str(), "");
 
     snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "GCP");
     snowflake_set_attribute(conn, SF_CON_WIF_AUDIENCE, "dummy_audience.com");
     snowflake_set_attribute(conn, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, "dummy_impersonation_path");
     snowflake_set_attribute(conn, SF_CON_WIF_TOKEN, "dummy_token");
+    snowflake_set_attribute(conn, SF_CON_WIF_HOST, "dummy_host");
+
 
     assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
 
@@ -1139,6 +1151,7 @@ void test_unit_wif_attestation_config(void**)
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
+    assert_string_equal(config.getWifHost().c_str(), "dummy_host");
 
     snowflake_term(conn);
 }
@@ -1148,7 +1161,7 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success),
-      cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_audience),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_wif_config),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
@@ -1163,7 +1176,7 @@ int main() {
       cmocka_unit_test(test_unit_gcp_attestation_failed_request),
       cmocka_unit_test(test_unit_gcp_attestation_bad_request),
       cmocka_unit_test(test_unit_gcp_impersonation_single_account_success),
-      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_custom_audience),
+      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_custom_wif_cofig),
       cmocka_unit_test(test_unit_gcp_impersonation_chain_success),
       cmocka_unit_test(test_unit_gcp_impersonation_whitespace_in_path),
       cmocka_unit_test(test_unit_gcp_impersonation_access_token_failed),
