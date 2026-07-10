@@ -1401,6 +1401,36 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
   conn->bits.connect_only = (bool)data->set.connect_only;
   conn->transport_wanted = TRNSPRT_TCP; /* most of them are TCP streams */
 
+  conn->ssl_config.sf_ocsp_check = data->set.ssl.primary.sf_ocsp_check;
+  conn->ssl_config.sf_ocsp_failopen = data->set.ssl.primary.sf_ocsp_failopen;
+  conn->ssl_config.sf_crl_check = data->set.ssl.primary.sf_crl_check;
+  conn->ssl_config.sf_crl_advisory = data->set.ssl.primary.sf_crl_advisory;
+  conn->ssl_config.sf_crl_allow_no_crl =
+    data->set.ssl.primary.sf_crl_allow_no_crl;
+  conn->ssl_config.sf_crl_disk_caching =
+    data->set.ssl.primary.sf_crl_disk_caching;
+  conn->ssl_config.sf_crl_memory_caching =
+    data->set.ssl.primary.sf_crl_memory_caching;
+  conn->ssl_config.sf_oob_enable = data->set.ssl.primary.sf_oob_enable;
+#ifndef CURL_DISABLE_PROXY
+  conn->proxy_ssl_config.sf_ocsp_check =
+    data->set.proxy_ssl.primary.sf_ocsp_check;
+  conn->proxy_ssl_config.sf_ocsp_failopen =
+    data->set.proxy_ssl.primary.sf_ocsp_failopen;
+  conn->proxy_ssl_config.sf_crl_check =
+    data->set.proxy_ssl.primary.sf_crl_check;
+  conn->proxy_ssl_config.sf_crl_advisory =
+    data->set.proxy_ssl.primary.sf_crl_advisory;
+  conn->proxy_ssl_config.sf_crl_allow_no_crl =
+    data->set.proxy_ssl.primary.sf_crl_allow_no_crl;
+  conn->proxy_ssl_config.sf_crl_disk_caching =
+    data->set.proxy_ssl.primary.sf_crl_disk_caching;
+  conn->proxy_ssl_config.sf_crl_memory_caching =
+    data->set.proxy_ssl.primary.sf_crl_memory_caching;
+  conn->proxy_ssl_config.sf_oob_enable =
+    data->set.proxy_ssl.primary.sf_oob_enable;
+#endif
+
   /* Store the local bind parameters that will be used for this connection */
   if(data->set.str[STRING_DEVICE]) {
     conn->localdev = curlx_strdup(data->set.str[STRING_DEVICE]);

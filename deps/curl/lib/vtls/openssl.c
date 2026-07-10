@@ -52,6 +52,8 @@
 #include "curlx/strcopy.h"
 #include "curlx/strdup.h"
 #include "vtls/apple.h"
+#include "sf_ocsp.h"
+#include "sf_crl.h"
 #ifdef USE_ECH
 #include "curlx/base64.h"
 #endif
@@ -111,6 +113,39 @@
 
 #if defined(USE_OPENSSL_ENGINE) || defined(OPENSSL_HAS_PROVIDERS)
 #include <openssl/ui.h>
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#define OSSL_UI_METHOD_CAST(x) (x)
+#else
+#define OSSL_UI_METHOD_CAST(x) CURL_UNCONST(x)
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L /* OpenSSL 1.1.0+ and LibreSSL */
+#define HAVE_X509_GET0_EXTENSIONS 1 /* added in 1.1.0 -pre1 */
+#define HAVE_OPAQUE_EVP_PKEY 1 /* since 1.1.0 -pre3 */
+#define HAVE_OPAQUE_RSA_DSA_DH 1 /* since 1.1.0 -pre5 */
+#define HAVE_ERR_REMOVE_THREAD_STATE_DEPRECATED 1
+#else
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
+    !(defined(LIBRESSL_VERSION_NUMBER) && \
+      LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
+    !defined(OPENSSL_IS_BORINGSSL) && \
+    !defined(OPENSSL_IS_AWSLC)
+#define CURL_HAS_VERIFIED_CHAIN 1
+#endif
+
+/* For OpenSSL before 1.1.0 */
+#define ASN1_STRING_get0_data(x) ASN1_STRING_data(x)
+#define X509_get0_notBefore(x) X509_get_notBefore(x)
+#define X509_get0_notAfter(x) X509_get_notAfter(x)
+#define OpenSSL_version_num() SSLeay()
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10002003L && \
+  OPENSSL_VERSION_NUMBER <= 0x10002FFFL && \
+  !defined(OPENSSL_NO_COMP)
+#define HAVE_SSL_COMP_FREE_COMPRESSION_METHODS 1
 #endif
 
 #ifdef HAVE_OPENSSL3
@@ -1640,6 +1675,12 @@ static int ossl_init(void)
 #ifndef HAVE_KEYLOG_UPSTREAM
   Curl_tls_keylog_open();
 #endif
+
+  /* init Cert OCSP revocation checks */
+  initCertOCSP();
+
+  /* init Cert CRL revocation checks */
+  initCertCRL();
 
   return 1;
 }
@@ -3307,6 +3348,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
   if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
     SSL_CTX_set_cert_store(octx->ssl_ctx, cached_store);
     octx->store_is_empty = is_empty;
+
+    /* !!! Starting Snowflake CRL !!! */
+    /* Update CRL configuration even for cached store */
+    if(conn_config->sf_crl_check) {
+      registerCRLCheck(data, cached_store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout,
+                       conn_config->sf_crl_download_max_size);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
   else {
     X509_STORE *store = SSL_CTX_get_cert_store(octx->ssl_ctx);
@@ -3315,6 +3369,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
     if(result == CURLE_OK && cache_criteria_met) {
       ossl_set_cached_x509_store(cf, data, store, (bool)octx->store_is_empty);
     }
+
+    /* !!! Starting Snowflake CRL !!! */
+    if(conn_config->sf_crl_check) {
+      registerCRLCheck(data, store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout,
+                       conn_config->sf_crl_download_max_size);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
 
   ERR_pop_to_mark();
@@ -4414,8 +4480,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
 }
 
 #ifdef CURLVERBOSE
-#if !defined(HAVE_BORINGSSL_LIKE) && \
-  !(defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL)
+#if !defined(HAVE_BORINGSSL_LIKE) && defined(CURL_HAS_VERIFIED_CHAIN)
 static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
 {
   STACK_OF(X509) *certstack;
@@ -4770,6 +4835,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
     goto out;
   infof_certstack(data, octx->ssl);
 #endif
+
+  /* !!! Starting OCSP !!! */
+  if(conn_config->sf_ocsp_check) {
+    STACK_OF(X509) *ch = NULL;
+    X509_STORE     *st = NULL;
+
+    /* Prefer the verified chain if available to ensure correct issuer pairing
+       for cross-signed chains; fall back to peer-provided chain otherwise. */
+    infof(data, "OCSP: preferring verified chain for issuer determination");
+#ifdef CURL_HAS_VERIFIED_CHAIN
+    {
+      STACK_OF(X509) *verified = SSL_get0_verified_chain(octx->ssl);
+      bool used_verified = false;
+      ch = verified;
+      if(!ch)
+        ch = SSL_get_peer_cert_chain(octx->ssl);
+      else
+        used_verified = true;
+      infof(data, "OCSP: used_verified_chain=%s",
+            used_verified ? "yes" : "no");
+    }
+#else
+    ch = SSL_get_peer_cert_chain(octx->ssl);
+#endif
+    if(!ch) {
+      infof(data, "OCSP validation could not get peer certificate chain");
+    }
+    st = SSL_CTX_get_cert_store(octx->ssl_ctx);
+    if(!st) {
+      infof(data, "OCSP validation could not get certificate data store");
+    }
+
+    /* Additional diagnostics for OCSP chain/store context */
+    infof(data, "OCSP: verified_chain_present=%s chain_count=%d",
+          ch ? "yes" : "no", ch ? sk_X509_num(ch) : 0);
+    infof(data, "OCSP: cert_store_present=%s", st ? "yes" : "no");
+
+    if(ch && st) {
+      result = checkCertOCSP(conn, data, ch, st,
+                             conn_config->sf_ocsp_failopen,
+                             conn_config->sf_oob_enable);
+      if(result) {
+        return result;
+      }
+    }
+  }
+  /* !!! End of OCSP !!! */
 
   if(conn_config->verifyhost) {
     result = ossl_verifyhost(data, conn, peer, server_cert);

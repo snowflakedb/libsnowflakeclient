@@ -139,6 +139,18 @@ typedef CURLcode (Curl_recv)(struct Curl_easy *data,   /* transfer */
 #endif
 
 struct ssl_primary_config {
+  bool sf_ocsp_check;    /* set TRUE if client side ocsp check is enabled */
+  bool sf_ocsp_failopen; /* set FALSE if failopen has to be disabled.*/
+  bool sf_crl_check;        /* set TRUE if client side CRL check is enabled */
+  bool sf_crl_advisory;     /* set TRUE if client side CRL check is
+                               in advisory mode */
+  bool sf_crl_allow_no_crl; /* set TRUE if client side CRL check allows
+                               certificates without crl */
+  bool sf_crl_disk_caching;   /* set FALSE to disable CRL disk caching */
+  bool sf_crl_memory_caching; /* set FALSE to disable CRL memory caching */
+  long sf_crl_download_timeout; /* timeout in seconds for CRL download */
+  long sf_crl_download_max_size; /* max CRL download size in bytes */
+  bool sf_oob_enable;    /* set TRUE if OOB telemetry is enabled.*/
   char *CApath;          /* certificate directory (does not work on Windows) */
   char *CAfile;          /* certificate to verify peer against */
   char *issuercert;      /* optional issuer certificate filename */

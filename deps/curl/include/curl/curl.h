@@ -109,6 +109,9 @@ extern "C" {
 typedef void CURL;
 typedef void CURLSH;
 
+#ifdef __linux__
+extern char sf_enable_getaddrinfo_lock;
+#endif
 /*
  * libcurl external API function linkage decorations.
  */
@@ -2257,6 +2260,37 @@ typedef enum {
 
   /* set TLS supported signature algorithms */
   CURLOPT(CURLOPT_SSL_SIGNATURE_ALGORITHMS, CURLOPTTYPE_STRINGPOINT, 328),
+
+  /* Snowflake options. True if enabling ocsp check */
+  CURLOPT(CURLOPT_SSL_SF_OCSP_CHECK, CURLOPTTYPE_LONG, 329),
+
+  /* Snowflake options. True if soft fail is enabled */
+  CURLOPT(CURLOPT_SSL_SF_OCSP_FAIL_OPEN, CURLOPTTYPE_LONG, 330),
+
+  /* Snowflake options. True if OOB telemetry is enabled. Defaults to false */
+  CURLOPT(CURLOPT_SSL_SF_OOB_ENABLE, CURLOPTTYPE_LONG, 331),
+
+  /* Snowflake options. True if CRL checking is enabled. Defaults to false */
+  CURLOPT(CURLOPT_SSL_SF_CRL_CHECK, CURLOPTTYPE_LONG, 332),
+
+  /* Snowflake options. True if CRL should be in advisory mode.
+   * Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_ADVISORY, CURLOPTTYPE_LONG, 333),
+
+  /* Snowflake options. True if CRL checking allows no CRL. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, CURLOPTTYPE_LONG, 334),
+
+  /* Snowflake options. True if CRL is cached on disk. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DISK_CACHING, CURLOPTTYPE_LONG, 335),
+
+  /* Snowflake options. True if CRL is cached in memory. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_MEMORY_CACHING, CURLOPTTYPE_LONG, 336),
+
+  /* Snowflake options. CRL download timeout */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, CURLOPTTYPE_LONG, 337),
+
+  /* Snowflake options. CRL download max size in bytes. Defaults to 20 MB */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, CURLOPTTYPE_LONG, 338),
 
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;

@@ -1290,6 +1290,55 @@ static CURLcode setopt_long_misc(struct Curl_easy *data, CURLoption option,
       (CURLGSSAPI_DELEGATION_POLICY_FLAG | CURLGSSAPI_DELEGATION_FLAG);
     break;
 #endif
+  case CURLOPT_SSL_SF_OCSP_CHECK:
+    data->set.ssl.primary.sf_ocsp_check = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OCSP_FAIL_OPEN:
+    data->set.ssl.primary.sf_ocsp_failopen = (0 != arg) ?
+                                         TRUE:FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OOB_ENABLE:
+    data->set.ssl.primary.sf_oob_enable = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_CHECK:
+    data->set.ssl.primary.sf_crl_check = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_ADVISORY:
+    data->set.ssl.primary.sf_crl_advisory = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL:
+    data->set.ssl.primary.sf_crl_allow_no_crl = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DISK_CACHING:
+    data->set.ssl.primary.sf_crl_disk_caching = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_MEMORY_CACHING:
+    data->set.ssl.primary.sf_crl_memory_caching = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT:
+      data->set.ssl.primary.sf_crl_download_timeout = (arg != 0) ?
+                                         (unsigned int)arg : 120;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE:
+      data->set.ssl.primary.sf_crl_download_max_size = (arg > 0) ? arg : 0;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }
