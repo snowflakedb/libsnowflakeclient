@@ -541,6 +541,19 @@ index 505e08a7e1..3715d392ee 100644
    /* Store the local bind parameters that will be used for this connection */
    if(data->set.str[STRING_DEVICE]) {
      conn->localdev = curlx_strdup(data->set.str[STRING_DEVICE]);
+diff --git a/deps/curl/lib/urldata.h b/deps/curl/lib/urldata.h
+index d4d336d8db..1f53ce41fb 100644
+--- a/deps/curl/lib/urldata.h
++++ b/deps/curl/lib/urldata.h
+@@ -291,6 +291,8 @@ struct connectdata {
+    * the connection is cleaned up (see Curl_hash_add2()).*/
+   struct Curl_hash meta_hash;
+ 
++  struct hostname host;
++
+   /* Who the connection is talking to, ultimately */
+   struct Curl_peer *origin; /* connection ultimately talks to this */
+   struct Curl_peer *via_peer; /* if set, connection really talks to this */
 diff --git a/deps/curl/lib/vtls/openssl.c b/deps/curl/lib/vtls/openssl.c
 index 010bbb9825..59223d307e 100644
 --- a/deps/curl/lib/vtls/openssl.c
