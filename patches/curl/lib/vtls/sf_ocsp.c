@@ -1497,6 +1497,13 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
 
   /* decode OCSP Response from base64 string */
   resp = decodeOCSPResponseFromBase64(resp_bas64_j->valuestring, data);
+  if (!resp)
+  {
+    infof(data, "OCSP Response cache is invalid. Deleting it from the cache.");
+    sf_curl_cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
+                                            cache_value->string);
+    goto end;
+  }
   if (checkResponseTimeValidity(resp, data, ocsp_log_data) == INVALID)
   {
       resp = NULL;
