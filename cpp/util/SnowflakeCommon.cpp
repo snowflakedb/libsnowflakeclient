@@ -16,8 +16,11 @@
 #include <chrono>
 #include "SnowflakeCommon.hpp"
 #include "log_file_util.h"
+#include "../lib/snowflake_cpp_util.h"
 #include "cJSON.h"
 #include "snowflake/PlatformDetection.hpp"
+#include "snowflake/TomlConfigParser.hpp"
+#include "memory.h"
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
@@ -217,7 +220,84 @@ void append_spcs_token(cJSON* data, const char* spcs_token_path)
     }
 }
 
-} // extern "C"
+
+SF_CONNECT* STDCALL snowflake_load_toml_config()
+{
+    std::string dsn = load_toml_config_as_dsn();
+    if (dsn.empty())
+    {
+        return NULL;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    if (snowflake_parse_dsn(sf, dsn) != SF_STATUS_SUCCESS)
+    {
+        snowflake_term(sf);
+        return NULL;
+    }
+    
+    return sf;
+}
+
+char* STDCALL snowflake_load_toml_as_dsn()
+{
+    std::string dsn = load_toml_config_as_dsn();
+    char* dsn_cstr = (char*)SF_MALLOC(dsn.size() + 1);
+    if (dsn_cstr == NULL)
+    {
+        return NULL;
+    }
+    std::memcpy(dsn_cstr, dsn.c_str(), dsn.size() + 1);
+    return dsn_cstr;
+}
+
+SF_STATUS snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
+{
+    if (dsn.empty())
+    {
+        return SF_STATUS_ERROR_STRING_FORMATTING;
+    }
+
+    std::string dsnCopy = dsn;
+    if (dsnCopy.back() == ';')
+    {
+        dsnCopy.pop_back();
+    }
+
+    if (sf == NULL)
+    {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
+    std::vector<std::string> connectionParams;
+    std::stringstream ss(dsnCopy);
+    std::string param;
+
+    while (std::getline(ss, param, ';')) 
+    {
+        if (!param.empty())
+        {
+            connectionParams.push_back(param);
+        }
+    }
+
+    for (const auto& params : connectionParams) 
+    {
+        size_t pos = params.find('=');
+        if (pos == std::string::npos)
+        {
+            continue;
+        }
+        std::string key = params.substr(0, pos);
+        std::string value = params.substr(pos + 1);
+
+        handle_single_param(sf, key.c_str(), value.c_str());
+    }
+
+    return SF_STATUS_SUCCESS;
+}
+
+}// extern "C"
 
 void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
   std::string const& oldValue,

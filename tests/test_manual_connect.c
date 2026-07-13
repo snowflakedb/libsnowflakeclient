@@ -597,10 +597,27 @@ void test_oauth_client_credentials(void** unused)
     snowflake_term(sf);
 }
 
+void test_toml_connect(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_toml_connect") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    SF_CONNECT* sf = snowflake_connect_with_toml();
+    assert_non_null(sf);
+
+    snowflake_term(sf);
+}
+
 int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_toml_connect),
         cmocka_unit_test(test_jwt_connect),
         cmocka_unit_test(test_oauth_connect),
         cmocka_unit_test(test_mfa_connect_with_duo_passcode),

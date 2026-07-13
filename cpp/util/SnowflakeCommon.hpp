@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdint>
 #include <type_traits>
+#include "snowflake/client.h"
 
 /* CPP only utilities */
 namespace Snowflake
