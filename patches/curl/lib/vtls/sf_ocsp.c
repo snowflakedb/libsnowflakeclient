@@ -2250,9 +2250,15 @@ int sf_ocsp_write_cache(const char* cache_dir, const char* content)
   if (fprintf(fp, "%s", content) < 0)
   {
     fclose(fp);
+    DeleteFile(tmp_file);
     return SF_OCSP_TMP_WRITE_ERR;
   }
-  fclose(fp);
+
+  if (fclose(fp) != 0)
+  {
+    DeleteFile(tmp_file);
+    return SF_OCSP_TMP_WRITE_ERR;
+  }
 
   if (!MoveFileEx(tmp_file, cache_file, MOVEFILE_REPLACE_EXISTING))
   {
@@ -2270,14 +2276,22 @@ int sf_ocsp_write_cache(const char* cache_dir, const char* content)
   fp = fdopen(tmp_fd, "w");
   if (fp == NULL)
   {
+    close(tmp_fd);
+    remove(tmp_file);
     return SF_OCSP_TMP_OPEN_ERR;
   }
   if (fprintf(fp, "%s", content) < 0)
   {
     fclose(fp);
+    remove(tmp_file);
     return SF_OCSP_TMP_WRITE_ERR;
   }
-  fclose(fp);
+
+  if (fclose(fp) != 0)
+  {
+    remove(tmp_file);
+    return SF_OCSP_TMP_WRITE_ERR;
+  }
 
   if (rename(tmp_file, cache_file) != 0)
   {
@@ -2285,6 +2299,8 @@ int sf_ocsp_write_cache(const char* cache_dir, const char* content)
     return SF_OCSP_TMP_RENAME_ERR;
   }
 #endif
+
+  return SF_OCSP_SUCCESS;
 }
 
 /**
