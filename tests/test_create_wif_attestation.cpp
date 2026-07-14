@@ -1134,7 +1134,6 @@ void test_unit_wif_attestation_config(void**)
     snowflake_set_attribute(conn, SF_CON_WIF_TOKEN, "dummy_token");
     snowflake_set_attribute(conn, SF_CON_WIF_HOST, "dummy_host");
 
-
     assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
 
     assert_true(config.type.has_value());
