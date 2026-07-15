@@ -90,6 +90,7 @@ SET(TESTS_CXX
         test_manual_wif
         test_create_wif_attestation
         test_crl
+        test_unit_token_cache_key
 )
 
 if (LINUX)
