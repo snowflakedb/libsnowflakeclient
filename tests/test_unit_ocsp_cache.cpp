@@ -112,6 +112,7 @@ void test_corrupted_cache(void **unused)
   if (!boost::filesystem::is_regular_file(cache_file))
   {
     printf("Skipping - cache file not available\n");
+    return;
   }
 
   std::string ocsp_response_cache = loadFileInString(cache_file);
