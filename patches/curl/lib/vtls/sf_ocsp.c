@@ -2245,6 +2245,7 @@ int sf_ocsp_write_cache(const char* cache_dir, const char* content)
   fp = fopen(tmp_file, "w");
   if (fp == NULL)
   {
+    DeleteFile(tmp_file);
     return SF_OCSP_TMP_OPEN_ERR;
   }
   if (fprintf(fp, "%s", content) < 0)
