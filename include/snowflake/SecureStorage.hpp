@@ -21,9 +21,9 @@ namespace Client {
     Unsupported
   };
 
-  // Returns the spec-canonical, uppercase token-type string used in the cache
-  // key. These strings are part of the cross-driver key contract and must not
-  // diverge from the other Snowflake drivers.
+  // Returns the canonical, uppercase token-type string used in the cache key.
+  // These strings must match across all Snowflake drivers so that token cache
+  // entries are interoperable.
   inline std::string keyTypeToString(SecureStorageKeyType type) {
     switch (type) {
       case SecureStorageKeyType::MFA_TOKEN:
@@ -80,7 +80,7 @@ namespace Client {
    * Normalizes a URL for use as a cache key component: strips the scheme and any
    * userinfo prefix, drops the query string and fragment, trims a root-only
    * trailing slash, and uppercases the remainder (authority + optional :port +
-   * optional /path). Cross-driver spec §2.3.
+   * optional /path).
    */
   std::string normalizeUrl(const std::string& url);
 
@@ -88,7 +88,6 @@ namespace Client {
    * Normalizes a Snowflake identifier for use as a cache key component:
    * uppercases every character outside double-quoted segments while preserving
    * the contents (and surrounding quotes) of double-quoted segments verbatim.
-   * Cross-driver spec §2.4.
    */
   std::string normalizeIdentifier(const std::string& identifier);
 

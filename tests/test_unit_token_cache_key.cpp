@@ -18,7 +18,7 @@
 
 using namespace Snowflake::Client;
 
-// Cross-driver golden key (locked). See token-cache/00-INDEX.md §3.
+// Locked golden key — changing this hash is a breaking change for cross-driver token sharing.
 static const char* GOLDEN_KEY =
     "SnowflakeTokenCache.v2.75ff2ad65a68afb402f125f62894697673c5ef3d863aba466d16b7a81053d1f4";
 
