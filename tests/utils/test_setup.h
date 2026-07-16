@@ -64,6 +64,8 @@ void generate_unique_id(char* buf);
  */
 void dump_error(SF_ERROR_STRUCT *error);
 
+void get_ocsp_cache_file(char *cache_file);
+
 #ifdef __cplusplus
 }
 #endif

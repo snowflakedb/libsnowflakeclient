@@ -38,6 +38,11 @@ void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 #define ERR_MSG_OAUTH_PARAMETER_IS_MISSING "OAuth 2.0 Auth parameter is missing"
 #define ERR_MSG_PAT_PARAMETER_IS_MISSING "programmatic_access_token parameter is missing"
 #define ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING "workload_identity_provider parameter is required for WIF authentication. Valid values: AWS, AZURE, GCP, OIDC"
+#define ERR_MSG_ACCOUNT_PARAMETER_INVALID "account parameter contains invalid characters"
+#define ERR_MSG_REGION_PARAMETER_INVALID "region parameter contains invalid characters"
+#define ERR_MSG_HOST_PARAMETER_INVALID "host parameter contains invalid characters"
+#define ERR_MSG_PROTOCOL_PARAMETER_INVALID "protocol parameter must be http or https"
+#define ERR_MSG_PORT_PARAMETER_INVALID "port parameter must be a number between 1 and 65535"
 
 #ifdef __cplusplus
 }
