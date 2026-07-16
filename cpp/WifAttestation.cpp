@@ -34,18 +34,21 @@ namespace Snowflake {
 
     std::string AttestationConfig::getWifHostForAws() const {
       const std::string host = getWifHost();
-      if (host.empty() || !hasScheme(host)) {
+      if (host.empty() || !hasScheme(host)) 
+      {
         return stripTrailingSlash(host);
       }
 
       auto parsed = boost::urls::parse_uri(host);
-      if (!parsed) {
+      if (!parsed) 
+      {
         log_error("Invalid WIF host URL for AWS: %s", host.c_str());
         return host;
       }
 
       std::string bareHost(parsed->host());
-      if (parsed->has_port()) {
+      if (parsed->has_port()) 
+      {
         bareHost += ":" + std::string(parsed->port());
       }
       return bareHost;
@@ -53,10 +56,12 @@ namespace Snowflake {
 
     std::string AttestationConfig::getWifHostForGcp() const {
       const std::string host = getWifHost();
-      if (host.empty()) {
+      if (host.empty()) 
+      {
         return host;
       }
-      if (hasScheme(host)) {
+      if (hasScheme(host)) 
+      {
         return stripTrailingSlash(host);
       }
 

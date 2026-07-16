@@ -84,10 +84,6 @@ namespace Client {
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
-    // Raw SF_CON_WIF_HOST value, exactly as supplied by the caller (either a
-    // bare hostname or a full base URL). Provider code must not use this
-    // directly -- use getWifHostForAws() / getWifHostForGcp() instead, which
-    // normalize it to the format each provider's URL-building code expects.
     boost::optional<std::string> wifHost;
 
     SF_STATUS configureWIFAttestation(SF_CONNECT* conn);
@@ -100,11 +96,8 @@ namespace Client {
       return wifHost.value_or("");
     }
 
-    // Normalized bare hostname (no scheme/path) for AWS STS requests.
     std::string getWifHostForAws() const;
 
-    // Normalized full base URL (scheme + host + path prefix) for GCP IAM
-    // credentials requests.
     std::string getWifHostForGcp() const;
   };
 
