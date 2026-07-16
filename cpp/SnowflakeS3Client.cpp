@@ -599,8 +599,15 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 
     std::string iv = outcome.GetResult().GetMetadata().at(AMZ_IV);
 
-    Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
-      encryptionMetadata.iv.data);
+    if (Util::Base64::decode(iv.c_str(), iv.size(),
+          fileMetadata->encryptionMetadata.iv.data,
+          sizeof(fileMetadata->encryptionMetadata.iv.data))
+        == static_cast<size_t>(-1L))
+    {
+      CXX_LOG_ERROR("Invalid or oversized IV in object metadata for %s; "
+                    "rejecting download.", key.c_str());
+      return RemoteStorageRequestOutcome::FAILED;
+    }
     if (outcome.GetResult().GetMetadata().find(AMZ_KEY) !=
         outcome.GetResult().GetMetadata().end())
     {

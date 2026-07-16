@@ -599,6 +599,110 @@ static void STDCALL log_term() {
 }
 
 /**
+ * Returns SF_BOOLEAN_TRUE if every character in value is safe to embed into the
+ * authority (scheme://host:port) portion of a request URL, i.e. it cannot alter
+ * the URL structure. Only ASCII letters, digits and the host/identifier
+ * punctuation '-', '_' and '.' are allowed. Characters such as '/', '?', '#',
+ * '@', ':', '\\', whitespace or control bytes are rejected so the value
+ * cannot alter the URL structure. NULL and empty strings are treated as valid;
+ * callers separately enforce required-ness.
+ */
+static sf_bool is_valid_url_authority_component(const char *value) {
+    const char *p;
+    if (value == NULL) {
+        return SF_BOOLEAN_TRUE;
+    }
+    for (p = value; *p != '\0'; ++p) {
+        char c = *p;
+        sf_bool is_alpha = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        sf_bool is_digit = (c >= '0' && c <= '9');
+        if (!(is_alpha || is_digit || c == '-' || c == '_' || c == '.')) {
+            return SF_BOOLEAN_FALSE;
+        }
+    }
+    return SF_BOOLEAN_TRUE;
+}
+
+/**
+ * Returns SF_BOOLEAN_TRUE if protocol is one of the supported URL schemes
+ * (http/https, case-insensitive) so the protocol attribute cannot alter
+ * the URL structure.
+ */
+static sf_bool is_valid_url_protocol(const char *protocol) {
+    return (strcasecmp(protocol, "https") == 0 ||
+            strcasecmp(protocol, "http") == 0) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+}
+
+/**
+ * Returns SF_BOOLEAN_TRUE if port is a decimal number in the range 1-65535.
+ * Anything else (non-digits, empty, out of range) is rejected so the port
+ * attribute cannot alter the URL structure.
+ */
+static sf_bool is_valid_url_port(const char *port) {
+    const char *p;
+    long value;
+    char *end = NULL;
+    if (port == NULL || *port == '\0') {
+        return SF_BOOLEAN_FALSE;
+    }
+    for (p = port; *p != '\0'; ++p) {
+        if (*p < '0' || *p > '9') {
+            return SF_BOOLEAN_FALSE;
+        }
+    }
+    value = strtol(port, &end, 10);
+    return (end != NULL && *end == '\0' && value >= 1 && value <= 65535) ?
+           SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+}
+
+/**
+ * Validates the connection attributes that are embedded into the request URL
+ * authority (account, region, host, protocol, port) so they cannot alter the
+ * URL structure. Validation runs before the host is derived from the
+ * account/region so it covers both caller-supplied and derived URL components.
+ * See SNOW-3649749.
+ */
+static SF_STATUS STDCALL
+_snowflake_validate_url_components(SF_CONNECT *sf) {
+    if (!is_valid_url_authority_component(sf->account)) {
+        log_error(ERR_MSG_ACCOUNT_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                            ERR_MSG_ACCOUNT_PARAMETER_INVALID,
+                            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    if (!is_valid_url_authority_component(sf->region)) {
+        log_error(ERR_MSG_REGION_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                            ERR_MSG_REGION_PARAMETER_INVALID,
+                            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    if (!is_valid_url_authority_component(sf->host)) {
+        log_error(ERR_MSG_HOST_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                            ERR_MSG_HOST_PARAMETER_INVALID,
+                            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    if (!is_string_empty(sf->protocol) && !is_valid_url_protocol(sf->protocol)) {
+        log_error(ERR_MSG_PROTOCOL_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                            ERR_MSG_PROTOCOL_PARAMETER_INVALID,
+                            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    if (!is_string_empty(sf->port) && !is_valid_url_port(sf->port)) {
+        log_error(ERR_MSG_PORT_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                            ERR_MSG_PORT_PARAMETER_INVALID,
+                            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    return SF_STATUS_SUCCESS;
+}
+
+/**
  * Process connection parameters
  * @param sf SF_CONNECT
  */
@@ -636,8 +740,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && 
-        auth_type != AUTH_WIF && 
+    // Validate account/region/host/protocol/port before they are used to
+    // derive the host and build request URLs (SNOW-3649749).
+    if (_snowflake_validate_url_components(sf) != SF_STATUS_SUCCESS) {
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) &&
+        auth_type != AUTH_WIF &&
         is_string_empty(sf->user)) {
         // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
