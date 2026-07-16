@@ -129,5 +129,24 @@ if [[ ! -d "$OPENSSL_BUILD_DIR/lib" ]] && [[ -d "$OPENSSL_BUILD_DIR/lib64" ]]; t
     mv $OPENSSL_BUILD_DIR/lib64 $OPENSSL_BUILD_DIR/lib
 fi
 
+# SNOW-3649681 configured OpenSSL with --prefix=$OPENSSL_RUNTIME_PREFIX so the
+# build directory is not compiled into libcrypto/libssl. That same prefix is,
+# however, baked into the generated pkg-config (.pc) files, whose absolute
+# prefix/libdir/includedir are NOT relocated by the INSTALLTOP install override.
+# curl's ./configure discovers OpenSSL via pkg-config, so a stale
+# "$OPENSSL_RUNTIME_PREFIX/lib" makes it emit -L$OPENSSL_RUNTIME_PREFIX/lib,
+# fail to find libcrypto in the staged tree, and abort with "OpenSSL could not
+# be detected". Repoint the .pc metadata at the real staged tree. (The CMake
+# config files compute their prefix relative to their own location, so they are
+# already relocatable and need no fixup.) These are build-time inputs only (not
+# shipped), so the hardened paths compiled into the libraries are unchanged.
+if compgen -G "$OPENSSL_BUILD_DIR/lib/pkgconfig/*.pc" > /dev/null; then
+    perl -pi \
+        -e "s{^prefix=\Q$OPENSSL_RUNTIME_PREFIX\E(?=/|\$)}{prefix=$OPENSSL_BUILD_DIR};" \
+        -e "s{^libdir=\Q$OPENSSL_RUNTIME_PREFIX\E/}{libdir=$OPENSSL_BUILD_DIR/};" \
+        -e "s{^includedir=\Q$OPENSSL_RUNTIME_PREFIX\E/}{includedir=$OPENSSL_BUILD_DIR/};" \
+        "$OPENSSL_BUILD_DIR"/lib/pkgconfig/*.pc
+fi
+
 echo === zip_file "openssl" "$OPENSSL_VERSION" "$target"
 zip_file "openssl" "$OPENSSL_VERSION" "$target"

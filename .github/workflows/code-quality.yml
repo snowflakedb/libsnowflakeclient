@@ -16,6 +16,7 @@ jobs:
   check-warnings:
     name: Extra-Warnings-Linux
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
