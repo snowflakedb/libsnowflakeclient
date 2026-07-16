@@ -276,7 +276,14 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush.back().destFileName = dstFileName;
     if (encMat)
     {
-      EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
+      if (!EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev()))
+      {
+        CXX_LOG_ERROR("Failed to decrypt file key for %s due to invalid "
+                      "encryption metadata; aborting download.",
+                      fullPath.c_str());
+        metaListToPush.pop_back();
+        return RemoteStorageRequestOutcome::FAILED;
+      }
     }
     else
     {

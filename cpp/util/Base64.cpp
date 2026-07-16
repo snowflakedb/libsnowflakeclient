@@ -44,7 +44,8 @@ std::vector<char> Base64::decodeURLNoPadding(const std::string &text)
   // Base 64 decode text
   size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
   std::vector<char> decoded(decode_len);
-  decode_len = decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
+  decode_len = decodeUrl(in_text.c_str(), in_text.length(), decoded.data(),
+                         decoded.size());
 
   if (decode_len == static_cast<size_t >(-1L))
   {
@@ -70,7 +71,8 @@ std::vector<char> Base64::decodePadding(const std::string &text)
   // Base 64 decode text
   size_t decode_len = Client::Util::Base64::decodedLength(text.length());
   std::vector<char> decoded(decode_len);
-  decode_len = decode(text.c_str(), text.length(), decoded.data());
+  decode_len = decode(text.c_str(), text.length(), decoded.data(),
+                      decoded.size());
 
   if (decode_len == static_cast<size_t >(-1L))
   {
@@ -143,10 +145,18 @@ size_t Base64::encodeHelper(const void *const vsrc,
 size_t Base64::decodeHelper(const void *const vsrc,
                             const size_t srcLength,
                             void *const vdst,
+                            const size_t dstLength,
                             const ReverseIndex &REV_INDEX) noexcept
 {
   // Check for correct padding.
   if (srcLength % 4)
+    return -1;
+
+  // Reject input whose decoded form would not fit in the destination buffer.
+  // decodedLength() returns the exact number of bytes decodeHelper writes for
+  // a (correctly padded) input, so this bound is precise.
+  const size_t outLength = decodedLength(vsrc, srcLength);
+  if ((outLength == static_cast<size_t>(-1L)) || (outLength > dstLength))
     return -1;
 
   const unsigned char *const src = static_cast<const unsigned char *>(vsrc);

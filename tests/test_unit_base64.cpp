@@ -178,10 +178,45 @@ void test_base64_coding(void **unused)
     assert_memory_equal(result, encodeExpect.data(), encodeExpect.size());
 
     // test decoding is correct
-    size_t actualDecodeSize = Base64::decode(encodeExpect.data(), encodeExpect.size(), result);
+    size_t actualDecodeSize = Base64::decode(encodeExpect.data(), encodeExpect.size(), result, sizeof(result));
     assert_int_equal(actualDecodeSize, decodeExpect.size());
     assert_memory_equal(result, decodeExpect.data(), decodeExpect.size());
   }
+}
+
+/**
+ * Verify that decode/decodeUrl refuse to write past the destination buffer.
+ * @param unused
+ */
+void test_base64_decode_bounds(void **)
+{
+  // "AAAA" (4 base64 chars) decodes to exactly 3 bytes.
+  const char encoded[] = "AAAAAAAAAAAA"; // 12 chars -> 9 decoded bytes
+  // NOTE: do not name this 'small' - it is a predefined macro on Windows
+  // (rpcndr.h defines `#define small char`).
+  char dstBuf[4];
+
+  // Fits exactly: 4 chars -> 3 bytes into a 3-byte buffer.
+  assert_int_equal(Base64::decode(encoded, 4, dstBuf, 3), 3);
+  // Would overflow: 12 chars -> 9 bytes into a 4-byte buffer -> rejected.
+  assert_int_equal(Base64::decode(encoded, 12, dstBuf, sizeof(dstBuf)),
+                   static_cast<size_t>(-1L));
+  // Zero capacity always rejects non-empty output.
+  assert_int_equal(Base64::decode(encoded, 4, dstBuf, 0),
+                   static_cast<size_t>(-1L));
+  // Same guarantees for the url-safe variant.
+  assert_int_equal(Base64::decodeUrl(encoded, 12, dstBuf, sizeof(dstBuf)),
+                   static_cast<size_t>(-1L));
+
+  // Simulate the IV sink: a 16-byte IV buffer must reject an oversized value.
+  char iv[16];
+  // 512 base64 chars -> 384 decoded bytes; must not touch the 16-byte buffer.
+  std::string oversized(512, 'A');
+  assert_int_equal(Base64::decode(oversized.c_str(), oversized.size(), iv, sizeof(iv)),
+                   static_cast<size_t>(-1L));
+  // A correctly-sized 16-byte IV (24 base64 chars with padding) is accepted.
+  const char ivEncoded[] = "AAAAAAAAAAAAAAAAAAAAAA==";
+  assert_int_equal(Base64::decode(ivEncoded, sizeof(ivEncoded) - 1, iv, sizeof(iv)), 16);
 }
 
 /**
@@ -251,7 +286,7 @@ void test_base64_url_coding(void **unused)
     assert_memory_equal(result, encodeExpect.data(), encodeExpect.size());
 
     // test decoding is correct
-    size_t actualDecodeSize = Base64::decodeUrl(encodeExpect.data(), encodeExpect.size(), result);
+    size_t actualDecodeSize = Base64::decodeUrl(encodeExpect.data(), encodeExpect.size(), result, sizeof(result));
     assert_int_equal(actualDecodeSize, decodeExpect.size());
     assert_memory_equal(result, decodeExpect.data(), decodeExpect.size());
   }
@@ -260,6 +295,7 @@ void test_base64_url_coding(void **unused)
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_base64_coding),
+    cmocka_unit_test(test_base64_decode_bounds),
     cmocka_unit_test(test_base64_cpp_coding),
     cmocka_unit_test(test_base64_url_coding),
     cmocka_unit_test(test_base64_url_cpp_coding),
