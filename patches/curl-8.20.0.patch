@@ -400,7 +400,7 @@ index fd26c5f0bc..38c79131d7 100644
  int Curl_getaddrinfo_ex(const char *nodename,
                          const char *servname,
                          const struct addrinfo *hints,
-@@ -104,9 +129,22 @@ int Curl_getaddrinfo_ex(const char *nodename,
+@@ -104,9 +129,36 @@ int Curl_getaddrinfo_ex(const char *nodename,
    struct Curl_addrinfo *ca;
    size_t ss_size;
    int error;
@@ -421,25 +421,22 @@ index fd26c5f0bc..38c79131d7 100644
 +#endif
 +
    error = CURL_GETADDRINFO(nodename, servname, hints, &aihead);
-   if(error)
-     return error;
-@@ -174,6 +212,16 @@ int Curl_getaddrinfo_ex(const char *nodename,
-   if(aihead)
-     CURL_FREEADDRINFO(aihead);
- 
++
 +#if defined(HAVE_THREADS_POSIX)
++  /* SNOW-119090: only the system getaddrinfo() call above needs to be
++     serialized (it may trigger a lazy libnss_*.so load). Release the lock
++     here, before any early return below, so it can never be orphaned on an
++     error path -- e.g. EAI_AGAIN from a slow/overloaded resolver, which
++     would otherwise deadlock all name resolution in the process. */
 +  if(sf_enable_getaddrinfo_lock == 1) {
 +    mutex_error = pthread_mutex_unlock(&sf_getaddrinfo_mutex);
-+    if(mutex_error) {
++    if(mutex_error)
 +      Curl_print_pthread_error(mutex_error);
-+      error = mutex_error;
-+    }
 +  }
 +#endif
 +
-   /* if we failed, also destroy the Curl_addrinfo list */
-   if(error) {
-     Curl_freeaddrinfo(cafirst);
+   if(error)
+     return error;
 diff --git a/deps/curl/lib/setopt.c b/deps/curl/lib/setopt.c
 index b8a632748c..5de2d73b55 100644
 --- a/deps/curl/lib/setopt.c
