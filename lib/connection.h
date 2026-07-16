@@ -512,6 +512,8 @@ size_t char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_
  * @param renew_injection For test purpose, forcely trigger the autentication renew.
  * @param proxy           proxy setting
  * @param no_proxy        exclusion of proxy
+ * @param tls_version     Per-connection TLS version override (CURL_SSLVERSION_* value).
+ *                        Pass SF_TLS_VERSION_UNSET to use the global SSL_VERSION setting.
  *
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure/renew timeout
  */
@@ -525,7 +527,8 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int8 *retried_count, sf_bool *is_renew,
                              sf_bool renew_injection, const char *proxy,
                              const char *no_proxy,
-                             sf_bool include_retry_reason, sf_bool is_login_request);
+                             sf_bool include_retry_reason, sf_bool is_login_request,
+                             int32 tls_version);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.

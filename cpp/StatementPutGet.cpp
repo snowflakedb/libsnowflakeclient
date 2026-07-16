@@ -196,7 +196,8 @@ bool StatementPutGet::http_put(std::string const& url,
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
                          &sf->crl_config,
                          sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
-                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                         sf->tls_version);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);
@@ -257,7 +258,8 @@ bool StatementPutGet::http_get(std::string const& url,
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
                          &sf->crl_config,
                          sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
-                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                         sf->tls_version);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);

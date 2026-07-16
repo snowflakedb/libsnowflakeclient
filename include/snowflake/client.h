@@ -398,7 +398,19 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
     SF_CON_WIF_AUDIENCE,
+    /**
+     * Per-connection TLS/SSL version override. Value is a CURL_SSLVERSION_*
+     * constant (see curl/curl.h). Set to SF_TLS_VERSION_UNSET (the default)
+     * to fall back to the global SF_GLOBAL_SSL_VERSION setting.
+     */
+    SF_CON_TLS_VERSION,
 } SF_ATTRIBUTE;
+
+/**
+ * Sentinel value for SF_CONNECT.tls_version meaning "not overridden" -
+ * the global SF_GLOBAL_SSL_VERSION setting should be used instead.
+ */
+#define SF_TLS_VERSION_UNSET (-1)
 
 /**
  * Attributes for Snowflake global context.
@@ -620,6 +632,11 @@ typedef struct SF_CONNECT {
     sf_bool log_query_parameters;
 
     char* wif_audience;
+
+    // Per-connection TLS version override (CURL_SSLVERSION_* value).
+    // SF_TLS_VERSION_UNSET means no override; fall back to the global
+    // SSL_VERSION setting.
+    int32 tls_version;
 } SF_CONNECT;
 
 /**

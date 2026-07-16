@@ -33,7 +33,7 @@ namespace Snowflake {
                     NULL, NULL, 120, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE,
                     &crl_config,
                     0, 7, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
-                    NULL, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                    NULL, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE, SF_TLS_VERSION_UNSET);
             }
         };
     } // namespace Client

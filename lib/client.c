@@ -1193,6 +1193,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         
         sf->log_query_text = SF_BOOLEAN_FALSE;
         sf->log_query_parameters = SF_BOOLEAN_FALSE;
+
+        sf->tls_version = SF_TLS_VERSION_UNSET;
     }
 
     return sf;
@@ -1929,6 +1931,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_TLS_VERSION:
+            sf->tls_version = value ? *((int32 *)value) : SF_TLS_VERSION_UNSET;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2189,6 +2194,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             *value = &sf->log_query_parameters;
             break;
+        case SF_CON_TLS_VERSION:
+            *value = &sf->tls_version;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2350,7 +2358,8 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             sfstmt->connection->proxy,
             sfstmt->connection->no_proxy,
             get_retry_timeout(sfstmt->connection),
-            sfstmt->connection->retry_count);
+            sfstmt->connection->retry_count,
+            sfstmt->connection->tls_version);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
           // Unable to create chunk downloader.
