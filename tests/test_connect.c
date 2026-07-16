@@ -110,46 +110,12 @@ void test_connect_with_include_retry_context() {
   snowflake_term(sf); // purge snowflake context
 }
 
-void setCacheFile(char *cache_file)
-{
-#ifdef __linux__
-  char *home_env = getenv("HOME");
-  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
-  strcat(cache_file, "/.cache");
-  strcat(cache_file, "/snowflake");
-  strcat(cache_file, "/ocsp_response_cache.json");
-#elif defined(__APPLE__)
-  char *home_env = getenv("HOME");
-  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
-  strcat(cache_file, "/Library");
-  strcat(cache_file, "/Caches");
-  strcat(cache_file, "/Snowflake");
-  strcat(cache_file, "/ocsp_response_cache.json");
-#elif  defined(_WIN32)
-  char *home_env = getenv("USERPROFILE");
-  if (home_env == NULL)
-  {
-    home_env = getenv("TMP");
-	if (home_env == NULL)
-    {
-      home_env = getenv("TEMP");
-    }
-  }
-  strcpy(cache_file, (home_env == NULL ? (char*)"c:\\temp" : home_env));
-  strcat(cache_file, "\\AppData");
-  strcat(cache_file, "\\Local");
-  strcat(cache_file, "\\Snowflake");
-  strcat(cache_file, "\\Caches");
-  strcat(cache_file, "\\ocsp_response_cache.json");
-#endif
-}
-
 /**
  * Test connection with OCSP cache server off
  */
 void test_connect_with_ocsp_cache_server_off() {
     char cache_file[4096];
-    setCacheFile(cache_file);
+    get_ocsp_cache_file(cache_file);
     remove(cache_file);
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -167,7 +133,7 @@ void test_connect_with_ocsp_cache_server_off() {
  */
 void test_connect_with_ocsp_cache_server_on() {
     char cache_file[4096];
-    setCacheFile(cache_file);
+    get_ocsp_cache_file(cache_file);
     remove(cache_file);
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true");
     SF_CONNECT *sf = setup_snowflake_connection();
