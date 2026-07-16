@@ -1,5 +1,6 @@
 #include <cassert>
 #include <string>
+#include <curl/curl.h>
 #include "memory.h"
 #include "../lib/client_int.h"
 #include <vector>
@@ -74,6 +75,7 @@ std::vector<sf_int_attributes> intAttributes = {
     { SF_CON_MAX_VARCHAR_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE },
     { SF_CON_MAX_BINARY_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE / 2 },
     { SF_CON_MAX_VARIANT_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE },
+    { SF_CON_TLS_VERSION, CURL_SSLVERSION_TLSv1_3 },
 };
 
 // unit test for snowflake_set_attribute and snowflake_get_attribute for all SF_ATTRIBUTE
@@ -187,6 +189,10 @@ void test_set_get_all_attributes(void **unused)
                 assert_int_equal(*((int8 *)value), attr.value);
             }
         }
+        else if (attr.type == SF_CON_TLS_VERSION)
+        {
+            assert_int_equal(*((int32 *)value), attr.value);
+        }
         else
         {
             if ((attr.type == SF_CON_RETRY_TIMEOUT) && (attr.value < 300) && (attr.value != 0))
@@ -206,9 +212,46 @@ void test_set_get_all_attributes(void **unused)
     }
 }
 
+// unit test for the per-connection TLS version override (SF_CON_TLS_VERSION):
+// verifies it defaults to "unset" (falls back to the global SSL_VERSION),
+// that it can be overridden, and that it can be reset back to "unset".
+void test_tls_version_override(void **unused)
+{
+    SF_CONNECT *sf = snowflake_init();
+    SF_STATUS status;
+    void *value = NULL;
+
+    // Default: no per-connection override.
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), SF_TLS_VERSION_UNSET);
+
+    // Override with a specific TLS version.
+    int32 tls_version = CURL_SSLVERSION_TLSv1_2;
+    status = snowflake_set_attribute(sf, SF_CON_TLS_VERSION, &tls_version);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    value = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), CURL_SSLVERSION_TLSv1_2);
+
+    // Passing NULL resets to "unset" so the global setting applies again.
+    status = snowflake_set_attribute(sf, SF_CON_TLS_VERSION, NULL);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    value = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), SF_TLS_VERSION_UNSET);
+
+    snowflake_term(sf);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_set_get_all_attributes),
+    cmocka_unit_test(test_tls_version_override),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

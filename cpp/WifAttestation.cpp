@@ -6,6 +6,7 @@
 #include "OIDCAttestation.hpp"
 #include "logger/SFLogger.hpp"
 #include "jwt/Jwt.hpp"
+#include <boost/url.hpp>
 
 namespace Snowflake {
   namespace Client {
@@ -18,6 +19,48 @@ namespace Snowflake {
           {AttestationType::GCP, createGcpAttestation},
           {AttestationType::OIDC, createOIDCAttestation},
       };
+
+      bool hasScheme(const std::string& value) {
+        return value.find("://") != std::string::npos;
+      }
+
+      std::string stripTrailingSlash(std::string value) {
+        while (!value.empty() && value.back() == '/') {
+          value.pop_back();
+        }
+        return value;
+      }
+    }
+
+    std::string AttestationConfig::getWifHostForAws() const {
+      const std::string host = getWifHost();
+      if (host.empty() || !hasScheme(host)) {
+        return stripTrailingSlash(host);
+      }
+
+      auto parsed = boost::urls::parse_uri(host);
+      if (!parsed) {
+        log_error("Invalid WIF host URL for AWS: %s", host.c_str());
+        return host;
+      }
+
+      std::string bareHost(parsed->host());
+      if (parsed->has_port()) {
+        bareHost += ":" + std::string(parsed->port());
+      }
+      return bareHost;
+    }
+
+    std::string AttestationConfig::getWifHostForGcp() const {
+      const std::string host = getWifHost();
+      if (host.empty()) {
+        return host;
+      }
+      if (hasScheme(host)) {
+        return stripTrailingSlash(host);
+      }
+
+      return "https://" + host + "/v1";
     }
 
     SF_STATUS AttestationConfig::configureWIFAttestation(SF_CONNECT* conn)

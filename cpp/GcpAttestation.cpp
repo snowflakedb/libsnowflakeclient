@@ -184,7 +184,7 @@ namespace Snowflake::Client {
         accessTokenOpt.get(),
         serviceAccountChain,
         config.getAudience(),
-        config.getWifHost());
+        config.getWifHostForGcp());
       if (!idTokenOpt) {
         CXX_LOG_ERROR("Failed to get identity token with delegation");
         return boost::none;

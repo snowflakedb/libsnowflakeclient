@@ -398,6 +398,13 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
     SF_CON_WIF_AUDIENCE,
+    /**
+     * Overrides the STS/IAM endpoint used for Workload Identity Federation.
+     * May be given as either a bare hostname (e.g. "sts.us-gov-east-1.amazonaws.com")
+     * or a full base URL (e.g. "https://iamcredentials.privategoogleapis.com/v1") --
+     * the value is normalized internally to whatever format the configured
+     * provider (AWS, GCP, ...) requires.
+     */
     SF_CON_WIF_HOST,
 } SF_ATTRIBUTE;
 

@@ -207,6 +207,24 @@ void test_unit_aws_attestation_jwt_success_with_custom_wif_config(void**) {
         AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
+// SF_CON_WIF_HOST may also be supplied as a full URL (GCP's native format);
+// AWS must still extract the bare host from it.
+void test_unit_aws_attestation_jwt_success_with_full_url_wif_host(void**) {
+    auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+    awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+    AttestationConfig config;
+    config.type = AttestationType::AWS;
+    config.awsSdkWrapper = &awsSdkWrapper;
+    config.wifHost = "https://sts.custom.example.com/";
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+
+    assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
+        "sts.custom.example.com");
+}
+
 void test_unit_aws_attestation_jwt_sdk_failure(void **) {
   auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
   // STS call returns no token (e.g. HTTP error, malformed response).
@@ -599,7 +617,7 @@ void test_unit_gcp_impersonation_single_account_success(void **) {
   assert_true(issuer == GCP_TEST_ISSUER);
 }
 
-void test_unit_gcp_impersonation_single_account_success_with_custom_wif_cofig(void**) {
+void test_unit_gcp_impersonation_single_account_success_with_custom_wif_config(void**) {
     const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
     const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
     const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
@@ -628,6 +646,34 @@ void test_unit_gcp_impersonation_single_account_success_with_custom_wif_cofig(vo
     assert_true(credential == std::string(idToken.data(), idToken.size()));
     assert_true(subject == GCP_TEST_SUBJECT);
     assert_true(issuer == GCP_TEST_ISSUER);
+}
+
+// SF_CON_WIF_HOST may also be supplied as a bare hostname (AWS's native
+// format); GCP must still build a valid IAM credentials base URL from it.
+void test_unit_gcp_impersonation_single_account_success_with_bare_host_wif_config(void**) {
+    const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+    const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+    const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
+
+    auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
+        accessToken,
+        idToken,
+        {},
+        targetServiceAccount,
+        GCP_TEST_AUDIENCE,
+        GCP_TEST_CUSTOM_ENDPOINT_HOST);
+
+    AttestationConfig config;
+    config.type = AttestationType::GCP;
+    config.httpClient = &fakeHttpClient;
+    config.workloadIdentityImpersonationPath = targetServiceAccount;
+    config.wifHost = GCP_TEST_CUSTOM_ENDPOINT_HOST;
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    const auto& [type, credential, issuer, subject] = attestationOpt.get();
+    assert_true(type == AttestationType::GCP);
+    assert_true(credential == std::string(idToken.data(), idToken.size()));
 }
 
 void test_unit_gcp_impersonation_chain_success(void **) {
@@ -1155,12 +1201,37 @@ void test_unit_wif_attestation_config(void**)
     snowflake_term(conn);
 }
 
+// SF_CON_WIF_HOST may be supplied as either a bare hostname or a full base
+// URL; both providers' accessors must accept either format.
+void test_unit_wif_host_normalization(void**) {
+  AttestationConfig config;
+
+  // Unset -> both accessors return empty.
+  assert_string_equal(config.getWifHostForAws().c_str(), "");
+  assert_string_equal(config.getWifHostForGcp().c_str(), "");
+
+  // Bare hostname -> AWS uses it unchanged; GCP builds a base URL from it.
+  config.wifHost = std::string("sts.us-gov-east-1.amazonaws.com");
+  assert_string_equal(config.getWifHostForAws().c_str(), "sts.us-gov-east-1.amazonaws.com");
+  assert_string_equal(config.getWifHostForGcp().c_str(), "https://sts.us-gov-east-1.amazonaws.com/v1");
+
+  // Full URL -> AWS extracts the bare host; GCP uses it unchanged.
+  config.wifHost = std::string("https://iamcredentials.privategoogleapis.com/v1");
+  assert_string_equal(config.getWifHostForAws().c_str(), "iamcredentials.privategoogleapis.com");
+  assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
+
+  // Full URL with a trailing slash -> GCP strips it.
+  config.wifHost = std::string("https://iamcredentials.privategoogleapis.com/v1/");
+  assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
+}
+
 int main() {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_wif_config),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_full_url_wif_host),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
@@ -1175,7 +1246,8 @@ int main() {
       cmocka_unit_test(test_unit_gcp_attestation_failed_request),
       cmocka_unit_test(test_unit_gcp_attestation_bad_request),
       cmocka_unit_test(test_unit_gcp_impersonation_single_account_success),
-      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_custom_wif_cofig),
+      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_custom_wif_config),
+      cmocka_unit_test(test_unit_gcp_impersonation_single_account_success_with_bare_host_wif_config),
       cmocka_unit_test(test_unit_gcp_impersonation_chain_success),
       cmocka_unit_test(test_unit_gcp_impersonation_whitespace_in_path),
       cmocka_unit_test(test_unit_gcp_impersonation_access_token_failed),
@@ -1195,6 +1267,7 @@ int main() {
       cmocka_unit_test(test_unit_oidc_attestation_success),
       cmocka_unit_test(test_unit_oidc_attestation_missing_token),
       cmocka_unit_test(test_unit_wif_attestation_config),
+      cmocka_unit_test(test_unit_wif_host_normalization),
   };
 
   return cmocka_run_group_tests(tests, nullptr, nullptr);
