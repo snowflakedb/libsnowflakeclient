@@ -27,9 +27,14 @@ public:
   static void encryptFileKey(FileMetadata *fileMetadata,
                              EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice);
   /**
-   * Encrypt file key with query stage master key using AES EBC mode
+   * Decrypt file key with query stage master key using AES EBC mode.
+   *
+   * @return
+   *    true on success; false if the encryption metadata is invalid (e.g.
+   *    a wrapped file key or query stage master key whose base64 form does
+   *    not fit the expected buffer.
    */
-  static void decryptFileKey(FileMetadata *fileMetadata,
+  static bool decryptFileKey(FileMetadata *fileMetadata,
                              EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice);
 
   /**
