@@ -91,6 +91,7 @@ SET(TESTS_CXX
         test_create_wif_attestation
         test_crl
         test_unit_token_cache_key
+        test_unit_ocsp_cache
 )
 
 if (LINUX)

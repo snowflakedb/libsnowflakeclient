@@ -217,7 +217,8 @@ public:
     {
       std::string iv = "ZxQiil366wJ+QqrhDKckBQ==";
       Snowflake::Client::Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
-        encryptionMetadata.iv.data);
+        encryptionMetadata.iv.data,
+        sizeof(fileMetadata->encryptionMetadata.iv.data));
       fileMetadata->encryptionMetadata.enKekEncoded = "rgANWKrHN14aKoHRxoIh9GtjXYScNdjseX4kmLZRnEc=";
       fileMetadata->srcFileSize = DOWNLOAD_DATA_SIZE_THRESHOLD + 1;
     }
@@ -287,7 +288,8 @@ public:
   {
     std::string iv = "ZxQiil366wJ+QqrhDKckBQ==";
     Snowflake::Client::Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
-      encryptionMetadata.iv.data);
+      encryptionMetadata.iv.data,
+      sizeof(fileMetadata->encryptionMetadata.iv.data));
     fileMetadata->encryptionMetadata.enKekEncoded = "rgANWKrHN14aKoHRxoIh9GtjXYScNdjseX4kmLZRnEc=";
     // return small files to test exception in threads.
     fileMetadata->srcFileSize = DOWNLOAD_DATA_SIZE_THRESHOLD - 1;
