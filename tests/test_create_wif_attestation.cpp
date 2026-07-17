@@ -1201,8 +1201,6 @@ void test_unit_wif_attestation_config(void**)
     snowflake_term(conn);
 }
 
-// SF_CON_WIF_HOST may be supplied as either a bare hostname or a full base
-// URL; both providers' accessors must accept either format.
 void test_unit_wif_host_normalization(void**) {
   AttestationConfig config;
 
