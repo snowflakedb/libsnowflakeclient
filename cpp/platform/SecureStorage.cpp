@@ -78,17 +78,23 @@ std::string normalizeUrl(const std::string& url)
     std::string::size_type schemePos = url.find("://");
     std::string result = (schemePos == std::string::npos) ? url : url.substr(schemePos + 3);
 
-    // Strip optional userinfo ("user:pass@").
+    // Drop the query string and fragment, which never appear in cache keys.
+    // This must happen before userinfo stripping so an '@' inside the query
+    // is never mistaken for a userinfo delimiter.
+    result = result.substr(0, result.find_first_of("?#"));
+
+    // Strip optional userinfo ("user:pass@") from the authority only. The
+    // authority ends at the first '/', so an '@' is a userinfo delimiter only
+    // when it precedes that first slash; an '@' inside the path is preserved.
+    std::string::size_type authorityEnd = result.find('/');
     std::string::size_type atPos = result.find('@');
-    if (atPos != std::string::npos)
+    if (atPos != std::string::npos &&
+        (authorityEnd == std::string::npos || atPos < authorityEnd))
     {
       result = result.substr(atPos + 1);
     }
 
-    // Drop the query string and fragment, which never appear in cache keys.
-    result = result.substr(0, result.find_first_of("?#"));
-
-    // Trim a root-only trailing slash so bare-host URLs have no slash suffix.
+    // Trim trailing slashes so bare-host URLs have no slash suffix.
     while (!result.empty() && result.back() == '/')
     {
       result.pop_back();
@@ -141,6 +147,15 @@ boost::optional<std::string> SecureStorage::convertTarget(const SecureStorageKey
     if (username.empty())
     {
       CXX_LOG_ERROR("Cannot build secure storage key: username is empty (host='%s').", key.host.c_str());
+      return {};
+    }
+    // Defense-in-depth: idp is always populated in practice (the IdP URL for
+    // OAuth, the server URL for non-OAuth flows). An empty idp would collapse
+    // the cross-IdP dimension of the key and reintroduce the collision class
+    // this key format guards against, so reject it rather than hash it.
+    if (idp.empty())
+    {
+      CXX_LOG_ERROR("Cannot build secure storage key: idp URL is empty (host='%s').", key.host.c_str());
       return {};
     }
 

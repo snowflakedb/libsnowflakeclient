@@ -86,6 +86,21 @@ void test_normalize_url(void **)
   assert_string_equal(
       normalizeUrl("https://user:pass@host.example.com/p?a=b#frag").c_str(),
       "HOST.EXAMPLE.COM/P");
+
+  // Userinfo is stripped from the authority only.
+  assert_string_equal(
+      normalizeUrl("https://user:pass@host.example.com/path").c_str(),
+      "HOST.EXAMPLE.COM/PATH");
+
+  // An '@' after the authority is part of the path and must survive.
+  assert_string_equal(
+      normalizeUrl("https://host.example.com/oauth/@handle/token").c_str(),
+      "HOST.EXAMPLE.COM/OAUTH/@HANDLE/TOKEN");
+
+  // An '@' inside a dropped query string is never mistaken for userinfo.
+  assert_string_equal(
+      normalizeUrl("https://host.example.com/path?email=a@b.com").c_str(),
+      "HOST.EXAMPLE.COM/PATH");
 }
 
 void test_normalize_identifier(void **)
@@ -195,6 +210,16 @@ void test_validation_rejects_empty_user(void **)
   assert_false(SecureStorage::convertTarget(key).is_initialized());
 }
 
+void test_validation_rejects_empty_idp(void **)
+{
+  SecureStorageKey key;
+  key.type = SecureStorageKeyType::ID_TOKEN;
+  key.idp = "";
+  key.snowflake = "host.example.com";
+  key.user = "user";
+  assert_false(SecureStorage::convertTarget(key).is_initialized());
+}
+
 int main(void)
 {
   const struct CMUnitTest tests[] = {
@@ -211,6 +236,7 @@ int main(void)
       cmocka_unit_test(test_backward_compatible_ctor_sets_idp_snowflake),
       cmocka_unit_test(test_validation_rejects_empty_snowflake),
       cmocka_unit_test(test_validation_rejects_empty_user),
+      cmocka_unit_test(test_validation_rejects_empty_idp),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

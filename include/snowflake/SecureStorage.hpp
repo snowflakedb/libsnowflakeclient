@@ -67,7 +67,7 @@ namespace Client {
     // continue to produce a valid v2 key.
     SecureStorageKey(std::string host_, std::string user_, SecureStorageKeyType type_)
       : host(host_), user(std::move(user_)), type(type_),
-        idp(host_), snowflake(host_), role() {}
+        idp(host_), snowflake(std::move(host_)), role() {}
 
     // Full v2 constructor.
     SecureStorageKey(std::string host_, std::string user_, SecureStorageKeyType type_,
@@ -77,10 +77,10 @@ namespace Client {
   };
 
   /**
-   * Normalizes a URL for use as a cache key component: strips the scheme and any
-   * userinfo prefix, drops the query string and fragment, trims a root-only
-   * trailing slash, and uppercases the remainder (authority + optional :port +
-   * optional /path).
+   * Normalizes a URL for use as a cache key component: strips the scheme, drops
+   * the query string and fragment, strips any userinfo prefix from the authority
+   * (an '@' inside the path is preserved), trims trailing slashes, and uppercases
+   * the remainder (authority + optional :port + optional /path).
    */
   std::string normalizeUrl(const std::string& url);
 
