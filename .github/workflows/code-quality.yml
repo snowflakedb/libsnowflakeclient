@@ -22,14 +22,14 @@ jobs:
       matrix:
         build_type: [ 'Release' ]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
           architecture: 'x64'
       - name: Restore cached deps
         id: cache-restore-deps
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: dep-cache
           key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
@@ -42,7 +42,7 @@ jobs:
         run: ci/build_linux.sh
       - name: Restore cached warnings
         id: cache-restore-warnings
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: warnings.json
           key: ${{ github.event.pull_request.base.sha }}-compile-warnings
@@ -57,23 +57,23 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: ci/scripts/warning_report.sh
       - name: Upload build log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build log
           path: build.log
       - name: Upload warning report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: report
           path: report.md
       - name: Upload warnings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: warnings
           path: warnings.json
       - name: Cache warnings
         id: cache-save-warnings
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: warnings.json
           key: ${{ github.sha }}-compile-warnings
