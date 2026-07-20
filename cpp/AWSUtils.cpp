@@ -167,10 +167,12 @@ namespace Snowflake {
             const Aws::Auth::AWSCredentials &creds,
             const std::string &region,
             const std::string &audience,
-            const std::string &signingAlgorithm) override {
+            const std::string &signingAlgorithm,
+            const std::string &configuredHost
+        ) override {
           auto awsSdk = initAwsSdk();
 
-          const std::string host = "sts." + region + "." + getDomainSuffixForRegionalUrl(region);
+          const std::string host = configuredHost.empty() ? "sts." + region + "." + getDomainSuffixForRegionalUrl(region) : configuredHost;
           const std::string url = "https://" + host + "/";
 
           // Query-protocol form body. URL-encode user-supplied parameters.
