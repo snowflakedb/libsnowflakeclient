@@ -1522,7 +1522,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 }
                 const char* role = sf->role ? sf->role : "";
                 if (authtype == AUTH_EXTERNALBROWSER) {
-                    sf->sso_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, role);
+                    sf->sso_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, NULL, sf->host, NULL);
                 }
                 else {
                     char* oauth_idp = sf_oauth_idp_url(sf);
@@ -1656,7 +1656,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             if (sf->token_cache) {
                 const char* role = sf->role ? sf->role : "";
                 if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
-                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, role, auth_token);
+                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, NULL, sf->host, NULL, auth_token);
                 }
                 else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
                     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);

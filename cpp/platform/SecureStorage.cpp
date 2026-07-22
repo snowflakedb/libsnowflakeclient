@@ -50,23 +50,42 @@ namespace {
     }
   }
 
-  // Serializes the (already-normalized) key components into the canonical JSON
-  // document the cache key is hashed from: compact, no whitespace, keys in
-  // lexicographic order (idp, role, snowflake, token_type, username).
-  std::string canonicalJson(const std::string& idp,
-                            const std::string& role,
-                            const std::string& snowflake,
-                            const std::string& tokenType,
-                            const std::string& username)
+  // Serializes normalized OAuth key components into compact canonical JSON with
+  // lexicographically sorted keys: idp, role, snowflake, username (4 fields).
+  // token_type is NOT included; it belongs in the key prefix, not keyData.
+  std::string canonicalJsonOAuth(const std::string& idp,
+                                 const std::string& role,
+                                 const std::string& snowflake,
+                                 const std::string& username)
   {
     std::string json = "{";
     json += "\"idp\":\"";        appendJsonEscaped(json, idp);        json += "\",";
     json += "\"role\":\"";       appendJsonEscaped(json, role);       json += "\",";
     json += "\"snowflake\":\"";  appendJsonEscaped(json, snowflake);  json += "\",";
-    json += "\"token_type\":\""; appendJsonEscaped(json, tokenType);  json += "\",";
     json += "\"username\":\"";   appendJsonEscaped(json, username);   json += "\"";
     json += "}";
     return json;
+  }
+
+  // Serializes normalized MFA / ID-token key components into compact canonical
+  // JSON with sorted keys: snowflake, username (2 fields).
+  // idp and role are absent — they are not embedded in MFA/ID-token flows.
+  std::string canonicalJsonMfaId(const std::string& snowflake,
+                                  const std::string& username)
+  {
+    std::string json = "{";
+    json += "\"snowflake\":\"";  appendJsonEscaped(json, snowflake);  json += "\",";
+    json += "\"username\":\"";   appendJsonEscaped(json, username);   json += "\"";
+    json += "}";
+    return json;
+  }
+
+  // Returns true for OAuth flow types that require idp + role in keyData.
+  bool isOAuthFlow(SecureStorageKeyType type)
+  {
+    return type == SecureStorageKeyType::OAUTH_ACCESS_TOKEN  ||
+           type == SecureStorageKeyType::OAUTH_REFRESH_TOKEN ||
+           type == SecureStorageKeyType::DPOP_BUNDLED_ACCESS_TOKEN;
   }
 
 }
@@ -133,9 +152,7 @@ std::string normalizeIdentifier(const std::string& identifier)
 
 boost::optional<std::string> SecureStorage::convertTarget(const SecureStorageKey& key)
   {
-    const std::string idp = normalizeUrl(key.idp);
     const std::string snowflake = normalizeUrl(key.snowflake);
-    const std::string role = normalizeIdentifier(key.role);
     const std::string username = normalizeIdentifier(key.user);
     const std::string tokenType = keyTypeToString(key.type);
 
@@ -149,17 +166,22 @@ boost::optional<std::string> SecureStorage::convertTarget(const SecureStorageKey
       CXX_LOG_ERROR("Cannot build secure storage key: username is empty (host='%s').", key.host.c_str());
       return {};
     }
-    // Defense-in-depth: idp is always populated in practice (the IdP URL for
-    // OAuth, the server URL for non-OAuth flows). An empty idp would collapse
-    // the cross-IdP dimension of the key and reintroduce the collision class
-    // this key format guards against, so reject it rather than hash it.
-    if (idp.empty())
+
+    std::string json;
+    if (isOAuthFlow(key.type))
     {
-      CXX_LOG_ERROR("Cannot build secure storage key: idp URL is empty (host='%s').", key.host.c_str());
-      return {};
+      // OAuth flows: 4-field keyData — idp, role, snowflake, username.
+      const std::string idp = normalizeUrl(key.idp);
+      const std::string role = normalizeIdentifier(key.role);
+      json = canonicalJsonOAuth(idp, role, snowflake, username);
+    }
+    else
+    {
+      // MFA_TOKEN, ID_TOKEN: 2-field keyData — snowflake, username only.
+      // idp and role are not part of these authentication flows.
+      json = canonicalJsonMfaId(snowflake, username);
     }
 
-    const std::string json = canonicalJson(idp, role, snowflake, tokenType, username);
     auto sha = sha256(json);
     if (!sha)
     {
@@ -167,7 +189,7 @@ boost::optional<std::string> SecureStorage::convertTarget(const SecureStorageKey
       return {};
     }
 
-    return std::string("SnowflakeTokenCache.v2.") + sha.get();
+    return std::string("SnowflakeTokenCache.v2.") + tokenType + "." + sha.get();
   }
 
 }

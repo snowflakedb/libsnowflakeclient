@@ -44,13 +44,19 @@ namespace Client {
   /**
    * Identifies a cached token across drivers.
    *
-   * The cache key (see SecureStorage::convertTarget) is derived from the five
-   * v2 dimensions below. `host` is kept for logging and backward-compatible
-   * construction only; it is not part of the v2 key. `idp`, `snowflake`, `user`
-   * and `role` are stored raw here and normalized when the key is built.
+   * The cache key (see SecureStorage::convertTarget) is derived from the fields
+   * below according to the flow type. `host` is kept for logging and
+   * backward-compatible construction only; it is not part of the v2 key.
+   * `idp`, `snowflake`, `user` and `role` are stored raw and normalized when
+   * the key is built.
    *
-   * For non-OAuth flows (MFA, external-browser ID token) set both `idp` and
-   * `snowflake` to the Snowflake server URL; `role` is empty for MFA.
+   * OAuth flows (OAUTH_ACCESS_TOKEN, OAUTH_REFRESH_TOKEN,
+   * DPOP_BUNDLED_ACCESS_TOKEN): all four dimensions — `idp`, `role`,
+   * `snowflake`, `username` — are included in keyData.
+   *
+   * MFA and external-browser ID-token flows (MFA_TOKEN, ID_TOKEN): only
+   * `snowflake` and `username` are included. Set `idp` and `role` to empty
+   * strings; they are ignored by convertTarget for these flow types.
    */
   struct SecureStorageKey {
     std::string host;       // logging / backward-compat only, not part of the v2 key
@@ -102,13 +108,26 @@ namespace Client {
     /**
      * Builds the versioned, uniformly-hashed cache key for `key`:
      *
-     *   SnowflakeTokenCache.v2.<lowercase sha256 hex of canonical JSON>
+     *   SnowflakeTokenCache.v2.<TOKEN_TYPE>.<lowercase sha256 hex of canonical JSON>
      *
-     * The canonical JSON is a compact object with lexicographically sorted keys
-     * (idp, role, snowflake, token_type, username) whose values are normalized
-     * (see normalizeUrl / normalizeIdentifier). The returned string is used
-     * verbatim by every backend (macOS Keychain, Windows Credential Manager and
-     * the Linux JSON file); hashing happens exactly once, here.
+     * The token type (e.g. MFA_TOKEN, OAUTH_ACCESS_TOKEN) is the third
+     * dot-separated segment, allowing keystore tooling to identify token
+     * classes without decoding the opaque hash.
+     *
+     * The canonical JSON (`keyData`) is compact, keys sorted lexicographically,
+     * and is flow-dependent:
+     *
+     *   OAuth flows (OAUTH_ACCESS_TOKEN, OAUTH_REFRESH_TOKEN,
+     *   DPOP_BUNDLED_ACCESS_TOKEN):
+     *     {"idp":"…","role":"…","snowflake":"…","username":"…"}   // 4 fields
+     *
+     *   MFA and ID-token flows (MFA_TOKEN, ID_TOKEN):
+     *     {"snowflake":"…","username":"…"}                        // 2 fields
+     *
+     * Values are normalized (see normalizeUrl / normalizeIdentifier) before
+     * serialization. The returned string is used verbatim by every backend
+     * (macOS Keychain, Windows Credential Manager, Linux JSON file); hashing
+     * happens exactly once, here.
      *
      * Returns boost::none if the required `snowflake` or `user` components are
      * empty, or if hashing fails.

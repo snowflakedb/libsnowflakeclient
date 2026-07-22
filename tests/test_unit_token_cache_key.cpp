@@ -18,49 +18,74 @@
 
 using namespace Snowflake::Client;
 
-// Locked golden key — changing this hash is a breaking change for cross-driver token sharing.
-static const char* GOLDEN_KEY =
-    "SnowflakeTokenCache.v2.75ff2ad65a68afb402f125f62894697673c5ef3d863aba466d16b7a81053d1f4";
+// Vector A — OAuth (DPOP_BUNDLED_ACCESS_TOKEN) golden key.
+// Locked: changing this hash is a breaking change for cross-driver token sharing.
+static const char* GOLDEN_KEY_OAUTH =
+    "SnowflakeTokenCache.v2.DPOP_BUNDLED_ACCESS_TOKEN.be782aa7c9abf8698adc9e6de61b954ccec7d9202899b44c2eb4e1dfa4313d5f";
 
-static SecureStorageKey golden_key()
+// Vector B — MFA golden key.
+// Locked: changing this hash is a breaking change for cross-driver token sharing.
+static const char* GOLDEN_KEY_MFA =
+    "SnowflakeTokenCache.v2.MFA_TOKEN.a508fa2858a6e22e9fdbc90b4149a3ff666d1acbb286c85ff179499ac92d75c8";
+
+// Pre-normalized Vector A inputs (no scheme prefix — normalizeUrl is a no-op on
+// already-stripped, already-uppercase strings). The quoted segments use mixed
+// case to exercise the quote-preservation branch of normalizeIdentifier.
+static SecureStorageKey golden_key_oauth()
 {
   SecureStorageKey key;
   key.type = SecureStorageKeyType::DPOP_BUNDLED_ACCESS_TOKEN;
-  key.idp = "LOGIN.MICROSOFTONLINE.COM:443/TENANT-ID/OAUTH2/V2.0";
+  key.idp       = "LOGIN.MICROSOFTONLINE.COM:443/TENANT-ID/OAUTH2/V2.0";
   key.snowflake = "MYORG-MYACCOUNT.PRIVATELINK.SNOWFLAKECOMPUTING.COM";
-  key.user = "\"FIRST LAST\"@LONG-CORPORATE-DOMAIN.EXAMPLE.COM";
-  key.role = "\"ANALYST ROLE WITH SPACES\":NORTH_AMERICA:PROD:READONLY";
+  key.user      = "\"First Last\"@LONG-CORPORATE-DOMAIN.EXAMPLE.COM";
+  key.role      = "\"Analyst Role With Spaces\":NORTH_AMERICA:PROD:READONLY";
   return key;
 }
 
 void test_golden_hash(void **)
 {
-  auto result = SecureStorage::convertTarget(golden_key());
+  auto result = SecureStorage::convertTarget(golden_key_oauth());
   assert_true(result.is_initialized());
-  assert_string_equal(result.get().c_str(), GOLDEN_KEY);
+  assert_string_equal(result.get().c_str(), GOLDEN_KEY_OAUTH);
 }
 
 void test_golden_hash_from_raw_inputs(void **)
 {
   // Same key, but supplied with a scheme and mixed case; normalization must
-  // reproduce the exact golden hash.
+  // reproduce the exact golden hash. Quoted segments use mixed case to verify
+  // that normalizeIdentifier preserves them verbatim.
   SecureStorageKey key;
   key.type = SecureStorageKeyType::DPOP_BUNDLED_ACCESS_TOKEN;
-  key.idp = "https://login.microsoftonline.com:443/tenant-id/oauth2/v2.0";
+  key.idp       = "https://login.microsoftonline.com:443/tenant-id/oauth2/v2.0";
   key.snowflake = "https://myorg-myaccount.privatelink.snowflakecomputing.com";
-  key.user = "\"FIRST LAST\"@long-corporate-domain.example.com";
-  key.role = "\"ANALYST ROLE WITH SPACES\":north_america:prod:readonly";
+  key.user      = "\"First Last\"@long-corporate-domain.example.com";
+  key.role      = "\"Analyst Role With Spaces\":north_america:prod:readonly";
 
   auto result = SecureStorage::convertTarget(key);
   assert_true(result.is_initialized());
-  assert_string_equal(result.get().c_str(), GOLDEN_KEY);
+  assert_string_equal(result.get().c_str(), GOLDEN_KEY_OAUTH);
+}
+
+// Vector B — MFA golden hash (2-field keyData: snowflake + username only).
+void test_golden_hash_mfa(void **)
+{
+  SecureStorageKey key;
+  key.type      = SecureStorageKeyType::MFA_TOKEN;
+  key.snowflake = "https://myorg-myaccount.privatelink.snowflakecomputing.com";
+  key.user      = "\"First Last\"@long-corporate-domain.example.com";
+  // idp and role are absent for MFA flows — not passed to convertTarget.
+
+  auto result = SecureStorage::convertTarget(key);
+  assert_true(result.is_initialized());
+  assert_string_equal(result.get().c_str(), GOLDEN_KEY_MFA);
 }
 
 void test_key_has_versioned_prefix(void **)
 {
-  auto result = SecureStorage::convertTarget(golden_key());
+  auto result = SecureStorage::convertTarget(golden_key_oauth());
   assert_true(result.is_initialized());
-  assert_true(result.get().rfind("SnowflakeTokenCache.v2.", 0) == 0);
+  // Key format: SnowflakeTokenCache.v2.<TOKEN_TYPE>.<hash>
+  assert_true(result.get().rfind("SnowflakeTokenCache.v2.DPOP_BUNDLED_ACCESS_TOKEN.", 0) == 0);
 }
 
 void test_normalize_url(void **)
@@ -107,7 +132,7 @@ void test_normalize_identifier(void **)
 {
   assert_string_equal(normalizeIdentifier("user@domain.com").c_str(), "USER@DOMAIN.COM");
 
-  // Double-quoted segment preserved verbatim; the rest uppercased.
+  // Double-quoted segment preserved verbatim including lowercase; unquoted part uppercased.
   assert_string_equal(
       normalizeIdentifier("\"First Last\"@domain.com").c_str(),
       "\"First Last\"@DOMAIN.COM");
@@ -170,6 +195,17 @@ void test_different_token_types_differ(void **)
   assert_true(a != b);
 }
 
+void test_mfa_oauth_same_host_user_differ(void **)
+{
+  // MFA and OAuth keys for the same host/user must differ: they differ by
+  // the token type in the prefix AND by field set (2 vs 4 fields).
+  std::string mfa = keyString("IDP.EXAMPLE.COM", "ACCOUNT.SNOWFLAKECOMPUTING.COM", "USER", "",
+                              SecureStorageKeyType::MFA_TOKEN);
+  std::string oauth = keyString("IDP.EXAMPLE.COM", "ACCOUNT.SNOWFLAKECOMPUTING.COM", "USER", "",
+                                SecureStorageKeyType::OAUTH_ACCESS_TOKEN);
+  assert_true(mfa != oauth);
+}
+
 void test_mfa_empty_role_is_stable(void **)
 {
   std::string a = keyString("ACCOUNT.SNOWFLAKECOMPUTING.COM", "ACCOUNT.SNOWFLAKECOMPUTING.COM",
@@ -182,7 +218,9 @@ void test_mfa_empty_role_is_stable(void **)
 
 void test_backward_compatible_ctor_sets_idp_snowflake(void **)
 {
-  // The (host, user, type) constructor must map to idp == snowflake == host.
+  // The (host, user, type) constructor maps to idp == snowflake == host.
+  // For MFA flows idp is excluded from the key, so both constructors must
+  // produce the same result.
   SecureStorageKey compat("host.example.com", "user", SecureStorageKeyType::MFA_TOKEN);
   std::string viaCompat = SecureStorage::convertTarget(compat).get();
   std::string explicitKey = keyString("host.example.com", "host.example.com", "user", "",
@@ -210,14 +248,16 @@ void test_validation_rejects_empty_user(void **)
   assert_false(SecureStorage::convertTarget(key).is_initialized());
 }
 
-void test_validation_rejects_empty_idp(void **)
+void test_mfa_id_does_not_require_idp(void **)
 {
+  // For MFA and ID-token flows, idp is excluded from keyData.
+  // An empty idp must not cause convertTarget to fail.
   SecureStorageKey key;
-  key.type = SecureStorageKeyType::ID_TOKEN;
-  key.idp = "";
+  key.type      = SecureStorageKeyType::ID_TOKEN;
+  key.idp       = "";   // deliberately empty — not used for this flow
   key.snowflake = "host.example.com";
-  key.user = "user";
-  assert_false(SecureStorage::convertTarget(key).is_initialized());
+  key.user      = "user";
+  assert_true(SecureStorage::convertTarget(key).is_initialized());
 }
 
 int main(void)
@@ -225,6 +265,7 @@ int main(void)
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_golden_hash),
       cmocka_unit_test(test_golden_hash_from_raw_inputs),
+      cmocka_unit_test(test_golden_hash_mfa),
       cmocka_unit_test(test_key_has_versioned_prefix),
       cmocka_unit_test(test_normalize_url),
       cmocka_unit_test(test_normalize_identifier),
@@ -232,11 +273,12 @@ int main(void)
       cmocka_unit_test(test_same_idp_different_snowflake_differ),
       cmocka_unit_test(test_different_roles_differ),
       cmocka_unit_test(test_different_token_types_differ),
+      cmocka_unit_test(test_mfa_oauth_same_host_user_differ),
       cmocka_unit_test(test_mfa_empty_role_is_stable),
       cmocka_unit_test(test_backward_compatible_ctor_sets_idp_snowflake),
       cmocka_unit_test(test_validation_rejects_empty_snowflake),
       cmocka_unit_test(test_validation_rejects_empty_user),
-      cmocka_unit_test(test_validation_rejects_empty_idp),
+      cmocka_unit_test(test_mfa_id_does_not_require_idp),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
