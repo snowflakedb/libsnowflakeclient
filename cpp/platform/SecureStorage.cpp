@@ -121,31 +121,25 @@ std::string normalizeUrl(const std::string& url)
 
     for (char& c : result)
     {
-      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
     return result;
   }
 
 std::string normalizeIdentifier(const std::string& identifier)
   {
+    // Quoted identifiers carry case-sensitive semantics in SQL — return them
+    // verbatim, unchanged. Unquoted identifiers are case-insensitive, so
+    // lowercasing produces a stable canonical form.
+    if (identifier.find('"') != std::string::npos)
+    {
+      return identifier;
+    }
     std::string result;
     result.reserve(identifier.size());
-    bool inQuotes = false;
     for (char c : identifier)
     {
-      if (c == '"')
-      {
-        inQuotes = !inQuotes;
-        result += c;
-      }
-      else if (inQuotes)
-      {
-        result += c;
-      }
-      else
-      {
-        result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-      }
+      result += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
     return result;
   }

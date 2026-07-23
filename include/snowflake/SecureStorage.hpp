@@ -21,23 +21,23 @@ namespace Client {
     Unsupported
   };
 
-  // Returns the canonical, uppercase token-type string used in the cache key.
-  // These strings must match across all Snowflake drivers so that token cache
-  // entries are interoperable.
+  // Returns the canonical PascalCase token-type string used in the cache key
+  // prefix (e.g. "MfaToken", "OauthAccessToken"). These strings must match
+  // across all Snowflake drivers so that token cache entries are interoperable.
   inline std::string keyTypeToString(SecureStorageKeyType type) {
     switch (type) {
       case SecureStorageKeyType::MFA_TOKEN:
-        return "MFA_TOKEN";
+        return "MfaToken";
       case SecureStorageKeyType::ID_TOKEN:
-        return "ID_TOKEN";
+        return "IdToken";
       case SecureStorageKeyType::OAUTH_REFRESH_TOKEN:
-        return "OAUTH_REFRESH_TOKEN";
+        return "OauthRefreshToken";
       case SecureStorageKeyType::OAUTH_ACCESS_TOKEN:
-        return "OAUTH_ACCESS_TOKEN";
+        return "OauthAccessToken";
       case SecureStorageKeyType::DPOP_BUNDLED_ACCESS_TOKEN:
-        return "DPOP_BUNDLED_ACCESS_TOKEN";
+        return "DpopBundledAccessToken";
       default:
-        return "UNKNOWN";
+        return "Unknown";
     }
   }
 
@@ -85,15 +85,17 @@ namespace Client {
   /**
    * Normalizes a URL for use as a cache key component: strips the scheme, drops
    * the query string and fragment, strips any userinfo prefix from the authority
-   * (an '@' inside the path is preserved), trims trailing slashes, and uppercases
+   * (an '@' inside the path is preserved), trims trailing slashes, and lowercases
    * the remainder (authority + optional :port + optional /path).
    */
   std::string normalizeUrl(const std::string& url);
 
   /**
    * Normalizes a Snowflake identifier for use as a cache key component:
-   * uppercases every character outside double-quoted segments while preserving
-   * the contents (and surrounding quotes) of double-quoted segments verbatim.
+   * if the value contains at least one double-quote character, it is returned
+   * verbatim and unchanged (quoted identifiers are case-sensitive in SQL).
+   * Otherwise the entire value is lowercased (unquoted identifiers are
+   * case-insensitive in Snowflake).
    */
   std::string normalizeIdentifier(const std::string& identifier);
 
@@ -108,11 +110,11 @@ namespace Client {
     /**
      * Builds the versioned, uniformly-hashed cache key for `key`:
      *
-     *   SnowflakeTokenCache.v2.<TOKEN_TYPE>.<lowercase sha256 hex of canonical JSON>
+     *   SnowflakeTokenCache.v2.<TokenType>.<lowercase sha256 hex of canonical JSON>
      *
-     * The token type (e.g. MFA_TOKEN, OAUTH_ACCESS_TOKEN) is the third
-     * dot-separated segment, allowing keystore tooling to identify token
-     * classes without decoding the opaque hash.
+     * The token type (e.g. MfaToken, OauthAccessToken) is the third
+     * dot-separated segment in PascalCase, allowing keystore tooling to
+     * identify token classes without decoding the opaque hash.
      *
      * The canonical JSON (`keyData`) is compact, keys sorted lexicographically,
      * and is flow-dependent:
