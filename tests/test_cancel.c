@@ -396,16 +396,18 @@ void test_array_binding() {
   SF_STATUS status;
   int i;
 
-  const int num_rows = 50;
-  const int a_width = 3;  /* max "51" = 2 chars + null */
-  const int b_width = 5;  /* max "51.3" = 4 chars + null */
+  enum {
+    NUM_ROWS = 50,
+    A_WIDTH = 3,  /* max "51" = 2 chars + null */
+    B_WIDTH = 5   /* max "51.3" = 4 chars + null */
+  };
 
-  char bind_data_a[num_rows][a_width];
-  char bind_data_b[num_rows][b_width];
+  char bind_data_a[NUM_ROWS][A_WIDTH];
+  char bind_data_b[NUM_ROWS][B_WIDTH];
 
-  for (i = 0; i < num_rows; i++) {
-    snprintf(bind_data_a[i], a_width, "%d", i + 2);
-    snprintf(bind_data_b[i], b_width, "%.1f", (double)(i + 2) + 0.3);
+  for (i = 0; i < NUM_ROWS; i++) {
+    snprintf(bind_data_a[i], A_WIDTH, "%d", i + 2);
+    snprintf(bind_data_b[i], B_WIDTH, "%.1f", (double)(i + 2) + 0.3);
   }
 
   SF_BIND_INPUT input_a;
@@ -419,11 +421,11 @@ void test_array_binding() {
   input_b.idx = 1;
   input_b.c_type = SF_C_TYPE_STRING;
   input_b.value = bind_data_b;
-  input_b.len = b_width;
+  input_b.len = B_WIDTH;
   input_a.idx = 2;
   input_a.c_type = SF_C_TYPE_STRING;
   input_a.value = bind_data_a;
-  input_a.len = a_width;
+  input_a.len = A_WIDTH;
 
   input_array[0] = input_b;
   input_array[1] = input_a;
@@ -451,7 +453,7 @@ void test_array_binding() {
 
   sprintf(query,
     "insert into foo1%s(a, b) select seq4() + 2, null"
-    " from table(generator(rowcount => %d))", unique_id, num_rows);
+    " from table(generator(rowcount => %d))", unique_id, NUM_ROWS);
   status = snowflake_query(
     sfstmt,
     query,
@@ -459,7 +461,7 @@ void test_array_binding() {
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  int64 paramset_size = num_rows;
+  int64 paramset_size = NUM_ROWS;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
   sprintf(query, "update foo1%s set b = ? where a = ?", unique_id);
   status = snowflake_prepare(
@@ -487,9 +489,9 @@ void test_array_binding() {
   sprintf(query, "select * from foo1%s order by a", unique_id);
   status = snowflake_query(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
-  assert_int_equal(snowflake_num_rows(sfstmt), num_rows);
+  assert_int_equal(snowflake_num_rows(sfstmt), NUM_ROWS);
 
-  for (i = 0; i < num_rows; i++)
+  for (i = 0; i < NUM_ROWS; i++)
   {
     status = snowflake_fetch(sfstmt);
     if (status != SF_STATUS_SUCCESS) {
@@ -510,7 +512,7 @@ void test_array_binding() {
      * 100ms delay before cancel, the cancel is guaranteed to arrive before
      * the last row is processed, so it must remain NULL (empty string).
      */
-    if ((isCancelSucceed) && (i == num_rows - 1))
+    if ((isCancelSucceed) && (i == NUM_ROWS - 1))
     {
       assert_string_equal(result, "");
     }
@@ -520,6 +522,7 @@ void test_array_binding() {
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+
 }
 
 int main(void) {
