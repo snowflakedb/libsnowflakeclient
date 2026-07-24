@@ -402,14 +402,20 @@ void test_bind_params() {
 
 void test_array_binding() {
   SF_STATUS status;
-  /* a values: "2", "3", ..., "101" (up to 4 chars including null terminator) */
-  /* b values: "2.3", "3.3", ..., "101.3" (up to 8 chars including null terminator) */
-  char bind_data_a[ROW_COUNT][4];
-  char bind_data_b[ROW_COUNT][8];
-  for (int i = 0; i < ROW_COUNT; i++)
-  {
-    snprintf(bind_data_a[i], sizeof(bind_data_a[i]), "%d", i + 2);
-    snprintf(bind_data_b[i], sizeof(bind_data_b[i]), "%d.3", i + 2);
+  int i;
+
+  enum {
+    NUM_ROWS = 50,
+    A_WIDTH = 3,  /* max "51" = 2 chars + null */
+    B_WIDTH = 5   /* max "51.3" = 4 chars + null */
+  };
+
+  char bind_data_a[NUM_ROWS][A_WIDTH];
+  char bind_data_b[NUM_ROWS][B_WIDTH];
+
+  for (i = 0; i < NUM_ROWS; i++) {
+    snprintf(bind_data_a[i], A_WIDTH, "%d", i + 2);
+    snprintf(bind_data_b[i], B_WIDTH, "%.1f", (double)(i + 2) + 0.3);
   }
 
   SF_BIND_INPUT input_a;
@@ -423,11 +429,11 @@ void test_array_binding() {
   input_b.idx = 1;
   input_b.c_type = SF_C_TYPE_STRING;
   input_b.value = bind_data_b;
-  input_b.len = sizeof(bind_data_b[0]);
+  input_b.len = B_WIDTH;
   input_a.idx = 2;
   input_a.c_type = SF_C_TYPE_STRING;
   input_a.value = bind_data_a;
-  input_a.len = sizeof(bind_data_a[0]);
+  input_a.len = A_WIDTH;
 
   input_array[0] = input_b;
   input_array[1] = input_a;
@@ -453,11 +459,17 @@ void test_array_binding() {
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  sprintf(query, "insert into foo1%s select seq4() + 2, NULL from table(generator(rowcount => %d))", unique_id, ROW_COUNT);
-  status = snowflake_query(sfstmt, query, 0);
+  sprintf(query,
+    "insert into foo1%s(a, b) select seq4() + 2, null"
+    " from table(generator(rowcount => %d))", unique_id, NUM_ROWS);
+  status = snowflake_query(
+    sfstmt,
+    query,
+    0
+  );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  int64 paramset_size = ROW_COUNT;
+  int64 paramset_size = NUM_ROWS;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
   sprintf(query, "update foo1%s set b = ? where a = ?", unique_id);
   status = snowflake_prepare(
@@ -486,9 +498,9 @@ void test_array_binding() {
   sprintf(query, "select * from foo1%s order by a", unique_id);
   status = snowflake_query(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
-  assert_int_equal(snowflake_num_rows(sfstmt), ROW_COUNT);
+  assert_int_equal(snowflake_num_rows(sfstmt), NUM_ROWS);
 
-  for (int i = 0; i < ROW_COUNT; i++)
+  for (i = 0; i < NUM_ROWS; i++)
   {
     status = snowflake_fetch(sfstmt);
     if (status != SF_STATUS_SUCCESS) {
@@ -504,14 +516,12 @@ void test_array_binding() {
     snowflake_column_as_str(sfstmt, 2, &result, &value_len, &max_value_size);
     /*
      * Check the last row value only when cancel succeeded.
-     * The query doesn't support array binding so the driver fallback with batch execution.
-     * When cancel failed not sure whether the query is being executed then canceled,
-     * or the cancel is before executing the query.
-     * When cancel succeeded which row being canceled. The only thing for sure is there is
-     * something being canceled so the last row must not updated.
-     * With 100 rows the batch is long enough that cancel should take effect mid-batch.
+     * The query doesn't support array binding so the driver falls back to
+     * batch execution (one statement per row). With NUM_ROWS rows and a
+     * 100ms delay before cancel, the cancel is guaranteed to arrive before
+     * the last row is processed, so it must remain NULL (empty string).
      */
-    if ((isCancelSucceed) && (i == ROW_COUNT - 1))
+    if ((isCancelSucceed) && (i == NUM_ROWS - 1))
     {
       assert_string_equal(result, "");
     }
@@ -521,6 +531,7 @@ void test_array_binding() {
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+
 }
 
 int main(void) {
