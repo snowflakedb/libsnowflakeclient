@@ -1,0 +1,136 @@
+::
+:: Build OpenSSL
+:: GitHub repo: https://github.com/openssl/openssl.git
+
+@echo off
+set OPENSSL_FIPS_SRC_VERSION=3.1.2
+set OPENSSL_FIPS_BUILD_VERSION=1
+set OPENSSL_FIPS_VERSION=%OPENSSL_FIPS_SRC_VERSION%.%OPENSSL_FIPS_BUILD_VERSION%
+call %*
+goto :EOF
+
+:get_version
+    set version=%OPENSSL_FIPS_VERSION%
+    goto :EOF
+
+:build
+setlocal
+set OPENSSL_FIPS_DIR=openssl_fips
+
+if defined GITHUB_ACTIONS (
+    set PERL_EXE=C:\Strawberry\perl\bin\perl
+) else (
+    set PERL_EXE=perl
+)
+echo === PERL_EXE: %PERL_EXE%
+
+set platform=%1
+set build_type=%2
+set vs_version=%3
+set dynamic_runtime=%4
+
+set scriptdir=%~dp0
+set "path=%scriptdir%..\ci\tools;%path%"
+
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+set currdir=%cd%
+
+if /I "%platform%"=="x64" (
+    set openssl_fips_target=VC-WIN64A
+    set engine_dir=Program Files
+)
+if /I "%platform%"=="x86" (
+    set openssl_fips_target=VC-WIN32
+    set engine_dir=Program Files (x86^)
+)
+
+set crypto_target_name=
+set ssl_target_name=
+if "%build_type%"=="Debug" (
+    set openssl_fips_debug_option=--debug
+)
+if "%build_type%"=="Release" (
+    set openssl_fips_debug_option=
+)
+set crypto_target_name=libcrypto_a.lib
+set ssl_target_name=libssl_a.lib
+
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+
+set OPENSSL_FIPS_SOURCE_DIR=%scriptdir%..\deps\%OPENSSL_FIPS_DIR%
+
+rd /S /Q %OPENSSL_FIPS_SOURCE_DIR%
+git clone --single-branch --branch openssl-%OPENSSL_FIPS_SRC_VERSION% --recursive https://github.com/openssl/openssl.git %OPENSSL_FIPS_SOURCE_DIR%
+
+echo === building openssl fips: %currdir%\..\deps\%OPENSSL_FIPS_DIR%
+cd "%scriptdir%..\deps\%OPENSSL_FIPS_DIR%"
+git apply "%scriptdir%..\patches\openssl-%OPENSSL_FIPS_SRC_VERSION%.patch"
+echo === %PERL_EXE% Configure %openssl_fips_debug_option% %openssl_fips_target% no-shared enable-fips /ZH:SHA_256 /Qspectre /sdl
+%PERL_EXE% Configure %openssl_fips_debug_option% %openssl_fips_target% no-shared enable-fips /ZH:SHA_256 /Qspectre /sdl
+if %ERRORLEVEL% NEQ 0 goto :error
+nmake clean
+if %ERRORLEVEL% NEQ 0 goto :error
+nmake
+if %ERRORLEVEL% NEQ 0 goto :error
+rd /S /Q _install
+if %ERRORLEVEL% NEQ 0 goto :error
+if not exist _install md _install
+if %ERRORLEVEL% NEQ 0 goto :error
+REM no doc build
+nmake install_sw install_ssldirs DESTDIR=.\_install
+if %ERRORLEVEL% NEQ 0 goto :error
+cd "%currdir%"
+
+echo === staging openssl artifacts
+rd /S /Q %currdir%\deps-build\%build_dir%\openssl_fips
+md "%currdir%\deps-build\%build_dir%\openssl_fips\bin"
+md "%currdir%\deps-build\%build_dir%\openssl_fips\include\openssl"
+md "%currdir%\deps-build\%build_dir%\openssl_fips\lib"
+if %ERRORLEVEL% NEQ 0 goto :error
+
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\OpenSSL\lib\libcrypto.lib" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib\%crypto_target_name%"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\providers\fips.dll" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\providers\fips.pdb" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\providers\legacy.dll" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\providers\legacy.pdb" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\OpenSSL\bin\openssl.exe" ^
+    ".\deps-build\%build_dir%\openssl_fips\bin"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\OpenSSL\bin\openssl.pdb" ^
+    ".\deps-build\%build_dir%\openssl_fips\bin"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\Common Files\SSL\*.cnf" ^
+    ".\deps-build\%build_dir%\openssl_fips"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\Common Files\SSL\*.dist" ^
+    ".\deps-build\%build_dir%\openssl_fips"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\OpenSSL\lib\libssl.lib" ^
+    ".\deps-build\%build_dir%\openssl_fips\lib\%ssl_target_name%"
+copy /v /y ^
+    ".\deps\%OPENSSL_FIPS_DIR%\_install\%engine_dir%\OpenSSL\include\openssl\*.h" ^
+    ".\deps-build\%build_dir%\openssl_fips\include\openssl"
+
+echo === archiving the library
+call "%scriptdir%utils.bat" :zip_file openssl_fips %openssl_fips_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+
+:success
+cd "%currdir%"
+exit /b 0
+
+:error
+cd "%currdir%"
+exit /b 1

@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 OPENSSL_SRC_VERSION=3.5.7
-OPENSSL_BUILD_VERSION=1
+OPENSSL_BUILD_VERSION=2
 OPENSSL_VERSION=$OPENSSL_SRC_VERSION.$OPENSSL_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -69,6 +69,8 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make depend > /dev/null
     make -j 4 > /dev/null
     make install_sw install_ssldirs install_fips "${openssl_install_opts[@]}" > /dev/null
+    # get FIPS module from verified version
+    cp $DEPENDENCY_DIR/openssl_fips/lib/ossl-modules/fips.so $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.so
 elif [[ "$PLATFORM" == "darwin" ]]; then
     openssl_config_opts+=("-mmacosx-version-min=${MACOSX_VERSION_MIN}")
     # Check to see if we are doing a universal build or not.
@@ -92,16 +94,13 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make install_sw install_ssldirs install_fips "${openssl_install_opts[@]}" > /dev/null
         lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
         lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/../legacy.dylib
         mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
         mv $OPENSSL_BUILD_DIR/lib/../libcrypto.a $OPENSSL_BUILD_DIR/lib/libcrypto.a
-        mv $OPENSSL_BUILD_DIR/lib/../fips.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
         mv $OPENSSL_BUILD_DIR/lib/../legacy.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
         rm -rf $OPENSSL_BUILD_DIR/libarm64
         lipo -info $OPENSSL_BUILD_DIR/lib/libssl.a
         lipo -info $OPENSSL_BUILD_DIR/lib/libcrypto.a
-        lipo -info $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
         lipo -info $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
     else
         make distclean clean &> /dev/null || true
@@ -119,10 +118,13 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make -j 4 > /dev/null
         make install_sw install_ssldirs install_fips "${openssl_install_opts[@]}" > /dev/null
     fi
+    # get FIPS module from verified version
+    cp $DEPENDENCY_DIR/openssl_fips/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
 fi
+
 
 # openssl3 changed lib path to lib64 for 64-bit build, move it back to keep the compatibility
 if [[ ! -d "$OPENSSL_BUILD_DIR/lib" ]] && [[ -d "$OPENSSL_BUILD_DIR/lib64" ]]; then
