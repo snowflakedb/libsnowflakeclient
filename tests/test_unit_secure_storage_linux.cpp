@@ -3,6 +3,8 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <iterator>
 
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
@@ -267,6 +269,37 @@ void test_secure_storage_c_api(void **)
   secure_storage_term(ss);
 }
 
+void test_secure_storage_file_key_is_final_v2_key(void **)
+{
+  // The Linux file backend must store the credential under the final
+  // SnowflakeTokenCache.v2.<hash> key verbatim, with no extra hashing.
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
+  SecureStorage ss;
+  SecureStorageKey key{"account.snowflakecomputing.com", "user",
+                       SecureStorageKeyType::OAUTH_ACCESS_TOKEN,
+                       "idp.example.com", "account.snowflakecomputing.com", "analyst"};
+
+  auto expectedKey = SecureStorage::convertTarget(key);
+  assert_true(expectedKey.is_initialized());
+  assert_true(expectedKey.get().rfind("SnowflakeTokenCache.v2.", 0) == 0);
+
+  std::string token = "example_token";
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
+
+  // The raw cache file must contain the final key verbatim.
+  std::ifstream fs(std::string("sf_cache_dir/") + CACHE_FILENAME);
+  std::string contents((std::istreambuf_iterator<char>(fs)), std::istreambuf_iterator<char>());
+  assert_true(contents.find(expectedKey.get()) != std::string::npos);
+
+  assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
+}
+
 void test_get_cache_dir_bad_path(void **)
 {
   EnvOverride override("ENV_VAR", "fakepath");
@@ -293,6 +326,7 @@ int main(void) {
       cmocka_unit_test(test_secure_storage_xdg_cache_home),
       cmocka_unit_test(test_secure_storage_home_dir),
       cmocka_unit_test(test_secure_storage_c_api),
+      cmocka_unit_test(test_secure_storage_file_key_is_final_v2_key),
       cmocka_unit_test(test_secure_storage_fails_to_lock),
       cmocka_unit_test(test_secure_storage_success_to_lock_after_expire),
       cmocka_unit_test(test_secure_storage_update_key),

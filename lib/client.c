@@ -1411,6 +1411,27 @@ SF_CONNECT* STDCALL snowflake_connect_with_toml() {
     return sf;
 }
 
+// Returns a newly allocated string with the OAuth token-endpoint URL used as
+// the `idp` component of the token cache key. Mirrors AuthenticatorOAuth's
+// default (https://<host>/oauth/token-request) when no explicit endpoint is
+// configured, so cached OAuth tokens key off the same IdP the flow uses.
+// Caller owns the result and must SF_FREE it.
+static char* sf_oauth_idp_url(SF_CONNECT* sf) {
+    if (sf->oauth_token_endpoint && sf->oauth_token_endpoint[0] != '\0') {
+        size_t len = strlen(sf->oauth_token_endpoint) + 1;
+        char* url = (char*)SF_CALLOC(1, len);
+        sf_strncpy(url, len, sf->oauth_token_endpoint, len);
+        return url;
+    }
+
+    const char* host = sf->host ? sf->host : "";
+    const char* postfix = "/oauth/token-request";
+    size_t len = strlen("https://") + strlen(host) + strlen(postfix) + 1;
+    char* url = (char*)SF_CALLOC(1, len);
+    sf_sprintf(url, len, "https://%s%s", host, postfix);
+    return url;
+}
+
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
@@ -1499,12 +1520,15 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 {
                     sf->token_cache = secure_storage_init();
                 }
+                const char* role = sf->role ? sf->role : "";
                 if (authtype == AUTH_EXTERNALBROWSER) {
-                    sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                    sf->sso_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, NULL, sf->host, NULL);
                 }
                 else {
-                    sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
-                    sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+                    char* oauth_idp = sf_oauth_idp_url(sf);
+                    sf->oauth_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, oauth_idp, sf->host, role);
+                    sf->oauth_refresh_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, oauth_idp, sf->host, role);
+                    SF_FREE(oauth_idp);
                 }
             }
             break;
@@ -1630,15 +1654,18 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
 
             char* auth_token = NULL;
             if (sf->token_cache) {
+                const char* role = sf->role ? sf->role : "";
                 if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
-                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, NULL, sf->host, NULL, auth_token);
                 }
                 else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
                     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
                 }
                 else if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE) {
-                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, sf->oauth_token);
-                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, sf->oauth_refresh_token);
+                    char* oauth_idp = sf_oauth_idp_url(sf);
+                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, oauth_idp, sf->host, role, sf->oauth_token);
+                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, oauth_idp, sf->host, role, sf->oauth_refresh_token);
+                    SF_FREE(oauth_idp);
                 }
             }
 
