@@ -5,29 +5,12 @@
 #include "logger/SFLogger.hpp"
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
-#include <algorithm>
-#include <cctype>
-#include <cstdlib>
 #include <sstream>
 #include <string>
 
 namespace Snowflake::Client {
   namespace {
-    // Opt-in env var that switches AWS WIF from the legacy
-    // base64(GetCallerIdentity-presigned-URL) format to a JWT obtained via
-    // STS:GetWebIdentityToken.
-    constexpr const char* AWS_OUTBOUND_TOKEN_ENV_VAR =
-        "SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN";
     constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
-
-    bool isAwsOutboundTokenEnabled() {
-      const char* raw = std::getenv(AWS_OUTBOUND_TOKEN_ENV_VAR);
-      if (!raw) return false;
-      std::string s(raw);
-      std::transform(s.begin(), s.end(), s.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-      return s == "true";
-    }
   }
 
   // STS rejects x-amz-content-sha256 on empty-body requests ("unacceptable headers"),
@@ -122,7 +105,7 @@ namespace Snowflake::Client {
       creds = assumedCredsOpt.get();
     }
 
-    if (isAwsOutboundTokenEnabled()) {
+    if (config.awsUseOutboundToken) {
       CXX_LOG_INFO(
           "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
           region.c_str());

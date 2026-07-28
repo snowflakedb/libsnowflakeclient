@@ -105,28 +105,18 @@ void test_aws_wif_outbound_jwt_authentication(void **unused) {
 
     fprintf(stderr, "Testing AWS WIF outbound JWT authentication via C API\n");
 
-#ifdef _WIN32
-    _putenv_s("SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN", "true");
-#else
-    setenv("SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN", "true", 1);
-#endif
-
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
 
+    sf_bool use_outbound = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
     snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AWS);
+    snowflake_set_attribute(sf, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &use_outbound);
 
     const SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
-
-#ifdef _WIN32
-    _putenv_s("SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN", "");
-#else
-    unsetenv("SNOWFLAKE_ENABLE_AWS_WIF_OUTBOUND_TOKEN");
-#endif
 
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
