@@ -116,7 +116,7 @@ namespace Snowflake::Client {
         return boost::none;
       }
       const auto &jwt = jwtOpt.get();
-      CXX_LOG_DEBUG("AWS WIF JWT token prefix: %.10s", jwt.c_str());
+      CXX_LOG_DEBUG("AWS WIF JWT token obtained (length=%zu)", jwt.size());
       return Attestation::makeAws(jwt);
     }
 
@@ -152,7 +152,7 @@ namespace Snowflake::Client {
     std::string json = picojson::value(obj).serialize(true);
     std::string base64;
     Util::Base64::encodePadding(json.begin(), json.end(), std::back_inserter(base64));
-    CXX_LOG_DEBUG("AWS WIF legacy credential prefix: %.10s", base64.c_str());
+    CXX_LOG_DEBUG("AWS WIF legacy credential obtained (length=%zu)", base64.size());
     return Attestation::makeAws(base64);
   }
 }
