@@ -2,9 +2,6 @@
 #include "snowflake/PlatformDetection.hpp"
 #include "snowflake/platform.h"
 #include "snowflake/HttpClient.hpp"
-#include "snowflake/AWSUtils.hpp"
-#include <aws/core/auth/AWSCredentialsProviderChain.h>
-#include <aws/core/Aws.h>
 #include <boost/algorithm/string.hpp>
 #include <exception>
 #include "../util/SnowflakeCommon.hpp"
@@ -201,19 +198,74 @@ PlatformDetectionStatus detectGcpIdentity(long timeout)
 
 PlatformDetectionStatus detectAwsIdentity(long timeout)
 {
-  SF_UNUSED(timeout);
-  auto awsSdkInit = AwsUtils::initAwsSdk();
-  Aws::Auth::DefaultAWSCredentialsProviderChain credentialsProvider;
-  auto creds = credentialsProvider.GetAWSCredentials();
-  std::string accessKey = creds.GetAWSAccessKeyId();
-  std::string secretKey = creds.GetAWSSecretKey();
+  // Environment variables (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)
+  std::string accessKey = getEnvironmentVariableValue("AWS_ACCESS_KEY_ID");
+  std::string secretKey = getEnvironmentVariableValue("AWS_SECRET_ACCESS_KEY");
+  // Also check the legacy names used by older SDKs
+  if (accessKey.empty()) accessKey = getEnvironmentVariableValue("AWS_ACCESS_KEY");
+  if (secretKey.empty()) secretKey = getEnvironmentVariableValue("AWS_SECRET_KEY");
   boost::trim(accessKey);
   boost::trim(secretKey);
-
   if (!accessKey.empty() && !secretKey.empty())
   {
     return PLATFORM_DETECTED;
   }
+
+  // EC2 instance metadata service
+  // setup timeout
+  auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
+  // obtain a session token via PUT
+  auto tokenUrl = boost::urls::url(awsMetadataBaseURL + "/latest/api/token");
+  HttpRequest tokenReq{
+    HttpRequest::Method::PUT,
+    tokenUrl,
+    {{"X-aws-ec2-metadata-token-ttl-seconds", "21600"}},
+  };
+  HttpClientConfig cfg = { 0, timeout, 0, timeout };
+  std::unique_ptr<IHttpClient> httpClient(IHttpClient::createSimple(cfg));
+
+  auto tokenRespOpt = httpClient->run(tokenReq);
+  if (!tokenRespOpt || tokenRespOpt.get().code != 200)
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+
+  std::string token = tokenRespOpt.get().getBody();
+  boost::trim(token);
+  if (token.empty())
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+
+  // list IAM roles attached to this instance
+  // check remaining time
+  auto curTime = std::chrono::steady_clock::now();
+  long remainTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - curTime).count();
+  if (remainTime <= 0)
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+
+  auto rolesUrl = boost::urls::url(
+    awsMetadataBaseURL + "/latest/meta-data/iam/security-credentials/");
+  HttpRequest rolesReq{
+    HttpRequest::Method::GET,
+    rolesUrl,
+    {{"X-aws-ec2-metadata-token", token}},
+  };
+  cfg = { 0, remainTime, 0, remainTime };
+  std::unique_ptr<IHttpClient> httpClient2(IHttpClient::createSimple(cfg));
+  auto rolesRespOpt = httpClient2->run(rolesReq);
+  if (rolesRespOpt && rolesRespOpt.get().code == 200)
+  {
+    std::string roles = rolesRespOpt.get().getBody();
+    boost::trim(roles);
+    if (!roles.empty())
+    {
+      return PLATFORM_DETECTED;
+    }
+  }
+
   return PLATFORM_NOT_DETECTED;
 }
 
@@ -252,16 +304,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
     }
     else
     {
-      std::vector<std::future<std::string> > futures;
-      futures.reserve(endpointDetectors.size());
-
-      for (const auto& pair : endpointDetectors)
-      {
-        futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first, timeoutMs] {
-          return detector(timeoutMs) == PLATFORM_DETECTED ? platform : "";
-          }));
-      }
-
+      // Run env detectors synchronously
       for (const auto& pair : envDetectors)
       {
         if (pair.second() == PLATFORM_DETECTED)
@@ -270,21 +313,79 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
         }
       }
 
-      auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
-      for (auto& fut : futures)
+      // asynchronously run detectors with network efforts
+      struct SharedState
       {
-        std::chrono::nanoseconds remainTime(0);
-        auto curTime = std::chrono::steady_clock::now();
-        if (curTime < endTime)
-        {
-          remainTime = endTime - curTime;
-        }
-        if (fut.wait_for(remainTime) == std::future_status::ready)
-        {
-          std::string result = fut.get();
-          if (!result.empty())
+        std::mutex mtx;
+        std::condition_variable cv;
+        bool done{false};
+        bool detected{false};
+      };
+
+      struct DetectorTask
+      {
+        std::string platform;
+        std::thread worker;
+        std::shared_ptr<SharedState> state;
+      };
+
+      std::vector<DetectorTask> tasks;
+      tasks.reserve(endpointDetectors.size());
+
+      for (const auto& pair : endpointDetectors)
+      {
+        DetectorTask task;
+        task.platform = pair.first;
+        task.state = std::make_shared<SharedState>();
+        auto state = task.state;
+
+        auto detector = pair.second;
+
+        task.worker = std::thread([detector, timeoutMs, state]() {
+          bool isDetected = (detector(timeoutMs) == PLATFORM_DETECTED);
           {
-            detectedPlatformsCache.push_back(result);
+            std::lock_guard<std::mutex> lk(state->mtx);
+            state->detected = isDetected;
+            state->done = true;
+          }
+          state->cv.notify_one();
+        });
+
+        tasks.push_back(std::move(task));
+      }
+
+      auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+
+      for (auto& task : tasks)
+      {
+        std::unique_lock<std::mutex> lk(task.state->mtx);
+        auto now = std::chrono::steady_clock::now();
+
+        if (now < endTime)
+        {
+          task.state->cv.wait_until(lk, endTime, [&task]() { return task.state->done; });
+        }
+
+        bool finished = task.state->done;
+        bool detected = task.state->detected;
+        lk.unlock();
+
+        if (finished)
+        {
+          if (task.worker.joinable())
+          {
+            task.worker.join();
+          }
+          if (detected)
+          {
+            detectedPlatformsCache.push_back(task.platform);
+          }
+        }
+        else
+        {
+          if (task.worker.joinable())
+          {
+            task.worker.detach();
           }
         }
       }
