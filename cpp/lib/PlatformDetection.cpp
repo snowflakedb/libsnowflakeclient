@@ -214,7 +214,10 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   // EC2 instance metadata service
   // setup timeout
   auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
-  // obtain a session token via PUT
+
+  // Try IMDSv2 token first
+  std::string token;
+  bool hasImdsV2Token = false;
   auto tokenUrl = boost::urls::url(awsMetadataBaseURL + "/latest/api/token");
   HttpRequest tokenReq{
     HttpRequest::Method::PUT,
@@ -225,16 +228,11 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   std::unique_ptr<IHttpClient> httpClient(IHttpClient::createSimple(cfg));
 
   auto tokenRespOpt = httpClient->run(tokenReq);
-  if (!tokenRespOpt || tokenRespOpt.get().code != 200)
+  if (tokenRespOpt && tokenRespOpt.get().code == 200)
   {
-    return PLATFORM_NOT_DETECTED;
-  }
-
-  std::string token = tokenRespOpt.get().getBody();
-  boost::trim(token);
-  if (token.empty())
-  {
-    return PLATFORM_NOT_DETECTED;
+    token = tokenRespOpt.get().getBody();
+    boost::trim(token);
+    hasImdsV2Token = !token.empty();
   }
 
   // list IAM roles attached to this instance
@@ -248,10 +246,16 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
 
   auto rolesUrl = boost::urls::url(
     awsMetadataBaseURL + "/latest/meta-data/iam/security-credentials/");
+  std::map<std::string, std::string> headers;
+  // If IMDSv2 failed fallback to use IMDSv1 without token
+  if (hasImdsV2Token)
+  {
+    headers["X-aws-ec2-metadata-token"] = token;
+  }
   HttpRequest rolesReq{
     HttpRequest::Method::GET,
     rolesUrl,
-    {{"X-aws-ec2-metadata-token", token}},
+    headers,
   };
   cfg = { 0, remainTime, 0, remainTime };
   std::unique_ptr<IHttpClient> httpClient2(IHttpClient::createSimple(cfg));
