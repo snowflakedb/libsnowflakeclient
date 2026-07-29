@@ -13,8 +13,9 @@
 #include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
-#include <curl/curl.h>
+#include "../lib/connection.h"
 #include <jwt/Jwt.hpp>
+#include <cstring>
 
 using namespace Snowflake::Client;
 
@@ -120,118 +121,24 @@ const std::string AWS_TEST_REGION = "us-east-1";
 const Aws::Auth::AWSCredentials AWS_TEST_CREDS = Aws::Auth::AWSCredentials("AKIAEXAMPLE12345678",
                                                                            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
-long run_request_curl(
-    const std::string &url,
-    const std::string &method,
-    const std::map<std::string, std::string> &headers) {
-  CURL *curl = curl_easy_init();
-  assert_true(curl != nullptr);
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
-
-  const char *ca_bundle = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-  if (ca_bundle) {
-    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle);
+namespace {
+  boost::optional<std::string> getHeaderIgnoreCase(const picojson::object &headers,
+                                                   const char *name) {
+    for (const auto &header : headers) {
+      if (strcasecmp(header.first.c_str(), name) == 0 &&
+          header.second.is<std::string>()) {
+        return header.second.get<std::string>();
+      }
+    }
+    return boost::none;
   }
-
-  struct curl_slist *header_list = nullptr;
-  for (const auto &h: headers) {
-    std::string hdr = h.first + ": " + h.second;
-    header_list = curl_slist_append(header_list, hdr.c_str());
-  }
-  if (header_list) {
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
-  }
-
-  CURLcode res = curl_easy_perform(curl);
-  long response_code = 0;
-  if (res == CURLE_OK) {
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  }
-
-  if (header_list) {
-    curl_slist_free_all(header_list);
-  }
-  curl_easy_cleanup(curl);
-  return response_code;
-}
-
-// Integration test: requires real AWS credentials in the environment.
-// Exercises the legacy GetCallerIdentity presigned-URL path end-to-end.
-void test_integration_aws_attestation(void **) {
-  if (std::getenv("GITHUB_ACTIONS")) {
-    std::cerr << "Skipping test_integration_aws_attestation on GitHub Actions since it requires AWS credentials" << std::endl;
-    return;
-  }
-
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  auto attestationOpt = Snowflake::Client::createAttestation(config);
-  assert_true(attestationOpt.has_value());
-  auto &attestation = attestationOpt.value();
-  assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
-  assert_false(attestation.credential.empty());
-  std::string json_string;
-  Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
-                                                 std::back_inserter(json_string));
-  picojson::value json;
-  picojson::parse(json, json_string);
-  assert_true(json.is<picojson::object>());
-  assert_true(json.get("url").is<std::string>());
-  assert_true(json.get("method").is<std::string>());
-  std::string method = json.get("method").get<std::string>();
-  assert_true(json.get("headers").is<picojson::object>());
-  std::map<std::string, std::string> headers;
-  for (auto &header: json.get("headers").get<picojson::object>()) {
-    assert_true(header.second.is<std::string>());
-    headers[header.first] = header.second.get<std::string>();
-  }
-  assert_true(
-      run_request_curl(json.get("url").get<std::string>(), method, headers) ==
-      200
-  );
 }
 
 // Helper used by legacy-path unit tests: decodes the base64(JSON) credential
-// and asserts it contains the expected STS regional host.
-void test_attestation_success(const char *region, const char *expectedHost) {
-  AttestationConfig config;
-  config.type = AttestationType::AWS;
-  auto awsSdkWrapper = FakeAwsSdkWrapper(std::string(region), AWS_TEST_CREDS);
-  config.awsSdkWrapper = &awsSdkWrapper;
-
-  auto attestationOpt = Snowflake::Client::createAttestation(config);
-  assert_true(attestationOpt.has_value());
-  auto &attestation = attestationOpt.value();
-  assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
-  assert_true(!attestation.credential.empty());
-  assert_true(!attestation.subject);
-  assert_true(!attestation.issuer);
-
-  std::string json_string;
-  Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
-                                                 std::back_inserter(json_string));
-  picojson::value json;
-  picojson::parse(json, json_string);
-  assert_true(json.is<picojson::object>());
-
-  auto headers = json.get("headers").get<picojson::object>();
-  auto host = headers["host"].get<std::string>();
-  assert_true(host == expectedHost);
-}
-
-void test_unit_aws_attestation_success(void **) {
-  test_attestation_success("us-east-1", "sts.us-east-1.amazonaws.com");
-}
-
-void test_unit_aws_attestation_china_region_success(void **) {
-  test_attestation_success("cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
-}
-
-// Helper: assert the attestation used the legacy base64(JSON) path.
+// and asserts the signed GetCallerIdentity request shape.
 void assertAwsLegacyPresignedAttestation(const boost::optional<Attestation> &attestationOpt,
-                                         const std::string &expectedHost) {
+                                         const std::string &expectedHost,
+                                         const std::string &expectedAudience = SF_SNOWFLAKE_WIF_AUDIENCE) {
   assert_true(attestationOpt.has_value());
   const auto &attestation = attestationOpt.get();
   assert_true(attestation.type == AttestationType::AWS);
@@ -244,8 +151,51 @@ void assertAwsLegacyPresignedAttestation(const boost::optional<Attestation> &att
   picojson::value json;
   picojson::parse(json, json_string);
   assert_true(json.is<picojson::object>());
-  auto headers = json.get("headers").get<picojson::object>();
-  assert_true(headers["host"].get<std::string>() == expectedHost);
+
+  assert_true(json.get("method").is<std::string>());
+  assert_string_equal(json.get("method").get<std::string>().c_str(), "POST");
+
+  assert_true(json.get("url").is<std::string>());
+  const std::string url = json.get("url").get<std::string>();
+  assert_true(url.find("https://" + expectedHost) == 0);
+  assert_true(url.find("Action=GetCallerIdentity") != std::string::npos);
+  assert_true(url.find("Version=2011-06-15") != std::string::npos);
+
+  assert_true(json.get("headers").is<picojson::object>());
+  const auto headers = json.get("headers").get<picojson::object>();
+
+  const auto host = getHeaderIgnoreCase(headers, "host");
+  assert_true(host.has_value());
+  assert_string_equal(host.get().c_str(), expectedHost.c_str());
+
+  const auto audience = getHeaderIgnoreCase(headers, "X-Snowflake-Audience");
+  assert_true(audience.has_value());
+  assert_string_equal(audience.get().c_str(), expectedAudience.c_str());
+
+  const auto authorization = getHeaderIgnoreCase(headers, "Authorization");
+  assert_true(authorization.has_value());
+  assert_true(!authorization.get().empty());
+}
+
+void test_attestation_success(const char *region, const char *expectedHost) {
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  auto awsSdkWrapper = FakeAwsSdkWrapper(std::string(region), AWS_TEST_CREDS);
+  config.awsSdkWrapper = &awsSdkWrapper;
+
+  const auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  assert_true(!attestationOpt.get().subject);
+  assert_true(!attestationOpt.get().issuer);
+  assertAwsLegacyPresignedAttestation(attestationOpt, expectedHost);
+}
+
+void test_unit_aws_attestation_success(void **) {
+  test_attestation_success("us-east-1", "sts.us-east-1.amazonaws.com");
+}
+
+void test_unit_aws_attestation_china_region_success(void **) {
+  test_attestation_success("cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
 }
 
 void test_unit_aws_attestation_failed(FakeAwsSdkWrapper *awsSdkWrapper) {
@@ -549,6 +499,51 @@ void test_unit_aws_attestation_impersonation_empty_path_fallback(void **) {
 
   assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 0);
   // Legacy path must NOT call getWebIdentityToken.
+  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
+}
+
+// Empty impersonation path with JWT enabled: no assumeRole, initial creds reach
+// getWebIdentityToken unchanged.
+void test_unit_aws_attestation_impersonation_empty_path_jwt(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.awsUseOutboundToken = true;
+  config.workloadIdentityImpersonationPath = std::string("");
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  assert_true(attestationOpt.get().credential == FAKE_WEB_IDENTITY_TOKEN);
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 0);
+  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
+  assert_string_equal(
+      awsSdkWrapper.lastGetWebIdentityTokenCreds.GetAWSAccessKeyId().c_str(),
+      AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
+}
+
+// Legacy path with impersonation: assumeRole runs, then a base64 GetCallerIdentity
+// credential is produced (no getWebIdentityToken).
+void test_unit_aws_attestation_legacy_with_impersonation(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  const std::string roleArn = "arn:aws:iam::123456789012:role/TestRole";
+  const Aws::Auth::AWSCredentials assumedCreds(
+      "ASSUMED_ACCESS_KEY", "ASSUMED_SECRET_KEY", "ASSUMED_SESSION_TOKEN");
+  awsSdkWrapper.assumeRoleResults[roleArn] = assumedCreds;
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = roleArn;
+
+  const auto attestationOpt = createAttestation(config);
+  assertAwsLegacyPresignedAttestation(attestationOpt, "sts." + AWS_TEST_REGION + ".amazonaws.com");
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 1);
+  assert_string_equal(awsSdkWrapper.assumeRoleArns[0].c_str(), roleArn.c_str());
   assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
 }
 
@@ -1372,13 +1367,46 @@ void test_unit_wif_attestation_config(void**)
     assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
     assert_true(config.awsUseOutboundToken);
 
+    void *value = NULL;
+    assert_int_equal(
+        snowflake_get_attribute(conn, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &value),
+        SF_STATUS_SUCCESS);
+    assert_true(*((sf_bool *) value) == SF_BOOLEAN_TRUE);
+
     // Set back to false and verify.
     sf_bool use_outbound_false = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(conn, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &use_outbound_false);
     assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_SUCCESS);
     assert_false(config.awsUseOutboundToken);
 
+    value = NULL;
+    assert_int_equal(
+        snowflake_get_attribute(conn, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &value),
+        SF_STATUS_SUCCESS);
+    assert_true(*((sf_bool *) value) == SF_BOOLEAN_FALSE);
+
     snowflake_term(conn);
+}
+
+void test_unit_wif_aws_use_outbound_token_connection_string(void **) {
+  SF_CONNECT *conn = snowflake_init();
+
+  handle_single_param(conn, "WIF_AWS_USE_OUTBOUND_TOKEN", "true");
+
+  void *value = NULL;
+  assert_int_equal(
+      snowflake_get_attribute(conn, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &value),
+      SF_STATUS_SUCCESS);
+  assert_true(*((sf_bool *) value) == SF_BOOLEAN_TRUE);
+
+  handle_single_param(conn, "WIF_AWS_USE_OUTBOUND_TOKEN", "false");
+  value = NULL;
+  assert_int_equal(
+      snowflake_get_attribute(conn, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &value),
+      SF_STATUS_SUCCESS);
+  assert_true(*((sf_bool *) value) == SF_BOOLEAN_FALSE);
+
+  snowflake_term(conn);
 }
 
 void test_unit_wif_host_normalization(void**) {
@@ -1420,6 +1448,8 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_jwt_impersonation_failure),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_whitespace_trimming),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_fallback),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_jwt),
+      cmocka_unit_test(test_unit_aws_attestation_legacy_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_region),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_credentials),
       cmocka_unit_test(test_unit_gcp_attestation_success),
@@ -1449,6 +1479,7 @@ int main() {
       cmocka_unit_test(test_unit_oidc_attestation_success),
       cmocka_unit_test(test_unit_oidc_attestation_missing_token),
       cmocka_unit_test(test_unit_wif_attestation_config),
+      cmocka_unit_test(test_unit_wif_aws_use_outbound_token_connection_string),
       cmocka_unit_test(test_unit_wif_host_normalization),
   };
 
