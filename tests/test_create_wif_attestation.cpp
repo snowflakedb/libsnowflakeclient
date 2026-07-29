@@ -19,6 +19,10 @@
 
 using namespace Snowflake::Client;
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
+
 namespace {
   EVP_PKEY *generate_key() {
     EVP_PKEY *key = nullptr;
