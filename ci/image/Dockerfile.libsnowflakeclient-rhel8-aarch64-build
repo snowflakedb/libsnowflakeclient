@@ -37,3 +37,5 @@ RUN mkdir -p /home/user
 RUN chmod 777 /home/user
 WORKDIR /home/user
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
