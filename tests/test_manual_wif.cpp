@@ -1,19 +1,93 @@
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <openssl/rsa.h>
+#include <picojson.h>
+#include <curl/curl.h>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "snowflake/WifAttestation.hpp"
+#include "util/Base64.hpp"
 
 using namespace Snowflake::Client;
 
-// AWS attestation is exercised end-to-end through snowflake_connect() in
-// tests/test_auth/test_wif.c::test_aws_wif_authentication (gated on the same
-// SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE=AWS env var). The credential format is
-// now a raw JWT, so the legacy "base64-decode + re-POST" reconstruction
-// pattern below no longer applies; the auth-suite cloud test is the canonical
-// AWS WIF runtime check.
+static long run_request_curl(
+    const std::string& url,
+    const std::string& method,
+    const std::map<std::string, std::string>& headers)
+{
+  CURL* curl = curl_easy_init();
+  assert_true(curl != nullptr);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
+
+  const char* ca_bundle = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+  if (ca_bundle) {
+    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle);
+  }
+
+  struct curl_slist* header_list = nullptr;
+  for (const auto& h : headers) {
+    std::string hdr = h.first + ": " + h.second;
+    header_list = curl_slist_append(header_list, hdr.c_str());
+  }
+  if (header_list) {
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+  }
+
+  CURLcode res = curl_easy_perform(curl);
+  long response_code = 0;
+  if (res == CURLE_OK) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  }
+
+  if (header_list) {
+    curl_slist_free_all(header_list);
+  }
+  curl_easy_cleanup(curl);
+  return response_code;
+}
+
+// Manual AWS WIF attestation test: exercises the default legacy path
+// (base64-encoded GetCallerIdentity presigned URL). Requires real AWS
+// credentials; gated on SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE=AWS.
+void test_aws_attestation(void**)
+{
+  auto type = std::getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
+  if (!type || strcmp(type, "AWS") != 0) {
+    std::cerr << "Not running AWS attestation test. SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE is not AWS" << std::endl;
+    return;
+  }
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  auto& attestation = attestationOpt.value();
+  assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
+  assert_true(!attestation.credential.empty());
+  std::string json_string;
+  Snowflake::Client::Util::Base64::decodePadding(
+      attestation.credential.begin(), attestation.credential.end(),
+      std::back_inserter(json_string));
+  picojson::value json;
+  picojson::parse(json, json_string);
+  assert_true(json.is<picojson::object>());
+  assert_true(json.get("url").is<std::string>());
+  assert_true(json.get("method").is<std::string>());
+  std::string method = json.get("method").get<std::string>();
+  assert_true(json.get("headers").is<picojson::object>());
+  std::map<std::string, std::string> headers;
+  for (auto& header: json.get("headers").get<picojson::object>()) {
+    assert_true(header.second.is<std::string>());
+    headers[header.first] = header.second.get<std::string>();
+  }
+  assert_true(
+      run_request_curl(json.get("url").get<std::string>(), method, headers) ==
+      200
+  );
+}
 
 void test_gcp_attestation(void**)
 {
@@ -61,15 +135,16 @@ void test_azure_attestation(void**)
   std::cerr << "Credential: " << attestation.credential << std::endl;
   assert_true(attestation.issuer.has_value());
   assert_true(!attestation.issuer->empty());
-  std::cerr << "Issuer: " << attestation.credential << std::endl;
-  assert_true(!attestation.subject->empty());
+  std::cerr << "Issuer: " << attestation.issuer.get() << std::endl;
   assert_true(attestation.subject.has_value());
+  assert_true(!attestation.subject->empty());
   std::cerr << "Subject: " << attestation.subject.get() << std::endl;
 }
 
 int main()
 {
   const struct CMUnitTest tests[] = {
+      cmocka_unit_test(test_aws_attestation),
       cmocka_unit_test(test_gcp_attestation),
       cmocka_unit_test(test_azure_attestation)
   };
