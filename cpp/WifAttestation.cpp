@@ -121,6 +121,8 @@ namespace Snowflake {
             log_debug("Using explicit WIF host: %s", conn->wif_host);
         }
 
+        awsUseOutboundToken = (conn->wif_aws_use_outbound_token == SF_BOOLEAN_TRUE);
+
         return SF_STATUS_SUCCESS;
     }
 

@@ -86,6 +86,10 @@ namespace Client {
 
     boost::optional<std::string> wifHost;
 
+    // When true, AWS WIF uses STS:GetWebIdentityToken (JWT) instead of the
+    // legacy GetCallerIdentity presigned-URL credential format.
+    bool awsUseOutboundToken = false;
+
     SF_STATUS configureWIFAttestation(SF_CONNECT* conn);
 
     std::string getAudience() const {
