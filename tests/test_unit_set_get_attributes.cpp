@@ -1,5 +1,6 @@
 #include <cassert>
 #include <string>
+#include <curl/curl.h>
 #include "memory.h"
 #include "../lib/client_int.h"
 #include <vector>
@@ -206,9 +207,45 @@ void test_set_get_all_attributes(void **unused)
     }
 }
 
+// SF_CON_TLS_VERSION is an int32 (a CURL_SSLVERSION_* value). Verify the
+// default, a valid round-trip, and that an invalid value is rejected without
+// clobbering the stored value.
+void test_set_get_tls_version_attribute(void **unused)
+{
+    SF_CONNECT *sf = snowflake_init();
+    SF_STATUS status = SF_STATUS_EOF;
+    void *value = NULL;
+
+    // Default: unset.
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), SF_TLS_VERSION_UNSET);
+
+    // A valid CURL_SSLVERSION_* value round-trips.
+    int32 tls = CURL_SSLVERSION_TLSv1_2;
+    status = snowflake_set_attribute(sf, SF_CON_TLS_VERSION, &tls);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    value = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), CURL_SSLVERSION_TLSv1_2);
+
+    // An invalid value is rejected and leaves the previous value intact.
+    int32 bad = 9999;
+    status = snowflake_set_attribute(sf, SF_CON_TLS_VERSION, &bad);
+    assert_int_not_equal(status, SF_STATUS_SUCCESS);
+    value = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_TLS_VERSION, &value);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(*((int32 *)value), CURL_SSLVERSION_TLSv1_2);
+
+    snowflake_term(sf);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_set_get_all_attributes),
+    cmocka_unit_test(test_set_get_tls_version_attribute),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

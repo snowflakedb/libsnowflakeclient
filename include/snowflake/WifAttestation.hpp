@@ -84,6 +84,10 @@ namespace Client {
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
+    // Per-connection TLS version override (a CURL_SSLVERSION_* value) applied to
+    // the AWS SDK STS call. SF_TLS_VERSION_UNSET means no override.
+    int tlsVersion = SF_TLS_VERSION_UNSET;
+
     SF_STATUS configureWIFAttestation(SF_CONNECT* conn);
 
     std::string getAudience() const {

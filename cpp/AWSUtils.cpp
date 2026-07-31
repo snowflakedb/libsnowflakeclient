@@ -1,5 +1,6 @@
 
 #include "snowflake/AWSUtils.hpp"
+#include "AwsTlsHttpClient.hpp"
 #include <aws/core/Aws.h>
 #include "logger/SFLogger.hpp"
 #include "logger/SFAwsLogger.hpp"
@@ -31,6 +32,9 @@ namespace Snowflake {
         AwsSdkInitialized() : options{} {
           CXX_LOG_INFO("Initializing AWS SDK");
           Aws::InitAPI(options);
+          // install our custom curl HTTP client factory so
+          // per-client tls_version can be applied. Must run right after InitAPI.
+          RegisterTlsHttpClientFactory();
           Aws::Utils::Logging::InitializeAWSLogging(
               Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
         }
@@ -167,7 +171,8 @@ namespace Snowflake {
             const Aws::Auth::AWSCredentials &creds,
             const std::string &region,
             const std::string &audience,
-            const std::string &signingAlgorithm) override {
+            const std::string &signingAlgorithm,
+            int tlsVersion = SF_TLS_VERSION_UNSET) override {
           auto awsSdk = initAwsSdk();
 
           const std::string host = "sts." + region + "." + getDomainSuffixForRegionalUrl(region);
@@ -206,6 +211,11 @@ namespace Snowflake {
           clientConfig.region = region;
           clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
           clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
+
+          // carry the session's tls_version into our custom
+          // curl HTTP client factory for the duration of this synchronous
+          // CreateHttpClient call only. UNSET => SDK default.
+          Snowflake::Client::ScopedAwsTlsVersion tlsGuard(static_cast<long>(tlsVersion));
           auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
           auto response = httpClient->MakeRequest(request);
           if (!response) {

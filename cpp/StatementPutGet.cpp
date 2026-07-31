@@ -155,6 +155,12 @@ Util::Proxy* StatementPutGet::get_proxy()
   }
 }
 
+int StatementPutGet::get_tls_version()
+{
+  return (m_stmt && m_stmt->connection) ? m_stmt->connection->tls_version
+                                        : SF_TLS_VERSION_UNSET;
+}
+
 bool StatementPutGet::http_put(std::string const& url,
                                std::vector<std::string> const& headers,
                                std::basic_iostream<char>& payload,

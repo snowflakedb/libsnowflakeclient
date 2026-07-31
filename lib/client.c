@@ -1931,9 +1931,24 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
-        case SF_CON_TLS_VERSION:
-            sf->tls_version = value ? *((int32 *)value) : SF_TLS_VERSION_UNSET;
+        case SF_CON_TLS_VERSION: {
+            int32 v = value ? *((int32 *)value) : SF_TLS_VERSION_UNSET;
+            if (v != SF_TLS_VERSION_UNSET) {
+                long minv = (long)v & 0xffff;
+                if (minv != CURL_SSLVERSION_TLSv1 &&
+                    minv != CURL_SSLVERSION_TLSv1_0 &&
+                    minv != CURL_SSLVERSION_TLSv1_1 &&
+                    minv != CURL_SSLVERSION_TLSv1_2 &&
+                    minv != CURL_SSLVERSION_TLSv1_3) {
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
+                                        "Invalid TLS version value",
+                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    return SF_STATUS_ERROR_APPLICATION_ERROR;
+                }
+            }
+            sf->tls_version = v;
             break;
+        }
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",

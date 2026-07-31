@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include <boost/url.hpp>
+#include <curl/curl.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <picojson.h>
@@ -81,12 +82,14 @@ public:
       const Aws::Auth::AWSCredentials& c,
       const std::string& r,
       const std::string& aud,
-      const std::string& alg) override {
+      const std::string& alg,
+      int tlsVersion = SF_TLS_VERSION_UNSET) override {
     getWebIdentityTokenCallCount++;
     lastGetWebIdentityTokenCreds = c;
     lastGetWebIdentityTokenRegion = r;
     lastGetWebIdentityTokenAudience = aud;
     lastGetWebIdentityTokenAlgorithm = alg;
+    lastGetWebIdentityTokenTlsVersion = tlsVersion;
     return webIdentityTokenResult;
   }
 
@@ -100,6 +103,7 @@ public:
   std::string lastGetWebIdentityTokenRegion;
   std::string lastGetWebIdentityTokenAudience;
   std::string lastGetWebIdentityTokenAlgorithm;
+  int lastGetWebIdentityTokenTlsVersion = SF_TLS_VERSION_UNSET;
 
   int assumeRoleCallCount = 0;
   std::vector<std::string> assumeRoleArns;
@@ -199,6 +203,36 @@ void test_unit_aws_attestation_jwt_success_with_custom_audience(void**) {
     // No impersonation -> creds passed through unchanged.
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenCreds.GetAWSAccessKeyId().c_str(),
         AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
+}
+
+// The session's TLS version must reach the STS GetWebIdentityToken call so the
+// AWS SDK curl handle can pin it. Default (no override) => SF_TLS_VERSION_UNSET.
+void test_unit_aws_attestation_jwt_tls_version_default_unset(void**) {
+    auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+    awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+    AttestationConfig config;
+    config.type = AttestationType::AWS;
+    config.awsSdkWrapper = &awsSdkWrapper;
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    assert_int_equal(awsSdkWrapper.lastGetWebIdentityTokenTlsVersion, SF_TLS_VERSION_UNSET);
+}
+
+void test_unit_aws_attestation_jwt_tls_version_passed_through(void**) {
+    auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+    awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+    AttestationConfig config;
+    config.type = AttestationType::AWS;
+    config.awsSdkWrapper = &awsSdkWrapper;
+    config.tlsVersion = CURL_SSLVERSION_TLSv1_2;
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    // The configured TLS version reached the STS call unchanged.
+    assert_int_equal(awsSdkWrapper.lastGetWebIdentityTokenTlsVersion, CURL_SSLVERSION_TLSv1_2);
 }
 
 void test_unit_aws_attestation_jwt_sdk_failure(void **) {
@@ -1146,6 +1180,8 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_audience),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_tls_version_default_unset),
+      cmocka_unit_test(test_unit_aws_attestation_jwt_tls_version_passed_through),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),

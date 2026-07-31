@@ -5,6 +5,7 @@
 #include <memory>
 #include <boost/optional.hpp>
 #include <aws/core/auth/AWSCredentials.h>
+#include "snowflake/client.h"   // SF_TLS_VERSION_UNSET
 
 namespace Snowflake {
   namespace Client {
@@ -32,11 +33,14 @@ namespace Snowflake {
         // Calls AWS STS GetWebIdentityToken for outbound identity federation
         // (SNOW-2919437). Returns the signed JWT on success, or boost::none on
         // any failure (HTTP error, signing failure, malformed response).
+        // tlsVersion is a CURL_SSLVERSION_* value (or SF_TLS_VERSION_UNSET) that
+        // pins the TLS version curl uses for this STS call inside the AWS SDK.
         virtual boost::optional<std::string> getWebIdentityToken(
             const Aws::Auth::AWSCredentials& creds,
             const std::string& region,
             const std::string& audience,
-            const std::string& signingAlgorithm) = 0;
+            const std::string& signingAlgorithm,
+            int tlsVersion = SF_TLS_VERSION_UNSET) = 0;
         virtual ~ISdkWrapper() = default;
         static ISdkWrapper* getInstance();
       };

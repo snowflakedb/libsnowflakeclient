@@ -67,6 +67,9 @@ namespace Snowflake {
             log_debug("Using explicit WIF audience: %s", conn->wif_audience);
         }
 
+        // Per-connection TLS version override for the AWS SDK STS call.
+        tlsVersion = conn->tls_version;
+
         return SF_STATUS_SUCCESS;
     }
 
