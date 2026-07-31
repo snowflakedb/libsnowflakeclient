@@ -172,7 +172,7 @@ namespace Snowflake {
             const std::string &region,
             const std::string &audience,
             const std::string &signingAlgorithm,
-            int tlsVersion = SF_TLS_VERSION_UNSET) override {
+            int tlsVersion) override {
           auto awsSdk = initAwsSdk();
 
           const std::string host = "sts." + region + "." + getDomainSuffixForRegionalUrl(region);

@@ -163,7 +163,12 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   // carry the session's tls_version into our custom curl
   // HTTP client factory for the duration of this synchronous construction only.
   // The HTTP client is created synchronously on this thread inside the S3Client
-  // ctor, so the thread-local is safe (no pool/async race). UNSET => SDK default.
+  // ctor, so the thread-local is safe (no pool/async race).
+  //
+  // Only an explicit per-connection tls_version reaches AWS here. When it is
+  // UNSET we deliberately leave the AWS SDK on its own default TLS version; the
+  // global SF_GLOBAL_SSL_VERSION setting is NOT applied to AWS S3 transfers
+  // (that global fallback only governs the direct Snowflake HTTP/curl paths).
   ScopedAwsTlsVersion tlsGuard(statement ? (long)statement->get_tls_version()
                                          : SF_TLS_VERSION_UNSET);
   s3Client = new Aws::S3::S3Client(credentials,

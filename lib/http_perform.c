@@ -515,18 +515,6 @@ sf_bool STDCALL http_perform(CURL *curl,
         log_trace("Running curl call");
         res = curl_easy_perform(curl);
 
-        // 세션별 TLS 지정 검증(함정 4): log the actually negotiated TLS version
-        // so a mismatch between configured and negotiated is observable.
-        if (res == CURLE_OK) {
-            struct curl_tlssessioninfo *tls_info = NULL;
-            if ((curl_easy_getinfo(curl, CURLINFO_TLS_SSL_PTR, &tls_info) == CURLE_OK) &&
-                tls_info && (tls_info->backend == CURLSSLBACKEND_OPENSSL) &&
-                tls_info->internals) {
-                log_debug("Negotiated TLS version: %s",
-                          SSL_get_version((const SSL *)tls_info->internals));
-            }
-        }
-
         // forcely trigger renew timeout on the first attempt
         if ((renew_injection) && (renew_timeout > 0) &&
             elapsed_time && (*elapsed_time <= 0))
