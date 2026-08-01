@@ -81,7 +81,6 @@ private:
   size_t OnRead(uint8_t* buffer, size_t count, Azure::Core::Context const& /*context*/) override
   {
     this->m_stream.read(reinterpret_cast<char*>(buffer), count);
-    size_t ret = m_stream.gcount();
     return m_stream.gcount();
   }
 
