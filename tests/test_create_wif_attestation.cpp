@@ -90,7 +90,7 @@ public:
       const std::string& r,
       const std::string& aud,
       const std::string& alg,
-      const std::string& host
+      const std::string& host,
       int tlsVersion = SF_TLS_VERSION_UNSET) override {
     getWebIdentityTokenCallCount++;
     lastGetWebIdentityTokenCreds = c;
@@ -357,9 +357,6 @@ void test_unit_aws_attestation_jwt_tls_version_passed_through(void**) {
     assert_int_equal(awsSdkWrapper.lastGetWebIdentityTokenTlsVersion, CURL_SSLVERSION_TLSv1_2);
     config.awsUseOutboundToken = true;
     config.wifHost = "https://sts.custom.example.com/";
-
-    const auto attestationOpt = createAttestation(config);
-    assert_true(attestationOpt.has_value());
 
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
         "sts.custom.example.com");

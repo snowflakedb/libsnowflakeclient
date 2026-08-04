@@ -172,7 +172,7 @@ namespace Snowflake {
             const std::string &region,
             const std::string &audience,
             const std::string &signingAlgorithm,
-            const std::string &configuredHost
+            const std::string &configuredHost,
             int tlsVersion
         ) override {
           auto awsSdk = initAwsSdk();
