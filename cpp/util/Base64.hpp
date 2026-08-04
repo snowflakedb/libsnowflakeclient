@@ -126,17 +126,21 @@ struct Base64 final
   /**
    * Decodes given source data of specified length with Base64 format.
    *
-   * The 'dst' buffer needs to have sufficient memory, see decodedLength.
+   * The decoded data is written into 'dst', which must be able to hold at
+   * least 'dstLength' bytes. Decoding fails (returns -1) when the decoded
+   * output would not fit.
    * Does not add a trailing zero.
    *
    * @return
-   *    Number of written bytes. -1 on error (invalid input).
+   *    Number of written bytes. -1 on error (invalid input or insufficient
+   *    destination capacity).
    */
   inline static size_t decode(const void *src,
                        size_t srcLength,
-                       void *dst) noexcept
+                       void *dst,
+                       size_t dstLength) noexcept
   {
-    return decodeHelper(src, srcLength, dst, BASE64_REV_INDEX);
+    return decodeHelper(src, srcLength, dst, dstLength, BASE64_REV_INDEX);
   }
 
   /**
@@ -158,17 +162,21 @@ struct Base64 final
   /**
    * Decodes given source data of specified length with Base64url format.
    *
-   * The 'dst' buffer needs to have sufficient memory, see decodedLength.
+   * The decoded data is written into 'dst', which must be able to hold at
+   * least 'dstLength' bytes. Decoding fails (returns -1) when the decoded
+   * output would not fit.
    * Does not add a trailing zero.
    *
    * @return
-   *    Number of written bytes. -1 on error (invalid input).
+   *    Number of written bytes. -1 on error (invalid input or insufficient
+   *    destination capacity).
    */
   inline static size_t decodeUrl(const void *src,
                        size_t srcLength,
-                       void *dst) noexcept
+                       void *dst,
+                       size_t dstLength) noexcept
   {
-    return decodeHelper(src, srcLength, dst, BASE64_URL_REV_INDEX);
+    return decodeHelper(src, srcLength, dst, dstLength, BASE64_URL_REV_INDEX);
   }
 
   // Reverse index, populated on first call.
@@ -230,14 +238,16 @@ private:
   /**
    * Decodes given source data of specified length.
    *
-   * The 'dst' buffer needs to have sufficient memory, see decodedLength.
+   * Writes at most 'dstLength' bytes into 'dst' and fails (returns -1) when
+   * the decoded output would exceed that capacity, see decodedLength.
    * Does not add a trailing zero.
    *
    * @return
-   *    Number of written bytes. -1 on error (invalid input).
+   *    Number of written bytes. -1 on error (invalid input or insufficient
+   *    destination capacity).
    */
   static size_t decodeHelper(const void *const src, const size_t srcLength, void *const dst,
-                             const ReverseIndex &) noexcept;
+                             const size_t dstLength, const ReverseIndex &) noexcept;
 
   // Not a real class. Just a namespace.
   Base64() = delete;

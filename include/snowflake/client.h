@@ -399,6 +399,24 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_LOG_QUERY_PARAMETERS,
     SF_CON_WIF_AUDIENCE,
     /**
+    * Overrides the STS/IAM endpoint used for Workload Identity Federation.
+    * May be given as either a bare hostname (e.g. "sts.us-gov-east-1.amazonaws.com")
+    * or a full base URL (e.g. "https://iamcredentials.privategoogleapis.com/v1") --
+    * the value is normalized internally to whatever format the configured
+    * provider requires:
+    *   - AWS: requires a bare host. If a full URL is given, the host is
+    *          extracted automatically.
+    *   - GCP: requires a full base URL. If a bare host is given, "/v1" is
+    *          appended automatically; a full URL is used as-is.
+    */
+    SF_CON_WIF_HOST,
+    /**
+    * When set to SF_BOOLEAN_TRUE, AWS WIF uses STS:GetWebIdentityToken (JWT).
+    * Defaults to SF_BOOLEAN_FALSE, which uses the GetCallerIdentity
+    * presigned-URL credential format.
+    */
+    SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN,
+    /**
      * Per-connection TLS/SSL version override. Value is a CURL_SSLVERSION_*
      * constant (see curl/curl.h). Set to SF_TLS_VERSION_UNSET (the default)
      * to fall back to the global SF_GLOBAL_SSL_VERSION setting.
@@ -640,6 +658,9 @@ typedef struct SF_CONNECT {
 
     char* wif_audience;
 
+    char* wif_host;
+    sf_bool wif_aws_use_outbound_token;
+  
     // Per-connection TLS version override (CURL_SSLVERSION_* value).
     // SF_TLS_VERSION_UNSET means no override; fall back to the global
     // SSL_VERSION setting.

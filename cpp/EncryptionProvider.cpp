@@ -3,6 +3,7 @@
 #include "EncryptionProvider.hpp"
 #include "crypto/Cryptor.hpp"
 #include "util/Base64.hpp"
+#include "logger/SFLogger.hpp"
 
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
@@ -15,7 +16,7 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
   ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
 
   Util::Base64::decode(qsmkEncoded.data(), qsmkEncoded.size(),
-                       queryStageMasterKey.data);
+                       queryStageMasterKey.data, sizeof(queryStageMasterKey.data));
   queryStageMasterKey.nbBits = Util::Base64::decodedLength(
     qsmkEncoded.data(), qsmkEncoded.size()) * 8;
 
@@ -44,7 +45,7 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
     ::std::string(encryptedFileKeyEncoded, encryptedFileKeyEncodedSize);
 }
 
-void Snowflake::Client::EncryptionProvider::decryptFileKey(
+bool Snowflake::Client::EncryptionProvider::decryptFileKey(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
 {
   const char *encryptedFileKeyEncoded = fileMetadata
@@ -53,11 +54,16 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
     ->encryptionMetadata.enKekEncoded.size();
 
   char encryptedFileKey[128];
-  Util::Base64::decode(encryptedFileKeyEncoded, encryptedFileKeyEncodedSize,
-                       encryptedFileKey);
-  size_t encryptedFileKeySize = Util::Base64::decodedLength(
-    encryptedFileKeyEncoded,
-    encryptedFileKeyEncodedSize);
+  size_t encryptedFileKeySize = Util::Base64::decode(
+    encryptedFileKeyEncoded, encryptedFileKeyEncodedSize,
+    encryptedFileKey, sizeof(encryptedFileKey));
+  if (encryptedFileKeySize == static_cast<size_t>(-1L))
+  {
+    CXX_LOG_ERROR("Failed to decode wrapped file key: invalid or oversized "
+                  "encryption metadata (enKekEncoded length=%zu).",
+                  encryptedFileKeyEncodedSize);
+    return false;
+  }
 
   Crypto::CryptoIV iv;
   Crypto::CryptoKey queryStageMasterKey;
@@ -66,10 +72,16 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
 
   ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
 
-  Util::Base64::decode(qsmkEncoded.data(), qsmkEncoded.size(),
-                       queryStageMasterKey.data);
-  queryStageMasterKey.nbBits = Util::Base64::decodedLength(
-    qsmkEncoded.data(), qsmkEncoded.size()) * 8;
+  size_t qsmkSize = Util::Base64::decode(qsmkEncoded.data(), qsmkEncoded.size(),
+                                         queryStageMasterKey.data,
+                                         sizeof(queryStageMasterKey.data));
+  if (qsmkSize == static_cast<size_t>(-1L))
+  {
+    CXX_LOG_ERROR("Failed to decode query stage master key: invalid or "
+                  "oversized value (length=%zu).", qsmkEncoded.size());
+    return false;
+  }
+  queryStageMasterKey.nbBits = qsmkSize * 8;
 
   Crypto::CipherContext context =
     Crypto::Cryptor::getInstance().createCipherContext(Crypto::CryptoAlgo::AES,
@@ -84,6 +96,7 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
                                  encryptedFileKeySize);
   size_t finalizeSize = context.finalize(fileKey.data + nextSize);
   fileKey.nbBits = (nextSize + finalizeSize) *8;
+  return true;
 }
 
 void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(

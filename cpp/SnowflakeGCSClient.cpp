@@ -201,8 +201,15 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::GetRemoteFileMetadata(
 
   std::string key, iv;
   parseEncryptionMetadataFromJSON(headers[GCS_ENCRYPTIONDATAPROP], key, iv);
-  Util::Base64::decode(iv.c_str(), iv.size(),
-                       fileMetadata->encryptionMetadata.iv.data);
+  if (Util::Base64::decode(iv.c_str(), iv.size(),
+        fileMetadata->encryptionMetadata.iv.data,
+        sizeof(fileMetadata->encryptionMetadata.iv.data))
+      == static_cast<size_t>(-1L))
+  {
+    CXX_LOG_ERROR("Invalid or oversized IV in object metadata for %s; "
+                  "rejecting download.", filePathFull->c_str());
+    return RemoteStorageRequestOutcome::FAILED;
+  }
   fileMetadata->encryptionMetadata.enKekEncoded = key;
 
   fileMetadata->srcFileSize = strtoull(headers["Content-Length"].c_str(), NULL, 10);

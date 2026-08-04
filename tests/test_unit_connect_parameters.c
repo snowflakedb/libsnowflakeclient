@@ -257,6 +257,113 @@ void test_connect_with_renew(void** unused) {
 }
 
 /**
+ * Regression test for SNOW-3649749: connection attributes embedded into the
+ * request URL authority must reject characters that are not part of a valid
+ * host/identifier, so they cannot alter the URL structure.
+ */
+void test_connection_parameters_url_injection(void **unused) {
+    SF_UNUSED(unused);
+
+    // Account values containing characters outside the allowed set must be
+    // rejected before the host is derived.
+    const char *bad_accounts[] = {
+        "badhost.example.com/x?",   // '/' and '?'
+        "badhost.example.com/x",    // '/'
+        "user@example.com",         // '@'
+        "host:443",                 // ':'
+        "bad value",                // whitespace
+        "bad\\value",               // backslash
+        "bad%2evalue",              // percent-encoding
+    };
+    size_t i;
+    for (i = 0; i < sizeof(bad_accounts) / sizeof(bad_accounts[0]); i++) {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = (char *) bad_accounts[i];
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        // Nothing should have been derived from the rejected input.
+        assert_int_equal(sf->host, NULL);
+        SF_FREE(sf);
+    }
+
+    // A caller-supplied host with URL metacharacters must be rejected too.
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = "testaccount";
+        sf->host = "badhost.example.com/x?.snowflakecomputing.com";
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        SF_FREE(sf);
+    }
+
+    // A caller-supplied region with URL metacharacters must be rejected.
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = "testaccount";
+        sf->region = "badregion.example.com/x?";
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        SF_FREE(sf);
+    }
+
+    // Invalid protocol / port values must be rejected.
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = "testaccount";
+        sf->protocol = "https://evil";
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        SF_FREE(sf);
+    }
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = "testaccount";
+        sf->port = "443/evil";
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        SF_FREE(sf);
+    }
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = "testaccount";
+        sf->port = "99999"; // out of range
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+        SF_FREE(sf);
+    }
+
+    // Legitimate values (dots, dashes, privatelink, explicit host/protocol/port)
+    // must still be accepted.
+    {
+        SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+        sf->account = (char *) SF_CALLOC(1, 128);
+        strcpy(sf->account, "test-account.us-east-1.privatelink");
+        sf->user = "testuser";
+        sf->password = "testpassword";
+        sf->protocol = "HTTPS";
+        sf->port = "8443";
+        assert_int_equal(
+            _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+        assert_string_equal(sf->host,
+            "test-account.us-east-1.privatelink.snowflakecomputing.com");
+        SF_FREE(sf->account);
+        SF_FREE(sf);
+    }
+}
+
+/**
  * Test account including cn region
  */
 void test_connection_parameters_including_cn_region(void **unused) {
@@ -290,6 +397,7 @@ int main(void) {
         cmocka_unit_test(test_connection_parameters_for_global_url_basic),
         cmocka_unit_test(test_connection_parameters_for_global_url_full),
         cmocka_unit_test(test_connection_parameters_application),
+        cmocka_unit_test(test_connection_parameters_url_injection),
         cmocka_unit_test(test_connect_with_renew),
         cmocka_unit_test(test_connection_parameters_including_cn_region),
     };

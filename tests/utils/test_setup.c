@@ -253,3 +253,37 @@ void generate_unique_id(char* buf)
         }
     }
 }
+
+void get_ocsp_cache_file(char *cache_file)
+{
+#ifdef __linux__
+  char *home_env = getenv("HOME");
+  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
+  strcat(cache_file, "/.cache");
+  strcat(cache_file, "/snowflake");
+  strcat(cache_file, "/ocsp_response_cache.json");
+#elif defined(__APPLE__)
+  char *home_env = getenv("HOME");
+  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
+  strcat(cache_file, "/Library");
+  strcat(cache_file, "/Caches");
+  strcat(cache_file, "/Snowflake");
+  strcat(cache_file, "/ocsp_response_cache.json");
+#elif  defined(_WIN32)
+  char *home_env = getenv("USERPROFILE");
+  if (home_env == NULL)
+  {
+    home_env = getenv("TMP");
+	if (home_env == NULL)
+    {
+      home_env = getenv("TEMP");
+    }
+  }
+  strcpy(cache_file, (home_env == NULL ? (char*)"c:\\temp" : home_env));
+  strcat(cache_file, "\\AppData");
+  strcat(cache_file, "\\Local");
+  strcat(cache_file, "\\Snowflake");
+  strcat(cache_file, "\\Caches");
+  strcat(cache_file, "\\ocsp_response_cache.json");
+#endif
+}

@@ -40,6 +40,7 @@ namespace Snowflake {
             const std::string& region,
             const std::string& audience,
             const std::string& signingAlgorithm,
+            const std::string& configuredHost,
             int tlsVersion = SF_TLS_VERSION_UNSET) = 0;
         virtual ~ISdkWrapper() = default;
         static ISdkWrapper* getInstance();
