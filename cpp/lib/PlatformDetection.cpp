@@ -4,6 +4,7 @@
 #include "snowflake/HttpClient.hpp"
 #include <boost/algorithm/string.hpp>
 #include <exception>
+#include <fstream>
 #include "../util/SnowflakeCommon.hpp"
 #include "../logger/SFLogger.hpp"
 
@@ -32,6 +33,9 @@ static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
 
+// helper functions
+namespace
+{
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
   char envbuf[MAX_ENV_VARIABLE_LENGTH];
@@ -40,6 +44,180 @@ std::string getEnvironmentVariableValue(const std::string& envVarName)
     return std::string(value);
   }
   return "";
+}
+
+std::string getAwsProfileName()
+{
+  std::string profile = getEnvironmentVariableValue("AWS_DEFAULT_PROFILE");
+  if (profile.empty())
+  {
+    profile = getEnvironmentVariableValue("AWS_PROFILE");
+  }
+  if (profile.empty())
+  {
+    profile = "default";
+  }
+  boost::trim(profile);
+  return profile;
+}
+
+std::string getHomeDirectoryPortable()
+{
+#ifdef _WIN32
+  std::string userProfile = getEnvironmentVariableValue("USERPROFILE");
+  if (!userProfile.empty())
+  {
+    return userProfile;
+  }
+
+  std::string homeDrive = getEnvironmentVariableValue("HOMEDRIVE");
+  std::string homePath = getEnvironmentVariableValue("HOMEPATH");
+  if (!homeDrive.empty() && !homePath.empty())
+  {
+    return homeDrive + homePath;
+  }
+  return "";
+#else
+  return getEnvironmentVariableValue("HOME");
+#endif
+}
+
+std::string getDefaultAwsCredentialsFile()
+{
+  std::string path = getEnvironmentVariableValue("AWS_SHARED_CREDENTIALS_FILE");
+  if (!path.empty())
+  {
+    boost::trim(path);
+    return path;
+  }
+
+  std::string home = getHomeDirectoryPortable();
+  if (home.empty())
+  {
+    return "";
+  }
+
+#ifdef _WIN32
+  return home + "\\.aws\\credentials";
+#else
+  return home + "/.aws/credentials";
+#endif
+}
+
+std::string getDefaultAwsConfigFile()
+{
+  std::string path = getEnvironmentVariableValue("AWS_CONFIG_FILE");
+  if (!path.empty())
+  {
+    boost::trim(path);
+    return path;
+  }
+
+  std::string home = getHomeDirectoryPortable();
+  if (home.empty())
+  {
+    return "";
+  }
+
+#ifdef _WIN32
+  return home + "\\.aws\\config";
+#else
+  return home + "/.aws/config";
+#endif
+}
+
+struct AwsProfileIdentity
+{
+  std::string accessKeyId;
+  std::string secretAccessKey;
+
+  bool hasIdentity() const
+  {
+    return !accessKeyId.empty() && !secretAccessKey.empty();
+  }
+};
+
+bool parseIniLikeFile(
+  const std::string& filePath,
+  const std::string& targetSection,
+  AwsProfileIdentity& identity)
+{
+  std::ifstream in(filePath);
+  if (!in)
+  {
+    return false;
+  }
+
+  std::string line;
+  std::string currentSection;
+  bool foundSection = false;
+
+  while (std::getline(in, line))
+  {
+    auto commentPos = line.find_first_of("#;");
+    if (commentPos != std::string::npos)
+    {
+      line = line.substr(0, commentPos);
+    }
+
+    boost::trim(line);
+    if (line.empty())
+    {
+      continue;
+    }
+
+    if (line.front() == '[' && line.back() == ']')
+    {
+      currentSection = line.substr(1, line.size() - 2);
+      boost::trim(currentSection);
+      foundSection = (currentSection == targetSection);
+      continue;
+    }
+
+    if (!foundSection)
+    {
+      continue;
+    }
+
+    auto pos = line.find('=');
+    if (pos == std::string::npos)
+    {
+      continue;
+    }
+
+    std::string key = line.substr(0, pos);
+    std::string value = line.substr(pos + 1);
+    boost::trim(key);
+    boost::trim(value);
+
+    if (key == "aws_access_key_id")
+    {
+      identity.accessKeyId = value;
+    }
+    else if (key == "aws_secret_access_key")
+    {
+      identity.secretAccessKey = value;
+    }
+  }
+
+  return true;
+}
+
+bool hasAwsSharedOrConfigIdentity()
+{
+  const std::string profile = getAwsProfileName();
+  AwsProfileIdentity identity;
+
+  // ~/.aws/credentials uses [profile]
+  parseIniLikeFile(getDefaultAwsCredentialsFile(), profile, identity);
+
+  // ~/.aws/config uses [default] or [profile name] for non-default profiles
+  std::string configSection = (profile == "default")
+    ? "default"
+    : ("profile " + profile);
+  parseIniLikeFile(getDefaultAwsConfigFile(), configSection, identity);
+
+  return identity.hasIdentity();
 }
 
 PlatformDetectionStatus detectWithEndpoint(
@@ -71,6 +249,7 @@ PlatformDetectionStatus detectWithEndpoint(
 
   return PLATFORM_DETECTED;
 }
+} // namespace for helper functions
 
 PlatformDetectionStatus detectAwsLambdaEnv()
 {
@@ -211,6 +390,12 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
     return PLATFORM_DETECTED;
   }
 
+  // Identity from shared or config file
+  if (hasAwsSharedOrConfigIdentity())
+  {
+    return PLATFORM_DETECTED;
+  }
+
   // EC2 instance metadata service
   // setup timeout
   auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
@@ -346,13 +531,22 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
         auto detector = pair.second;
 
         task.worker = std::thread([detector, timeoutMs, state]() {
-          bool isDetected = (detector(timeoutMs) == PLATFORM_DETECTED);
-          {
-            std::lock_guard<std::mutex> lk(state->mtx);
-            state->detected = isDetected;
-            state->done = true;
+          bool isDetected = false;
+          try {
+            isDetected = (detector(timeoutMs) == PLATFORM_DETECTED);
+            {
+              std::lock_guard<std::mutex> lk(state->mtx);
+              state->detected = isDetected;
+              state->done = true;
+            }
+            state->cv.notify_one();
           }
-          state->cv.notify_one();
+          catch (const std::exception& e) {
+            CXX_LOG_ERROR("Exception from detector: %s", e.what());
+          }
+          catch (...) {
+            CXX_LOG_ERROR("Unknown exception from detector.");
+          }
         });
 
         tasks.push_back(std::move(task));

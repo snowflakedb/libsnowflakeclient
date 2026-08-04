@@ -217,6 +217,7 @@ int main(void) {
       cmocka_unit_test(test_gceCloudRunJobEnv),
       cmocka_unit_test(test_githubActionEnv),
       cmocka_unit_test(test_ec2Instance),
+      cmocka_unit_test(test_awsIdentity),
       cmocka_unit_test(test_azurevm),
       cmocka_unit_test(test_azureIdentity),
       cmocka_unit_test(test_gcevm),
