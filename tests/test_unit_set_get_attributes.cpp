@@ -81,6 +81,7 @@ std::vector<sf_int_attributes> intAttributes = {
 // unit test for snowflake_set_attribute and snowflake_get_attribute for all SF_ATTRIBUTE
 void test_set_get_all_attributes(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
 
     // Connection parameters that cannot be set by user
@@ -213,6 +214,7 @@ void test_set_get_all_attributes(void **unused)
 // clobbering the stored value.
 void test_set_get_tls_version_attribute(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     SF_STATUS status = SF_STATUS_EOF;
     void *value = NULL;
