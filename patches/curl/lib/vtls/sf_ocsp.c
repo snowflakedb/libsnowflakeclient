@@ -259,6 +259,8 @@ SF_PUBLIC(CURLcode) checkTelemetryHosts(char *hostname)
 {
   struct connectdata conn;
   struct Curl_peer origin;
+  memset(&conn, 0, sizeof(conn));
+  memset(&origin, 0, sizeof(origin));
   origin.hostname = hostname;
   conn.origin = &origin;
   return checkCertOCSP(&conn, NULL, NULL, NULL, 0, 0);
@@ -1863,7 +1865,11 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     }
 
     ocsp_url_invalid = false;
-    resp = queryResponderUsingCurl(ocsp_url, certid, conn->origin->hostname, req, data, ocsp_fail_open, ocsp_log_data, last_timeout_host);
+    /* just in case check whether conn->origin->hostname is valid before using */
+    if (conn && conn->origin && conn->origin->hostname)
+    {
+      resp = queryResponderUsingCurl(ocsp_url, certid, conn->origin->hostname, req, data, ocsp_fail_open, ocsp_log_data, last_timeout_host);
+    }
     /* update local cache */
     OPENSSL_free(host);
     OPENSSL_free(path);
@@ -2510,7 +2516,12 @@ void initOCSPCacheServer(struct Curl_easy *data)
 
   if (ocsp_cache_server_url_env == NULL)
   {
-    char* top_domain = strrchr(data->conn->origin->hostname, '.');
+    char* top_domain = NULL;
+    /* just in case check whether data->conn->origin->hostname is valid before using */
+    if (data->conn && data->conn->origin && data->conn->origin->hostname)
+    {
+      top_domain = strrchr(data->conn->origin->hostname, '.');
+    }
     if (top_domain)
     {
       top_domain++;
