@@ -410,6 +410,12 @@ typedef enum SF_ATTRIBUTE {
     *          appended automatically; a full URL is used as-is.
     */
     SF_CON_WIF_HOST,
+    /**
+    * When set to SF_BOOLEAN_TRUE, AWS WIF uses STS:GetWebIdentityToken (JWT).
+    * Defaults to SF_BOOLEAN_FALSE, which uses the GetCallerIdentity
+    * presigned-URL credential format.
+    */
+    SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN,
 } SF_ATTRIBUTE;
 
 /**
@@ -633,6 +639,7 @@ typedef struct SF_CONNECT {
 
     char* wif_audience;
     char* wif_host;
+    sf_bool wif_aws_use_outbound_token;
 } SF_CONNECT;
 
 /**

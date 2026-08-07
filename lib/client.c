@@ -1284,6 +1284,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->wif_token = NULL;
         sf->wif_azure_resource = NULL;
         sf->wif_audience = NULL;
+        sf->wif_aws_use_outbound_token = SF_BOOLEAN_FALSE;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -2052,6 +2053,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_HOST:
             alloc_buffer_and_copy(&sf->wif_host, value);
             break;
+        case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
+            sf->wif_aws_use_outbound_token = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2314,6 +2318,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_WIF_HOST:
             *value = sf->wif_host;
+            break;
+        case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
+            *value = &sf->wif_aws_use_outbound_token;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
