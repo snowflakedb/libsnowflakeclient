@@ -62,7 +62,7 @@ index b9180c119..33073c94d 100644
    {
      if (!SetLibcurlOption(m_handle, CURLOPT_PROXY, options.Proxy->c_str(), &result))
 diff --git a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
-index e4970b862..92594e5fb 100644
+index 60ccb558f..6a86cf8d0 100644
 --- a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 +++ b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 @@ -131,6 +131,12 @@ namespace Azure { namespace Core {

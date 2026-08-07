@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/Azure/azure-sdk-for-cpp.git
 ::
 @echo off
-set azure_src_version=12.17.0
+set azure_src_version=12.18.0
 set azure_build_version=1
 set azure_version=%azure_src_version%.%azure_build_version%
 call %*
