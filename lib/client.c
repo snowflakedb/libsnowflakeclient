@@ -4258,7 +4258,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
                 "Out of memory in creating a buffer for the error message.",
                 SF_SQLSTATE_APP_REJECT_CONNECTION);
         }
-        sf_strncpy(sf->error.msg, len + 1, sfstmt->error.msg, len);
+        sf_strncpy(sf->error.msg, len + 1, sfstmt->error.msg, len + 1);
     }
     return SF_STATUS_SUCCESS;
 }
