@@ -7,6 +7,7 @@
 #include <list>
 #include "snowflake/BaseClasses.hpp"
 #include "snowflake/Proxy.hpp"
+#include "basic_types.h"
 
 /**
  * Delegate class to modify url
