@@ -28,7 +28,6 @@
 #include "client_int.h"
 #include "snowflake_util.h"
 #include "tls_config.h"
-#include <openssl/ssl.h>
 
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,

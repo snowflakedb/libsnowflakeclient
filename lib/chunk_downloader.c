@@ -210,7 +210,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                int64 retry_timeout, int8 retry_max_count,
                                int32 tls_version) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy, tls_version);
     CURL *curl = get_curl_from_desc(curl_desc);
 
     if (!curl ||

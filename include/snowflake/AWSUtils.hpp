@@ -33,8 +33,6 @@ namespace Snowflake {
         // Calls AWS STS GetWebIdentityToken for outbound identity federation
         // (SNOW-2919437). Returns the signed JWT on success, or boost::none on
         // any failure (HTTP error, signing failure, malformed response).
-        // tlsVersion is a CURL_SSLVERSION_* value (or SF_TLS_VERSION_UNSET) that
-        // pins the TLS version curl uses for this STS call inside the AWS SDK.
         virtual boost::optional<std::string> getWebIdentityToken(
             const Aws::Auth::AWSCredentials& creds,
             const std::string& region,

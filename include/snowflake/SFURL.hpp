@@ -420,6 +420,19 @@ public:
     return m_proxy;
   }
 
+  /**
+  * Get TLS version.
+  */
+  inline int32 getTlsVersion() const
+  {
+    return m_tlsVersion;
+  }
+
+  inline void setTlsVersion(int32 tlsVersion)
+  {
+    m_tlsVersion = tlsVersion;
+  }
+
 private:
 
   /**
@@ -441,6 +454,7 @@ private:
   std::string m_path;
   QueryParams m_params;
   std::string m_fragment;
+  int32 m_tlsVersion;
 
   /**
   * proxy settings

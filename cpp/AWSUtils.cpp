@@ -32,8 +32,8 @@ namespace Snowflake {
         AwsSdkInitialized() : options{} {
           CXX_LOG_INFO("Initializing AWS SDK");
           Aws::InitAPI(options);
-          // install our custom curl HTTP client factory so
-          // per-client tls_version can be applied. Must run right after InitAPI.
+
+          // install our custom curl HTTP client factory 
           RegisterTlsHttpClientFactory();
           Aws::Utils::Logging::InitializeAWSLogging(
               Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
@@ -216,7 +216,6 @@ namespace Snowflake {
 
           // carry the session's tls_version into our custom
           // curl HTTP client factory for the duration of this synchronous
-          // CreateHttpClient call only. UNSET => SDK default.
           Snowflake::Client::ScopedAwsTlsVersion tlsGuard(static_cast<long>(tlsVersion));
           auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
           auto response = httpClient->MakeRequest(request);

@@ -429,7 +429,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** json)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;
@@ -539,7 +539,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** json, NON_JSON_RESP* raw_resp, sf_bool is_json_format)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;
@@ -960,7 +960,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
       (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
     char *url = (char *)SF_CALLOC(1, url_size);
     sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL *curl = get_curl_from_desc(curl_desc);
     char *encoded_url = NULL;
     SF_HEADER *my_header = NULL;

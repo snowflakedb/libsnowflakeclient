@@ -172,7 +172,7 @@ bool StatementPutGet::http_put(std::string const& url,
     return false;
   }
   SF_CONNECT* sf = m_stmt->connection;
-  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy, sf->tls_version);
   CURL* curl = get_curl_from_desc(curl_desc);
   if (!curl)
   {
@@ -235,7 +235,7 @@ bool StatementPutGet::http_get(std::string const& url,
   }
   SF_CONNECT* sf = m_stmt->connection;
 
-  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy, sf->tls_version);
   CURL* curl = get_curl_from_desc(curl_desc);
   if (!curl)
   {

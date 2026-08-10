@@ -17,7 +17,7 @@ namespace Snowflake {
             {
                 CXX_LOG_TRACE("sf::AuthenticationWebBrowserTestRunner::running curl instead opening a browser::%s", url.c_str());
                 cJSON* resp_data = NULL;
-                void* curl_desc = get_curl_desc_from_pool(url.c_str(), NULL, NULL);
+                void* curl_desc = get_curl_desc_from_pool(url.c_str(), NULL, NULL, SF_TLS_VERSION_UNSET);
                 CURL* curl = get_curl_from_desc(curl_desc);
 
                 SF_CRL_CONFIG crl_config = {

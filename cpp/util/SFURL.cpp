@@ -146,6 +146,7 @@ std::string SFURL::QueryParams::encodeParam(const std::string &srcParam)
 /// Functions of SFURL
 SFURL::SFURL()
 : m_cacheValid(false), m_params(m_cacheValid, m_cacheURL)
+, m_tlsVersion(-1)  // SF_TLS_VERSION_UNSET
 , m_proxyEnabled(false) {}
 
 SFURL::SFURL(const SFURL &copy)
@@ -155,6 +156,7 @@ SFURL::SFURL(const SFURL &copy)
 , m_path(copy.path())
 , m_params(copy.m_params, m_cacheValid, m_cacheURL)
 , m_fragment(copy.m_fragment)
+, m_tlsVersion(copy.m_tlsVersion)
 , m_proxy(copy.m_proxy)
 , m_proxyEnabled(copy.m_proxyEnabled)
 {}
@@ -178,6 +180,7 @@ SFURL &SFURL::operator= (const SFURL &copy)
   m_params = QueryParams(copy.m_params, m_cacheValid, m_cacheURL);
 
   m_fragment = copy.m_fragment;
+  m_tlsVersion = copy.m_tlsVersion;
   m_proxy = copy.m_proxy;
   m_proxyEnabled = copy.m_proxyEnabled;
   return *this;

@@ -9,10 +9,6 @@
 namespace
 {
   const char* SF_TLS_HTTP_TAG = "SFTlsHttpClient";
-
-  // Construction-scoped carrier: set by ScopedAwsTlsVersion around the
-  // synchronous `new S3Client(...)`, read by the factory's CreateHttpClient
-  // (which runs on the same thread during that construction). Not request-level.
   thread_local long t_ctorTlsVersion = SF_TLS_VERSION_UNSET;
 }
 
@@ -59,9 +55,6 @@ TlsCurlHttpClientFactory::CreateHttpRequest(const Aws::Http::URI& uri, Aws::Http
 
 void TlsCurlHttpClientFactory::InitStaticState()
 {
-  // Mirror DefaultHttpClientFactory. This repo builds the AWS SDK with the
-  // default httpOptions.initAndCleanupCurl == true, so curl global state is
-  // owned by the SDK; re-init it here after SetHttpClientFactory tore it down.
   Aws::Http::CurlHttpClient::InitGlobalState();
 }
 

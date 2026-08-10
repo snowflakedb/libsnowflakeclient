@@ -13,7 +13,7 @@ extern "C" {
     std::unique_ptr<CurlDesc> curl_desc;
   };
 
-  void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy)
+  void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy, int32 tls_version)
   {
     CURL_DESC_S* ret = new CURL_DESC_S;
     if (!ret)
@@ -35,6 +35,9 @@ extern "C" {
         }
         sfurl.setProxy(proxy_setting);
       }
+
+      sfurl.setTlsVersion(tls_version);
+
       // get pool of curl descriptors
       ClientCurlDescPool& curlDescPool = ClientCurlDescPool::getInstance();
 
@@ -291,6 +294,8 @@ namespace Client
                         ", no_proxy: " + proxy.getNoProxy();
       }
     }
+
+    endPointName += " TLS version: " + std::to_string(url.getTlsVersion());
 
     // iterator to lookup sub pools in our map
     SubPoolByName_t::iterator subPoolIterator;

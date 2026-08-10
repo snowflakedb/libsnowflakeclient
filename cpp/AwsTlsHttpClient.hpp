@@ -36,8 +36,6 @@ namespace Snowflake::Client
         long getConfiguredTlsVersion() const { return m_tlsVersion; }
 
     protected:
-        // Exact SDK signature. Called after the SDK's own CURLOPT_SSLVERSION and
-        // just before curl_easy_perform, so our value wins. Touches SSLVERSION only.
         void OverrideOptionsOnConnectionHandle(CURL* connectionHandle) const override;
 
     private:
@@ -77,12 +75,7 @@ namespace Snowflake::Client
         ScopedAwsTlsVersion& operator=(const ScopedAwsTlsVersion&) = delete;
     };
 
-    /**
-     * Install TlsCurlHttpClientFactory as the global AWS HTTP client factory.
-     * Call exactly once, immediately after Aws::InitAPI().
-     */
     void RegisterTlsHttpClientFactory();
-
 }
 
 #endif // SNOWFLAKE_AWS_TLS_HTTP_CLIENT_HPP
