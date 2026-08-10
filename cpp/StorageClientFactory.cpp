@@ -25,15 +25,19 @@ IStorageClient * StorageClientFactory::getClient(StageInfo *stageInfo,
     case StageType::S3:
       CXX_LOG_INFO("Creating S3 client");
       client =  new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig, statement);
+      break;
     case StageType::MOCKED_STAGE_TYPE:
       client = injectedClient;
+      break;
     case StageType::AZURE:
       CXX_LOG_INFO("Creating Azure client");
       client = new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold,
                                       transferConfig, statement, maxPutRetries);
+      break;
     case StageType::GCS:
       CXX_LOG_INFO("Creating GCS client");
       client = new SnowflakeGCSClient(stageInfo, parallel, transferConfig, statement);
+      break;
     default:
       // invalid stage type
       throw SnowflakeTransferException(TransferError::UNSUPPORTED_FEATURE,
