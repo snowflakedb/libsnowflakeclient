@@ -44,6 +44,7 @@ IStorageClient * StorageClientFactory::getClient(StageInfo *stageInfo,
         "Remote storage not supported.");
   }
   client->setMaxRetries(maxPutRetries);
+  return client;
 }
 
 void StorageClientFactory::injectMockedClient(IStorageClient *client)
