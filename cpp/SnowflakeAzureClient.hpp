@@ -105,7 +105,8 @@ class SnowflakeAzureClient : public Snowflake::Client::IStorageClient
 {
 public:
   SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel, size_t uploadThreshold,
-                       TransferConfig *transferConfig, IStatementPutGet* statement);
+                       TransferConfig *transferConfig, IStatementPutGet* statement,
+                       unsigned int maxRetries);
 
   ~SnowflakeAzureClient();
 
@@ -138,6 +139,8 @@ private:
 
   Util::ThreadPool * m_threadPool;
   std::shared_ptr<Azure::Storage::Blobs::BlobServiceClient> m_blobServiceClient;
+  // client with retry disabled for single uploading
+  std::shared_ptr<Azure::Storage::Blobs::BlobServiceClient> m_blobServiceClientNoRetry;
 
   const size_t m_uploadThreshold;
   unsigned int m_parallel;

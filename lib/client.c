@@ -1161,7 +1161,7 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
               if (copylen > size) {
                 return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
               }
-              sf_strncpy(value, size, CLIENT_CONFIG_FILE, size);
+              sf_strncpy(value, size, CLIENT_CONFIG_FILE, copylen);
             }
             break;
         case SF_GLOBAL_LOG_LEVEL:

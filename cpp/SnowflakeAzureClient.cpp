@@ -32,11 +32,13 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
                                            unsigned int parallel,
                                            size_t uploadThreshold,
                                            TransferConfig *transferConfig,
-                                           IStatementPutGet* statement) :
+                                           IStatementPutGet* statement,
+                                           unsigned int maxRetries) :
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
-  m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
+  m_parallel(std::min(parallel, std::thread::hardware_concurrency())),
+  m_maxRetries(maxRetries)
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
   char caBundleFile[MAX_PATH] = {0};
@@ -81,7 +83,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
 
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
-  std::string endpoint = account_name + "." + m_stageInfo->endPoint;
+  std::string endpoint = std::string("https://") + account_name + "." + m_stageInfo->endPoint;
   Util::Proxy * proxy;
   if (transferConfig && transferConfig->proxy) {
     proxy = transferConfig->proxy;
@@ -112,6 +114,9 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
 
     options.Transport.Transport = std::make_shared<Azure::Core::Http::CurlTransport>(curl_options);
     m_blobServiceClient = std::make_shared<BlobServiceClient>(endpoint + sas_key, options);
+
+    options.Retry.MaxRetries = 0;
+    m_blobServiceClientNoRetry = std::make_shared<BlobServiceClient>(endpoint + sas_key, options);
   }
   catch (const std::exception& e) {
     CXX_LOG_ERROR("Failed to create Azure Service Client: %s", e.what());
@@ -168,7 +173,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   int64_t len = (int64_t) ((fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize) ;
 
   try {
-    auto containerClient = m_blobServiceClient->GetBlobContainerClient(containerName);
+    auto containerClient = m_blobServiceClientNoRetry->GetBlobContainerClient(containerName);
     auto blobClient = containerClient.GetBlockBlobClient(blobName);
     //metadata azure uses.
     UploadBlockBlobOptions uploadOptions;
@@ -497,7 +502,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleDownload(
     auto response = blobClient.Download();
     if (!response.Value.BodyStream)
     {
-      CXX_LOG_ERROR("%s file donwload failed:: BodyStream is NULL",
+      CXX_LOG_ERROR("%s file download failed:: BodyStream is NULL",
                     fileMetadata->srcFileName.c_str());
       return RemoteStorageRequestOutcome::FAILED;
     }

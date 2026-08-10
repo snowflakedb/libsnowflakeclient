@@ -70,7 +70,7 @@ index 60ccb558f..6a86cf8d0 100644
        virtual bool IsExpired() = 0;
  
 +      /**
-+       * @brief Checks whether this CURL connection is ued proxy.
++       * @brief Checks whether this CURL connection is used proxy.
 +       *
 +       */
 +      virtual bool IsUsedProxy() = 0;
