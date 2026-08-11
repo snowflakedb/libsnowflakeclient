@@ -60,7 +60,7 @@ cd %AZURE_CMAKE_BUILD_DIR%
 
 set AZURE_SDK_DISABLE_AUTO_VCPKG=1
 cmake %AZURE_SOURCE_DIR% ^
--G "%cmake_generator%" -A "%cmake_architecture%" ^
+-G "%cmake_generator%" -A "%cmake_architecture%" -T "%ToolSetVersion%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^
 -DMSVC_USE_STATIC_CRT=%staticcrt% ^
