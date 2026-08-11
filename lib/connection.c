@@ -51,7 +51,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     sf_os_version(os_version, sizeof(os_version));
     // Use application_path override if provided, otherwise detect automatically
     if (sf->application_path && sf->application_path[0] != '\0') {
-        sf_strncpy(app_path, sizeof(app_path), sf->application_path, sizeof(app_path) - 1);
+        sf_strncpy(app_path, sizeof(app_path), sf->application_path, strlen(sf->application_path) + 1);
         app_path[sizeof(app_path) - 1] = '\0';
     } else {
         sf_get_callers_executable_path(app_path, sizeof(app_path));
