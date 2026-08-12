@@ -1,5 +1,6 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/WifAttestation.hpp"
+#include "snowflake/HttpClient.hpp"
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
@@ -7,6 +8,7 @@
 #include "logger/SFLogger.hpp"
 #include "jwt/Jwt.hpp"
 #include <boost/url.hpp>
+#include <memory>
 
 namespace Snowflake {
   namespace Client {
@@ -128,8 +130,17 @@ namespace Snowflake {
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
-      if (config.httpClient == NULL)
-        config.httpClient = IHttpClient::getInstance();
+      // When the caller did not inject an HTTP client, build one that carries
+      // the session's TLS version so attestation HTTPS calls (e.g. Azure/GCP
+      // managed-identity endpoints) honor it. Owned locally for this call.
+      std::unique_ptr<IHttpClient> ownedHttpClient;
+      if (config.httpClient == NULL) {
+        HttpClientConfig cfg{};
+        cfg.connectTimeoutInSeconds = 5;      // match defaultHttpClientConfig
+        cfg.tlsVersion = config.tlsVersion;   // populated from SF_CONNECT.tls_version
+        ownedHttpClient.reset(IHttpClient::createSimple(cfg));
+        config.httpClient = ownedHttpClient.get();
+      }
       if (config.awsSdkWrapper == NULL)
         config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
 

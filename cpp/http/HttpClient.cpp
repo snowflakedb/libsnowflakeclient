@@ -2,6 +2,7 @@
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
 #include <curl/curl.h>
+#include <tls_config.h>
 
 namespace Snowflake {
   namespace Client {
@@ -43,6 +44,10 @@ namespace Snowflake {
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
           curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req.body.size());
+        }
+
+        if (config.tlsVersion != -1) {
+            sf_apply_tls_version(curl, config.tlsVersion);
         }
 
         struct curl_slist *header_list = nullptr;
