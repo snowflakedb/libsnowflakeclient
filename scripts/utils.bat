@@ -8,14 +8,14 @@ goto :EOF
 :: VC16 is for Github Workflow windows-2019 virtual machine
 :setup_visual_studio
     if /I "%~1"=="VS17" (
-        if not "%ToolSetVersion%" == "v143" (
+        if not "%ToolSetVersion%"=="v143" (
             echo === setting up the Visual Studio 17 environments with default toolset
             call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch%
             set "ToolSetVersion=v143"
         )
     )
     if /I "%~1"=="VS16" (
-        if not "%ToolSetVersion%" == "v142" (
+        if not "%ToolSetVersion%"=="v142" (
             echo === setting up the Visual Studio 17 environments with VS16 toolset
             call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch% -vcvars_ver=14.2
             set "ToolSetVersion=v142"
