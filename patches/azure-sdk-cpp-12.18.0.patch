@@ -2,6 +2,13 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 433f22dc7..f235c888b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -39,5 +39,5 @@ az_vcpkg_integrate()
+ 
+ # Project definition
+ project(azure-sdk LANGUAGES CXX C)
+-set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED True)
 @@ -179,12 +179,12 @@ endif()
  # sub-projects
  add_subdirectory(sdk/core)
