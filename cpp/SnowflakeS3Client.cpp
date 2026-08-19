@@ -272,6 +272,13 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
 
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
+#if defined(_DEBUG) || defined(TEST_DEBUG)
+  // for testing retry with debug build, fail the first attempt
+  if (!uploadCtx->m_isRetry)
+  {
+    uploadPartRequest.SetContentLength(uploadCtx->buf->getSize() + 10);
+  }
+#endif
   uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", streamBuf.get()));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
@@ -352,6 +359,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
                                //Sleeps only when its a retry
                                partRetryCtx.waitForNextRetry();
                                this->uploadParts(&uploadParts[partId]);
+                               uploadParts[partId].m_isRetry = true;
                              } while(partRetryCtx.isRetryable(uploadParts[partId].m_outcome));
                            });
     }
