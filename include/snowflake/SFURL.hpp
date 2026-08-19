@@ -7,7 +7,6 @@
 #include <list>
 #include "snowflake/BaseClasses.hpp"
 #include "snowflake/Proxy.hpp"
-#include "basic_types.h"
 
 /**
  * Delegate class to modify url
@@ -421,15 +420,13 @@ public:
     return m_proxy;
   }
 
-  /**
-  * Get TLS version.
-  */
-  inline int32 getTlsVersion() const
+  // TLS version (CURL_SSLVERSION_* value; -1 = unset). Used as a subpool key.
+  inline int getTlsVersion() const
   {
     return m_tlsVersion;
   }
 
-  inline void setTlsVersion(int32 tlsVersion)
+  inline void setTlsVersion(int tlsVersion)
   {
     m_tlsVersion = tlsVersion;
   }
@@ -455,7 +452,7 @@ private:
   std::string m_path;
   QueryParams m_params;
   std::string m_fragment;
-  int32 m_tlsVersion;
+  int m_tlsVersion = -1;
 
   /**
   * proxy settings

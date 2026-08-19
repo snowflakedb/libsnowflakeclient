@@ -431,10 +431,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_TLS_VERSION,
 } SF_ATTRIBUTE;
 
-/**
- * Sentinel value for SF_CONNECT.tls_version meaning "not overridden" -
- * the global SF_GLOBAL_SSL_VERSION setting should be used instead.
- */
+// SF_CON_TLS_VERSION sentinel: no per-connection override.
 #define SF_TLS_VERSION_UNSET (-1)
 
 /**

@@ -18,7 +18,7 @@ index 433f22dc7..f235c888b 100644
  add_subdirectory(sdk/storage)
  add_subdirectory(sdk/template)
 diff --git a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
-index 2ffd76cee..359412574 100644
+index 2ffd76cee..c50e691b5 100644
 --- a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 +++ b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 @@ -91,6 +91,8 @@ namespace Azure { namespace Core { namespace Http {
@@ -30,8 +30,18 @@ index 2ffd76cee..359412574 100644
      /**
       * @brief Username to be used for proxy connections.
       *
+@@ -199,6 +201,9 @@ namespace Azure { namespace Core { namespace Http {
+      * @brief If set, enables libcurl's internal SSL session caching.
+      */
+     bool EnableCurlSslCaching = true;
++
++    // Snowflake: CURLOPT_SSLVERSION value; negative (default) = SDK default (TLS 1.2 min).
++    int TlsVersion = -1;
+   };
+ 
+   /**
 diff --git a/sdk/core/azure-core/src/http/curl/curl.cpp b/sdk/core/azure-core/src/http/curl/curl.cpp
-index b9180c119..33073c94d 100644
+index b9180c119..0d42d8877 100644
 --- a/sdk/core/azure-core/src/http/curl/curl.cpp
 +++ b/sdk/core/azure-core/src/http/curl/curl.cpp
 @@ -764,7 +764,7 @@ inline std::string CurlSession::GetHTTPMessagePreBody(Azure::Core::Http::Request
@@ -61,8 +71,26 @@ index b9180c119..33073c94d 100644
    if (options.Proxy)
    {
      if (!SetLibcurlOption(m_handle, CURLOPT_PROXY, options.Proxy->c_str(), &result))
+@@ -2644,12 +2655,14 @@ CurlConnection::CurlConnection(
+         + ". Failed to set libcurl HTTP/1.1" + ". " + std::string(curl_easy_strerror(result)));
+   }
+ 
+-  //   Make libcurl to support only TLS v1.2 or later
+-  if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2, &result))
++  // Snowflake per-connection TLS version; negative keeps the SDK default (TLS v1.2+).
++  long sslVersion
++      = (options.TlsVersion < 0) ? CURL_SSLVERSION_TLSv1_2 : options.TlsVersion;
++  if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, sslVersion, &result))
+   {
+     throw Azure::Core::Http::TransportException(
+         _detail::DefaultFailedToGetNewConnectionTemplate + hostDisplayName
+-        + ". Failed enforcing TLS v1.2 or greater. " + std::string(curl_easy_strerror(result)));
++        + ". Failed enforcing TLS version. " + std::string(curl_easy_strerror(result)));
+   }
+ 
+   auto performResult = curl_easy_perform(m_handle.get());
 diff --git a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
-index 60ccb558f..6a86cf8d0 100644
+index 60ccb558f..a89aa6aa8 100644
 --- a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 +++ b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 @@ -131,6 +131,12 @@ namespace Azure { namespace Core {

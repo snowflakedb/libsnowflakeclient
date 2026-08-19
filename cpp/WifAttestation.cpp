@@ -129,15 +129,18 @@ namespace Snowflake {
         return SF_STATUS_SUCCESS;
     }
 
+    HttpClientConfig defaultAttestationHttpClientConfig(int tlsVersion) {
+      HttpClientConfig cfg{};
+      cfg.connectTimeoutInSeconds = 5;   // match defaultHttpClientConfig
+      cfg.tlsVersion = tlsVersion;       // session TLS version (or UNSET)
+      return cfg;
+    }
+
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
-      // When the caller did not inject an HTTP client, build one that carries
-      // the session's TLS version so attestation HTTPS calls (e.g. Azure/GCP
-      // managed-identity endpoints) honor it. Owned locally for this call.
+      // Default HTTP client carries the session's TLS version; owned for this call.
       std::unique_ptr<IHttpClient> ownedHttpClient;
       if (config.httpClient == NULL) {
-        HttpClientConfig cfg{};
-        cfg.connectTimeoutInSeconds = 5;      // match defaultHttpClientConfig
-        cfg.tlsVersion = config.tlsVersion;   // populated from SF_CONNECT.tls_version
+        HttpClientConfig cfg = defaultAttestationHttpClientConfig(config.tlsVersion);
         ownedHttpClient.reset(IHttpClient::createSimple(cfg));
         config.httpClient = ownedHttpClient.get();
       }

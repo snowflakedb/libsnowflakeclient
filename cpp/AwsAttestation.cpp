@@ -46,7 +46,8 @@ namespace Snowflake::Client {
   boost::optional<Aws::Auth::AWSCredentials> assumeAwsRoleChain(
     AwsUtils::ISdkWrapper &sdkWrapper,
     const Aws::Auth::AWSCredentials &initialCreds,
-    const std::vector<std::string> &roleArnChain) {
+    const std::vector<std::string> &roleArnChain,
+    int tlsVersion) {
 
     if (roleArnChain.empty()) {
       CXX_LOG_ERROR("Role ARN chain is empty");
@@ -56,7 +57,7 @@ namespace Snowflake::Client {
     Aws::Auth::AWSCredentials currentCreds = initialCreds;
 
     for (const auto &roleArn: roleArnChain) {
-      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn);
+      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn, tlsVersion);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role in chain: %s", roleArn.c_str());
         return boost::none;
@@ -96,7 +97,7 @@ namespace Snowflake::Client {
 
       CXX_LOG_DEBUG("Role ARN chain size: %zu", roleArnChain.size());
 
-      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain);
+      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain, config.tlsVersion);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role chain");
         return boost::none;

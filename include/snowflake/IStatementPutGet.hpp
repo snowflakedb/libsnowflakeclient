@@ -3,7 +3,6 @@
 
 #include "PutGetParseResponse.hpp"
 #include "Proxy.hpp"
-#include "client.h"   // SF_TLS_VERSION_UNSET
 #include <iostream>
 
 namespace Snowflake
@@ -74,15 +73,10 @@ public:
     return NULL;
   }
 
-  /**
-   * Per-connection TLS version override for storage transfers (e.g. AWS S3).
-   * Returns a CURL_SSLVERSION_* value, or SF_TLS_VERSION_UNSET when the
-   * session did not override it (fall back to SDK/library default).
-   * Not overridden by default.
-   */
+  // Per-connection TLS version (CURL_SSLVERSION_* value); -1 = unset.
   virtual int get_tls_version()
   {
-    return SF_TLS_VERSION_UNSET;
+    return -1;
   }
 
   // Utility functions to convert enconding between UTF-8 to the encoding

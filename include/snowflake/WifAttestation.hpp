@@ -71,6 +71,7 @@ namespace Client {
   };
 
   class IHttpClient;
+  struct HttpClientConfig;
   namespace AwsUtils {
     class ISdkWrapper;
   }
@@ -109,6 +110,8 @@ namespace Client {
   };
 
   boost::optional<Attestation> createAttestation(AttestationConfig& config);
+
+  HttpClientConfig defaultAttestationHttpClientConfig(int tlsVersion);
 }
 
 }

@@ -1,6 +1,5 @@
 
 #include "snowflake/AWSUtils.hpp"
-#include "AwsTlsHttpClient.hpp"
 #include <aws/core/Aws.h>
 #include "logger/SFLogger.hpp"
 #include "logger/SFAwsLogger.hpp"
@@ -32,9 +31,6 @@ namespace Snowflake {
         AwsSdkInitialized() : options{} {
           CXX_LOG_INFO("Initializing AWS SDK");
           Aws::InitAPI(options);
-
-          // install our custom curl HTTP client factory 
-          RegisterTlsHttpClientFactory();
           Aws::Utils::Logging::InitializeAWSLogging(
               Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
         }
@@ -136,12 +132,16 @@ namespace Snowflake {
         // call through the same DI seam they use for getWebIdentityToken.
         boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials &currentCreds,
-            const std::string &roleArn) override {
+            const std::string &roleArn,
+            int tlsVersion) override {
           auto awsSdk = initAwsSdk();
 
           CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
 
-          const Aws::STS::STSClient stsClient(currentCreds);
+          // Session TLS version via the patched ClientConfiguration field.
+          Aws::Client::ClientConfiguration clientConfig;
+          clientConfig.tlsVersion = tlsVersion;
+          const Aws::STS::STSClient stsClient(currentCreds, clientConfig);
 
           Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
           assumeRoleRequest.SetRoleArn(roleArn.c_str());
@@ -213,10 +213,7 @@ namespace Snowflake {
           clientConfig.region = region;
           clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
           clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
-
-          // carry the session's tls_version into our custom
-          // curl HTTP client factory for the duration of this synchronous
-          Snowflake::Client::ScopedAwsTlsVersion tlsGuard(static_cast<long>(tlsVersion));
+          clientConfig.tlsVersion = tlsVersion;
           auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
           auto response = httpClient->MakeRequest(request);
           if (!response) {

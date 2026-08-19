@@ -401,8 +401,8 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
 
         {
-            long chosen_tls = (tls_version != SF_TLS_VERSION_UNSET)
-                                ? (long)tls_version : (long)SSL_VERSION;
+            /* per-connection tls_version overrides the global SSL_VERSION */
+            int chosen_tls = (tls_version != SF_TLS_VERSION_UNSET) ? tls_version : SSL_VERSION;
             res = sf_apply_tls_version(curl, chosen_tls);
             if (res != CURLE_OK) {
                 log_error("Unable to set SSL Version [%s]",

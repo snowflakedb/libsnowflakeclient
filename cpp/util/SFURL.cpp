@@ -146,7 +146,7 @@ std::string SFURL::QueryParams::encodeParam(const std::string &srcParam)
 /// Functions of SFURL
 SFURL::SFURL()
 : m_cacheValid(false), m_params(m_cacheValid, m_cacheURL)
-, m_tlsVersion(-1)  // SF_TLS_VERSION_UNSET
+, m_tlsVersion(-1) 
 , m_proxyEnabled(false) {}
 
 SFURL::SFURL(const SFURL &copy)

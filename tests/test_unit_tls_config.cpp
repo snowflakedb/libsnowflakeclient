@@ -1,20 +1,23 @@
 /*
  * Unit tests for the shared TLS-version configuration module (tls_config) and
- * the AWS custom curl HTTP client that carries a per-connection TLS version
- * into the AWS SDK. No network I/O: assertions are on CURLcode return values
- * and the stamped tls_version (via a test-seam accessor).
+ * the StatementPutGet bridge that exposes the session's per-connection TLS
+ * version. No network I/O: assertions are on CURLcode return values and the
+ * bridged tls_version.
+ *
+ * The AWS SDK path (per-client TLS via the patched ClientConfiguration.tlsVersion
+ * field applied in CurlHttpClient) is exercised at integration level with a
+ * rebuilt AWS SDK; the ISdkWrapper tlsVersion passthrough is covered by
+ * test_create_wif_attestation.
  */
 
-#include <aws/core/client/ClientConfiguration.h>
-#include <aws/core/http/HttpClientFactory.h>
-
-#include <curl/curl.h>
-#include "utils/test_setup.h"
-#include "../lib/tls_config.h"
+// StatementPutGet.hpp (via <iostream>) must precede cmocka (utils/test_setup.h):
+// cmocka macroizes "inline", which the C++ standard library headers reject if
+// they are processed afterwards.
 #include "snowflake/client.h"
-#include "snowflake/AWSUtils.hpp"
-#include "AwsTlsHttpClient.hpp"
 #include "StatementPutGet.hpp"
+#include <curl/curl.h>
+#include "../lib/tls_config.h"
+#include "utils/test_setup.h"
 
 using namespace Snowflake::Client;
 
@@ -36,37 +39,6 @@ void test_apply_tls_version_sets_version(void **) {
   assert_non_null(handle);
   assert_int_equal(sf_apply_tls_version(handle, CURL_SSLVERSION_TLSv1_2), CURLE_OK);
   curl_easy_cleanup(handle);
-}
-
-// ---- AWS custom client layer ----------------------------------------------
-
-// Direct construction stamps the requested version.
-void test_tls_curl_http_client_stamps_version(void **) {
-  auto awsSdk = AwsUtils::initAwsSdk();
-  Aws::Client::ClientConfiguration cfg;
-
-  TlsCurlHttpClient direct(cfg, CURL_SSLVERSION_TLSv1_3);
-  assert_int_equal((int)direct.getConfiguredTlsVersion(), CURL_SSLVERSION_TLSv1_3);
-}
-
-// The registered factory reads the ScopedAwsTlsVersion thread-local: inside the
-// scope the created client is stamped with the scoped version; outside, UNSET.
-void test_scoped_aws_tls_version_flows_through_factory(void **) {
-  auto awsSdk = AwsUtils::initAwsSdk();
-  Aws::Client::ClientConfiguration cfg;
-
-  {
-    ScopedAwsTlsVersion guard(CURL_SSLVERSION_TLSv1_2);
-    auto client = Aws::Http::CreateHttpClient(cfg);
-    auto *tlsClient = dynamic_cast<TlsCurlHttpClient *>(client.get());
-    assert_non_null(tlsClient);
-    assert_int_equal((int)tlsClient->getConfiguredTlsVersion(), CURL_SSLVERSION_TLSv1_2);
-  }
-
-  auto client2 = Aws::Http::CreateHttpClient(cfg);
-  auto *tlsClient2 = dynamic_cast<TlsCurlHttpClient *>(client2.get());
-  assert_non_null(tlsClient2);
-  assert_int_equal((int)tlsClient2->getConfiguredTlsVersion(), SF_TLS_VERSION_UNSET);
 }
 
 // ---- StatementPutGet::get_tls_version() ------------------------------------
@@ -95,8 +67,6 @@ int main(void) {
     cmocka_unit_test(test_apply_tls_version_null_handle_is_noop),
     cmocka_unit_test(test_apply_tls_version_unset_is_noop),
     cmocka_unit_test(test_apply_tls_version_sets_version),
-    cmocka_unit_test(test_tls_curl_http_client_stamps_version),
-    cmocka_unit_test(test_scoped_aws_tls_version_flows_through_factory),
     cmocka_unit_test(test_statement_put_get_tls_version),
     cmocka_unit_test(test_statement_put_get_tls_version_null_stmt),
   };

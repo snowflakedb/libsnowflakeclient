@@ -98,6 +98,9 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
     Azure::Core::Http::CurlTransportOptions curl_options;
     curl_options.CAInfo = caBundleFile;
 
+    // Per-connection TLS version (patched CurlTransportOptions field); -1 = SDK default.
+    curl_options.TlsVersion = statement->get_tls_version();
+
     if (proxy) {
       curl_options.Proxy = proxy->getHost().empty() ?
           "" : proxy->getHost() + ":" + std::to_string(proxy->getPort());

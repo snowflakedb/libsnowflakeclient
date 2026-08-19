@@ -229,8 +229,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/AWSUtils.hpp
         cpp/OIDCAttestation.cpp
         cpp/OIDCAttestation.hpp
-        cpp/AwsTlsHttpClient.cpp
-        cpp/AwsTlsHttpClient.hpp
 )
 
 if (LINUX)
