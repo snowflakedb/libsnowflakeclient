@@ -2,15 +2,21 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 433f22dc7..f235c888b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -39,5 +39,7 @@ az_vcpkg_integrate()
+@@ -37,3 +37,9 @@ az_vcpkg_integrate()
  
- # Project definition
- project(azure-sdk LANGUAGES CXX C)
--set(CMAKE_CXX_STANDARD 14)
++# Must set CMAKE_CXX_STANDARD before project() or GCC 12 defaults to C++14.
 +if(NOT CMAKE_CXX_STANDARD)
 +  set(CMAKE_CXX_STANDARD 14)
 +endif()
- set(CMAKE_CXX_STANDARD_REQUIRED True)
++set(CMAKE_CXX_STANDARD_REQUIRED True)
++
+ # Project definition
+ project(azure-sdk LANGUAGES CXX C)
+@@ -40,4 +46,2 @@ project(azure-sdk LANGUAGES CXX C)
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED True)
+ 
+ # Enable a build configuration to disable features when building for Windows Store.
 @@ -179,12 +179,12 @@ endif()
  # sub-projects
  add_subdirectory(sdk/core)
