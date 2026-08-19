@@ -416,18 +416,6 @@ typedef enum SF_ATTRIBUTE {
     * presigned-URL credential format.
     */
     SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN,
-    /**
-     * Per-connection TLS/SSL version override. Value is a CURL_SSLVERSION_*
-     * constant (see curl/curl.h). Set to SF_TLS_VERSION_UNSET (the default)
-     * to fall back to the global SF_GLOBAL_SSL_VERSION setting.
-     *
-     * NOTE: The fall back to the global SF_GLOBAL_SSL_VERSION setting applies
-     * only to the direct Snowflake HTTP/curl paths. For AWS storage transfers
-     * (S3 PUT/GET and the AWS STS calls that go through the AWS SDK), only an
-     * explicit per-connection value set here is honored; when this is left
-     * UNSET those transfers use the AWS SDK's own default TLS version, NOT the
-     * global SF_GLOBAL_SSL_VERSION setting.
-     */
     SF_CON_TLS_VERSION,
 } SF_ATTRIBUTE;
 

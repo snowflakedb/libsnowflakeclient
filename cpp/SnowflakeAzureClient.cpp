@@ -97,8 +97,6 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
     options.Retry.MaxRetries = m_maxRetries;
     Azure::Core::Http::CurlTransportOptions curl_options;
     curl_options.CAInfo = caBundleFile;
-
-    // Per-connection TLS version (patched CurlTransportOptions field); -1 = SDK default.
     curl_options.TlsVersion = statement->get_tls_version();
 
     if (proxy) {
