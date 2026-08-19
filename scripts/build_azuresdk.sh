@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 AZURE_SRC_VERSION=12.18.0
-AZURE_BUILD_VERSION=1
+AZURE_BUILD_VERSION=2
 AZURE_DIR=azure-sdk-for-cpp
 AZURE_VERSION=$AZURE_SRC_VERSION.$AZURE_BUILD_VERSION
 
@@ -29,7 +29,8 @@ AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 rm -rf $AZURE_SOURCE_DIR
 git clone --single-branch --branch azure-storage-blobs_$AZURE_SRC_VERSION --recursive https://github.com/Azure/azure-sdk-for-cpp.git $AZURE_SOURCE_DIR
 pushd $AZURE_SOURCE_DIR
-  git apply ../../patches/azure-sdk-cpp-$AZURE_SRC_VERSION.patch
+  echo "Applying patches/azure-sdk-cpp-${AZURE_SRC_VERSION}.patch"
+  git apply --verbose ../../patches/azure-sdk-cpp-$AZURE_SRC_VERSION.patch
 popd
 
 azure_configure_opts=()
@@ -41,10 +42,12 @@ else
 fi
 azure_configure_opts+=(
     "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+    "-DCMAKE_CXX_STANDARD=17"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_C_COMPILER=$CC"
     "-DCMAKE_CXX_COMPILER=$CXX"
     "-DCMAKE_INSTALL_PREFIX=$AZURE_BUILD_DIR"
+    "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
     "-DBUILD_SHARED_LIBS=OFF"
     "-DBUILD_TESTING=OFF"
     "-DBUILD_TRANSPORT_CURL=ON"
@@ -103,9 +106,15 @@ else
 fi
 
 unset GIT_DIR
-    
-make
-make install
+
+# Match Windows: only build azure-storage-blobs (and its deps). `make` /
+# `make install` depend on `all` and would compile unused SDKs including
+# azure-storage-files-shares, which GCC 12 rejects as C++14 under
+# -Werror=maybe-uninitialized.
+$CMAKE --build . --target azure-storage-blobs
+$CMAKE --install sdk/core/azure-core
+$CMAKE --install sdk/storage/azure-storage-common
+$CMAKE --install sdk/storage/azure-storage-blobs
 
 # keep library in lib folder  consistently
 if [[ -d "$AZURE_BUILD_DIR/lib64" ]]; then
