@@ -59,7 +59,8 @@ index 203022fa225..130ebb999d6 100644
               * You probably shouldn't use this flag in a production scenario.
               */
              bool verifySSL = true;
-
++            // Snowflake: per-connection TLS version (CURL_SSLVERSION_* value);
++            // negative (default) keeps the SDK default.
 +            int tlsVersion = -1;
              /**
               * If your Certificate Authority path is different from the default, you can tell
