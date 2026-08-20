@@ -1,24 +1,105 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 433f22dc7..f235c888b 100644
+index 433f22d..0bf0420 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -179,12 +179,12 @@ endif()
- # sub-projects
+@@ -35,10 +35,11 @@ include(AzureBuildTargetForCI)
+ 
+ az_vcpkg_integrate()
+ 
++# Must set CMAKE_CXX_STANDARD before project() or GCC 12 defaults to C++14.
++include(AzureHonorCxxStandard)
++
+ # Project definition
+ project(azure-sdk LANGUAGES CXX C)
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED True)
+ 
+ # Enable a build configuration to disable features when building for Windows Store.
+ message(STATUS "CMAKE_SYSTEM_NAME=" ${CMAKE_SYSTEM_NAME} ";")
+@@ -176,19 +177,21 @@ if(BUILD_SAMPLES)
+   add_subdirectory(samples/helpers/service)
+ endif()
+ 
+-# sub-projects
++# libsnowflakeclient only needs azure-core + azure-storage-blobs.
++# Skip the rest so they cannot reset CMAKE_CXX_STANDARD to 14 during configure
++# or pull azure-storage-files-shares into `all` (GCC 12 -Werror).
  add_subdirectory(sdk/core)
- add_subdirectory(sdk/appconfiguration)
+-add_subdirectory(sdk/appconfiguration)
 -add_subdirectory(sdk/attestation)
++#add_subdirectory(sdk/appconfiguration)
 +#add_subdirectory(sdk/attestation)
  # AMQP doesn't work for UWP yet, and eventhubs depends on AMQP, so we cannot include eventhubs on UWP.
  if (NOT DISABLE_AMQP)
      add_subdirectory(sdk/eventhubs)
  endif()
 -add_subdirectory(sdk/identity)
+-add_subdirectory(sdk/keyvault)
 +#add_subdirectory(sdk/identity)
- add_subdirectory(sdk/keyvault)
++#add_subdirectory(sdk/keyvault)
  add_subdirectory(sdk/storage)
- add_subdirectory(sdk/template)
+-add_subdirectory(sdk/template)
+-add_subdirectory(sdk/tables)
++#add_subdirectory(sdk/template)
++#add_subdirectory(sdk/tables)
+ 
+ if(BUILD_SAMPLES)
+   add_subdirectory(samples/integration/vcpkg-all-smoke)
+diff --git a/cmake-modules/AzureHonorCxxStandard.cmake b/cmake-modules/AzureHonorCxxStandard.cmake
+new file mode 100644
+index 0000000..e6e45ad
+--- /dev/null
++++ b/cmake-modules/AzureHonorCxxStandard.cmake
+@@ -0,0 +1,16 @@
++# Honor CMAKE_CXX_STANDARD from -D / the parent directory. Azure otherwise
++# `set(CMAKE_CXX_STANDARD 14)` after every project(), which on GCC 12 matches
++# the compiler default stamped by enable_language() and ignores
++# -DCMAKE_CXX_STANDARD=17.
++#
++# Must be included *before* project() in each CMakeLists that would otherwise
++# force 14.
++if(NOT CMAKE_CXX_STANDARD)
++  set(CMAKE_CXX_STANDARD 14)
++endif()
++# Copy cache into a normal variable so project()/enable_language() cannot
++# replace it with the compiler default.
++set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
++set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD}" CACHE STRING "C++ standard" FORCE)
++set(CMAKE_CXX_STANDARD_REQUIRED True)
++message(STATUS "AzureHonorCxxStandard: CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} (${CMAKE_CURRENT_SOURCE_DIR})")
+diff --git a/sdk/core/CMakeLists.txt b/sdk/core/CMakeLists.txt
+index 0e7e9e5..d59c41d 100644
+--- a/sdk/core/CMakeLists.txt
++++ b/sdk/core/CMakeLists.txt
+@@ -3,9 +3,8 @@
+ 
+ cmake_minimum_required (VERSION 3.13)
+ 
++include(AzureHonorCxxStandard)
+ project (azure-core LANGUAGES CXX)
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ add_subdirectory(azure-core)
+diff --git a/sdk/core/azure-core/CMakeLists.txt b/sdk/core/azure-core/CMakeLists.txt
+index b8bc1d5..5a389d0 100644
+--- a/sdk/core/azure-core/CMakeLists.txt
++++ b/sdk/core/azure-core/CMakeLists.txt
+@@ -8,10 +8,9 @@ az_vcpkg_integrate()
+ 
+ # Azure core is compatible with CMake 3.12
+ cmake_minimum_required (VERSION 3.12)
++include(AzureHonorCxxStandard)
+ project(azure-core LANGUAGES CXX)
+ 
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED True)
+ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ include(AzureVersion)
 diff --git a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
-index 2ffd76cee..359412574 100644
+index 2ffd76c..3594125 100644
 --- a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 +++ b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 @@ -91,6 +91,8 @@ namespace Azure { namespace Core { namespace Http {
@@ -31,7 +112,7 @@ index 2ffd76cee..359412574 100644
       * @brief Username to be used for proxy connections.
       *
 diff --git a/sdk/core/azure-core/src/http/curl/curl.cpp b/sdk/core/azure-core/src/http/curl/curl.cpp
-index b9180c119..33073c94d 100644
+index b9180c1..33073c9 100644
 --- a/sdk/core/azure-core/src/http/curl/curl.cpp
 +++ b/sdk/core/azure-core/src/http/curl/curl.cpp
 @@ -764,7 +764,7 @@ inline std::string CurlSession::GetHTTPMessagePreBody(Azure::Core::Http::Request
@@ -62,7 +143,7 @@ index b9180c119..33073c94d 100644
    {
      if (!SetLibcurlOption(m_handle, CURLOPT_PROXY, options.Proxy->c_str(), &result))
 diff --git a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
-index 60ccb558f..6a86cf8d0 100644
+index 60ccb55..a89aa6a 100644
 --- a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 +++ b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 @@ -131,6 +131,12 @@ namespace Azure { namespace Core {
@@ -92,3 +173,56 @@ index 60ccb558f..6a86cf8d0 100644
        /**
         * @brief This function is used when working with streams to pull more data from the wire.
         * Function will try to keep pulling data from socket until the buffer is all written or until
+diff --git a/sdk/storage/CMakeLists.txt b/sdk/storage/CMakeLists.txt
+index 55bc5d0..13dea58 100644
+--- a/sdk/storage/CMakeLists.txt
++++ b/sdk/storage/CMakeLists.txt
+@@ -3,10 +3,13 @@
+ 
+ cmake_minimum_required (VERSION 3.13)
+ 
++include(AzureHonorCxxStandard)
+ project (azure-storage LANGUAGES CXX)
+ 
+ add_subdirectory(azure-storage-common)
+ add_subdirectory(azure-storage-blobs)
+-add_subdirectory(azure-storage-files-datalake)
+-add_subdirectory(azure-storage-files-shares)
+-add_subdirectory(azure-storage-queues)
++# libsnowflakeclient does not use datalake / files-shares / queues.
++# files-shares fails GCC 12 -Werror=maybe-uninitialized as C++14.
++#add_subdirectory(azure-storage-files-datalake)
++#add_subdirectory(azure-storage-files-shares)
++#add_subdirectory(azure-storage-queues)
+diff --git a/sdk/storage/azure-storage-blobs/CMakeLists.txt b/sdk/storage/azure-storage-blobs/CMakeLists.txt
+index d624433..c626711 100644
+--- a/sdk/storage/azure-storage-blobs/CMakeLists.txt
++++ b/sdk/storage/azure-storage-blobs/CMakeLists.txt
+@@ -6,10 +6,9 @@ include(AzureVcpkg)
+ az_vcpkg_integrate()
+ 
+ cmake_minimum_required (VERSION 3.13)
++include(AzureHonorCxxStandard)
+ project(azure-storage-blobs LANGUAGES CXX)
+ 
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED True)
+ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ option(FETCH_SOURCE_DEPS "build source dependencies" OFF)
+diff --git a/sdk/storage/azure-storage-common/CMakeLists.txt b/sdk/storage/azure-storage-common/CMakeLists.txt
+index a91e1ba..a117d2c 100644
+--- a/sdk/storage/azure-storage-common/CMakeLists.txt
++++ b/sdk/storage/azure-storage-common/CMakeLists.txt
+@@ -6,10 +6,9 @@ include(AzureVcpkg)
+ az_vcpkg_integrate()
+ 
+ cmake_minimum_required (VERSION 3.13)
++include(AzureHonorCxxStandard)
+ project(azure-storage-common LANGUAGES CXX)
+ 
+-set(CMAKE_CXX_STANDARD 14)
+-set(CMAKE_CXX_STANDARD_REQUIRED True)
+ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ option(FETCH_SOURCE_DEPS "build source dependencies" OFF)
