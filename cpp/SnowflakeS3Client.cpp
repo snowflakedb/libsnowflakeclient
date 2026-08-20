@@ -19,6 +19,9 @@
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
+#include <aws/core/utils/stream/PreallocatedStreamBuf.h>
+#include <aws/core/utils/memory/stl/AWSStreamFwd.h>
+#include <aws/core/utils/memory/AWSMemory.h>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -262,9 +265,21 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
   uploadPartRequest.WithBucket(uploadCtx->m_bucket)
                    .WithKey(uploadCtx->m_key);
 
+  auto streamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
+      "",
+      reinterpret_cast<unsigned char*>(uploadCtx->buf->getDataBuffer()),
+      uploadCtx->buf->getSize());
+
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
-  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
+#if defined(_DEBUG) || defined(TEST_DEBUG)
+  // for testing retry with debug build, fail the first attempt
+  if (!uploadCtx->m_isRetry)
+  {
+    uploadPartRequest.SetContentLength(uploadCtx->buf->getSize() + 10);
+  }
+#endif
+  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", streamBuf.get()));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
 
@@ -344,6 +359,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
                                //Sleeps only when its a retry
                                partRetryCtx.waitForNextRetry();
                                this->uploadParts(&uploadParts[partId]);
+                               uploadParts[partId].m_isRetry = true;
                              } while(partRetryCtx.isRetryable(uploadParts[partId].m_outcome));
                            });
     }
