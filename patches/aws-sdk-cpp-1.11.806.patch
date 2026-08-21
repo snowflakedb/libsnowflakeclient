@@ -55,12 +55,10 @@ diff --git a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h 
 index 203022fa225..130ebb999d6 100644
 --- a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
 +++ b/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
-@@ -301,6 +301,9 @@ namespace Aws
+@@ -301,6 +301,7 @@ namespace Aws
               * You probably shouldn't use this flag in a production scenario.
               */
              bool verifySSL = true;
-+            // Snowflake: per-connection TLS version (CURL_SSLVERSION_* value);
-+            // negative (default) keeps the SDK default.
 +            int tlsVersion = -1;
              /**
               * If your Certificate Authority path is different from the default, you can tell
@@ -73,7 +71,7 @@ index 087ed8d2c6f..529aa211010 100644
      unsigned m_proxyPort = 0;
      Aws::String m_nonProxyHosts;
      bool m_verifySSL = true;
-+    int m_tlsVersion = -1;   // Snowflake: per-connection CURL_SSLVERSION_* (<0 = SDK default)
++    int m_tlsVersion = -1;
      Aws::String m_caPath;
      Aws::String m_caFile;
      Aws::String m_proxyCaPath;
@@ -91,11 +89,10 @@ index 657193f2e11..6849ebaf752 100644
      m_caFile(clientConfig.caFile), m_proxyCaPath(clientConfig.proxyCaPath), m_proxyCaFile(clientConfig.proxyCaFile),
      m_disableExpectHeader(clientConfig.disableExpectHeader),
      m_enableHttpClientTrace(clientConfig.enableHttpClientTrace || FORCE_ENABLE_CURL_LOGGING),
-@@ -751,6 +752,12 @@ std::shared_ptr<HttpResponse> CurlHttpClient::MakeRequest(const std::shared_ptr<
+@@ -751,6 +752,11 @@ std::shared_ptr<HttpResponse> CurlHttpClient::MakeRequest(const std::shared_ptr<
              curl_easy_setopt(connectionHandle, CURLOPT_SSL_VERIFYHOST, 0L);
          }
  
-+        // Snowflake per-connection TLS override; applied last so it wins.
 +        if (m_tlsVersion >= 0)
 +        {
 +            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, (long)m_tlsVersion);
