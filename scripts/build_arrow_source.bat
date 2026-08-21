@@ -61,7 +61,7 @@ if /I "%dynamic_runtime%"=="on" (
 )
 
 cmake ..\ ^
--G "%cmake_generator%" -A "%cmake_architecture%" ^
+-G "%cmake_generator%" -A "%cmake_architecture%" -T "%ToolSetVersion%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DCMAKE_INSTALL_PREFIX=%ARROW_INSTALL_DIR% ^

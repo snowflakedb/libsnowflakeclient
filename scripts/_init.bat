@@ -60,39 +60,28 @@ if "%target_name%"=="" (
 	goto :error
 )
 
-set cmake_generator=
-set vsdir=
-if /I "%vs_version%"=="VS17" (
-    set cmake_generator=Visual Studio 17 2022
-    set vsdir=vs17
-    if "%VCINSTALLDIR%" == "" (
-        if exist "c:\Program Files\Microsoft Visual Studio\2022\Community\VC" (
-            set VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC
-        ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC" (
-            set VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC
-        ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC" (
-            set VCINSTALLDIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\2022\BuildTools\VC
-        ) else (
-            set "VCINSTALLDIR="
-            for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
-            if not defined VCINSTALLDIR (
-                echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
-                goto :error
-            )
+::Always use Visual Studio 2022
+set cmake_generator=Visual Studio 17 2022
+set vsdir=vs17
+if "%VCINSTALLDIR%" == "" (
+    if exist "c:\Program Files\Microsoft Visual Studio\2022\Community\VC" (
+        set "VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC"
+    ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC" (
+        set "VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC"
+    ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC" (
+        set "VCINSTALLDIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\2022\BuildTools\VC"
+    ) else (
+        set "VCINSTALLDIR="
+        for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
+        if not defined VCINSTALLDIR (
+            echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
+            goto :error
         )
     )
 )
+
 if /I "%vs_version%"=="VS16" (
-    set cmake_generator=Visual Studio 16 2019
     set vsdir=vs16
-)
-if /I "%vs_version%"=="VS15" (
-    set cmake_generator=Visual Studio 15 2017
-    set vsdir=vs15
-)
-if "%cmake_generator%"=="" (
-    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15]
-    goto :error
 )
 
 if "%dynamic_runtime%"=="" (
