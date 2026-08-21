@@ -95,6 +95,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
         download_build_component uuid "$SCRIPTS_DIR/build_uuid.sh" "$target"
 fi
 download_build_component zlib "$SCRIPTS_DIR/build_zlib.sh" "$target"
+download_build_component openssl_fips "$SCRIPTS_DIR/build_openssl_fips.sh" "$target"
 download_build_component openssl "$SCRIPTS_DIR/build_openssl.sh" "$target"
 download_build_component oob "$SCRIPTS_DIR/build_oob.sh" "$target"
 download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"

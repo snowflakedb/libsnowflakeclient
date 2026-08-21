@@ -192,6 +192,12 @@ void test_connect_with_proxy() {
   sf_unsetenv("http_proxy");
 }
 
+void test_fips_default_disabled() {
+  sf_bool fips_enabled = SF_BOOLEAN_TRUE;
+  snowflake_global_get_attribute(SF_GLOBAL_FIPS_ENABLED, &fips_enabled, 0);
+  assert_int_equal(fips_enabled, SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -202,6 +208,7 @@ int main(void) {
       cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
+      cmocka_unit_test(test_fips_default_disabled),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

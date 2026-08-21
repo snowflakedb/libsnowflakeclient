@@ -11,6 +11,10 @@
  */
 const int STATUS_WAIT_RETRY_MAX = 10;
 
+/* Number of rows for test_array_binding. Enough rows to keep the batch running
+ * long enough for cancel to take effect mid-batch. */
+#define ROW_COUNT 100
+
 void test_basic_cancel() {
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
@@ -243,7 +247,11 @@ void test_multiple_statements() {
   }
 
   status = snowflake_cancel_query(sfstmt);
-  assert_int_equal(status, SF_STATUS_SUCCESS);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+    assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
+    assert_int_equal(sfstmt->error.error_code, 605);
+  }
 
   while (SF_QUERY_STATUS_RUNNING == query_status)
   {
@@ -479,8 +487,9 @@ void test_array_binding() {
   sf_sleep_ms(100);
   status = snowflake_cancel_query(sfstmt);
   bool isCancelSucceed = true;
-  if (status == SF_STATUS_ERROR_GENERAL)
-  {
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+	assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     assert_int_equal(sfstmt->error.error_code, 605);
     isCancelSucceed = false;
   }

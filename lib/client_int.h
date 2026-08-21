@@ -271,6 +271,11 @@ sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT* sfstmt);
 char* STDCALL
 _snowflake_stage_bind_upload(SF_STMT* sfstmt);
 
+/**
+ * @return true if FIPS is enabled
+ */
+sf_bool STDCALL _is_fips_enabled();
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
