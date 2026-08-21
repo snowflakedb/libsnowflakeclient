@@ -169,9 +169,9 @@ namespace
     {
       CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
         filePath.c_str());
-      return false;
+      return SF_BOOLEAN_FALSE;
     }
-    return true;
+    return SF_BOOLEAN_TRUE;
   }
 
   sf_bool parseConfigFile(
@@ -187,12 +187,12 @@ namespace
     {
       CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
         filePath.c_str());
-      return false;
+      return SF_BOOLEAN_FALSE;
     }
 #if !defined(_WIN32) && !defined(_WIN64)
     if (!checkIfValidPermissions(filePath))
     {
-      return false;
+      return SF_BOOLEAN_FALSE;
     }
 #endif
     err = parse(jsonConfig, configFile);
@@ -200,7 +200,7 @@ namespace
     if (!err.empty())
     {
       CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", filePath.c_str(), err.c_str());
-      return false;
+      return SF_BOOLEAN_FALSE;
     }
 
     if (jsonConfig.is<picojson::object>())
@@ -216,7 +216,7 @@ namespace
             sf_strcpy(clientConfig.logLevel, strlen(logLevel) + 1, logLevel);
           } else {
             CXX_LOG_ERROR("Error: The maximum length for log level is 64.");
-            return false;
+            return SF_BOOLEAN_FALSE;
           }
         }
         if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
@@ -226,20 +226,21 @@ namespace
             sf_strcpy(clientConfig.logPath, strlen(logPath) + 1, logPath);
           } else {
             CXX_LOG_ERROR("Error: The maximum length for log path is %d", MAX_PATH);
-            return false;
+            return SF_BOOLEAN_FALSE;
           }
         }
-        return true;
+        return SF_BOOLEAN_TRUE;
       }
     }
     CXX_LOG_ERROR("Malformed client config file: %s", filePath.c_str());
-    return false;
+    return SF_BOOLEAN_FALSE;
   }
 
   sf_bool loadClientConfig(
     const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
   {
+    memset(&clientConfig, 0, sizeof(clientConfig));
     try {
       boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
       
@@ -252,7 +253,7 @@ namespace
     } catch (...) {
       CXX_LOG_ERROR("Caught unknown exception in loadClientConfig()");
     }
-    return false;
+    return SF_BOOLEAN_FALSE;
   }
 }
 
@@ -265,6 +266,6 @@ sf_bool load_client_config(
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   return loadClientConfig(boost::filesystem::path(configFilePath), *clientConfig);
 #else
-  return false;
+  return SF_BOOLEAN_FALSE;
 #endif
 }
