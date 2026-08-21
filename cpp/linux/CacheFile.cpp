@@ -9,7 +9,6 @@
 #include <boost/filesystem.hpp>
 
 #include "../logger/SFLogger.hpp"
-#include "../util/Sha256.hpp"
 
 namespace {
   class FileDescriptor {
