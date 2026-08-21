@@ -16,7 +16,7 @@ if /I "%platform%"=="x86" set platform=x86
 set curdir=%cd%
 set ARROW_FROM_SOURCE=1
 set CJSON_VERSION=1.7.19
-set CURL_VERSION=8.20.0
+set CURL_VERSION=8.21.0
 
 if defined arch (
     if not "%platform%"=="" (
@@ -73,8 +73,12 @@ if /I "%vs_version%"=="VS17" (
         ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC" (
             set VCINSTALLDIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\2022\BuildTools\VC
         ) else (
-            echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
-            goto :error
+            set "VCINSTALLDIR="
+            for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
+            if not defined VCINSTALLDIR (
+                echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
+                goto :error
+            )
         )
     )
 )
