@@ -11,6 +11,10 @@ extern "C" {
  * or SF_TLS_VERSION_UNSET (-1) for a no-op. Touches no other option. */
 CURLcode sf_apply_tls_version(CURL* handle, int tlsVersion);
 
+/* Resolve a per-connection tls_version: the override if set, else the global
+ * SSL_VERSION. */
+int sf_resolve_tls_version(int tlsVersion);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

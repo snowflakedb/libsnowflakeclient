@@ -9,6 +9,7 @@
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/AWSUtils.hpp"
+#include "tls_config.h"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
@@ -18,6 +19,7 @@
 #include <aws/s3/model/UploadPartRequest.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
+#include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <algorithm>
 #include <iostream>
@@ -159,7 +161,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     Aws::String(stageInfo->credentials.at(AWS_SECRET_KEY)),
     Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
-  clientConfiguration.tlsVersion = statement->get_tls_version();
+  clientConfiguration.tlsVersion = sf_resolve_tls_version(statement->get_tls_version());
 
   s3Client = new Aws::S3::S3Client(credentials,
           clientConfiguration,

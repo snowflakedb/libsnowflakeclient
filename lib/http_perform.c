@@ -400,15 +400,12 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        {
-            /* per-connection tls_version overrides the global SSL_VERSION */
-            int chosen_tls = (tls_version != SF_TLS_VERSION_UNSET) ? tls_version : SSL_VERSION;
-            res = sf_apply_tls_version(curl, chosen_tls);
-            if (res != CURLE_OK) {
-                log_error("Unable to set SSL Version [%s]",
-                          curl_easy_strerror(res));
-                break;
-            }
+        int chosen_tls = sf_resolve_tls_version(tls_version);
+        res = sf_apply_tls_version(curl, chosen_tls);
+        if (res != CURLE_OK) {
+            log_error("Unable to set SSL Version [%s]",
+                      curl_easy_strerror(res));
+            break;
         }
 
         // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)

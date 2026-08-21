@@ -41,6 +41,27 @@ void test_apply_tls_version_sets_version(void **) {
   curl_easy_cleanup(handle);
 }
 
+// ---- sf_resolve_tls_version ------------------------------------------------
+
+// An explicit per-connection value wins over the global SSL_VERSION.
+void test_resolve_tls_version_override_wins(void **) {
+  assert_int_equal(sf_resolve_tls_version(CURL_SSLVERSION_TLSv1_3),
+                   CURL_SSLVERSION_TLSv1_3);
+}
+
+// UNSET falls back to the global SSL_VERSION.
+void test_resolve_tls_version_falls_back_to_global(void **) {
+  int32 restore = CURL_SSLVERSION_TLSv1_2;
+  snowflake_global_get_attribute(SF_GLOBAL_SSL_VERSION, &restore, sizeof(restore));
+
+  int32 v = CURL_SSLVERSION_TLSv1_3;
+  snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &v);
+  assert_int_equal(sf_resolve_tls_version(SF_TLS_VERSION_UNSET),
+                   CURL_SSLVERSION_TLSv1_3);
+
+  snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &restore);
+}
+
 // ---- StatementPutGet::get_tls_version() ------------------------------------
 
 // The C++ storage path reads the session's tls_version through this bridge.
@@ -67,6 +88,8 @@ int main(void) {
     cmocka_unit_test(test_apply_tls_version_null_handle_is_noop),
     cmocka_unit_test(test_apply_tls_version_unset_is_noop),
     cmocka_unit_test(test_apply_tls_version_sets_version),
+    cmocka_unit_test(test_resolve_tls_version_override_wins),
+    cmocka_unit_test(test_resolve_tls_version_falls_back_to_global),
     cmocka_unit_test(test_statement_put_get_tls_version),
     cmocka_unit_test(test_statement_put_get_tls_version_null_stmt),
   };

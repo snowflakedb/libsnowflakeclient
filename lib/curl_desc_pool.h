@@ -2,7 +2,6 @@
 #define SNOWFLAKE_CURL_DESC_POOL_H
 
 #include <curl/curl.h>
-#include <snowflake/basic_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,9 +10,6 @@ extern "C" {
     /**
      * Get curl desc instance from pool.
      *
-     * Sub-pools are partitioned by TLS version in addition to endpoint/proxy so
-     * that a pooled handle (whose live connection has a TLS version fixed at
-     * handshake) is only ever reused for a request with the same TLS version.
      *
      * @param url          The url of the rest request
      * @param proxy        The proxy setting, null if not available.
@@ -24,7 +20,7 @@ extern "C" {
      * @return curl desc instance from pool
      */
 
-    void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy, int32 tls_version);
+    void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy, int tls_version);
 
     /**
      * Get curl handle from the curl description returned from get_curl_desc_from_pool().

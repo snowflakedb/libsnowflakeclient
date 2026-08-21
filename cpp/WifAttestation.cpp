@@ -1,6 +1,7 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "snowflake/HttpClient.hpp"
+#include "tls_config.h"
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
@@ -124,7 +125,7 @@ namespace Snowflake {
         }
 
         awsUseOutboundToken = (conn->wif_aws_use_outbound_token == SF_BOOLEAN_TRUE);
-        tlsVersion = conn->tls_version;
+        tlsVersion = sf_resolve_tls_version(conn->tls_version);
 
         return SF_STATUS_SUCCESS;
     }
