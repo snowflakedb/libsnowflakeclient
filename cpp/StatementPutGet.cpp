@@ -155,6 +155,12 @@ Util::Proxy* StatementPutGet::get_proxy()
   }
 }
 
+int StatementPutGet::get_tls_version()
+{
+  return (m_stmt && m_stmt->connection) ? m_stmt->connection->tls_version
+                                        : SF_TLS_VERSION_UNSET;
+}
+
 bool StatementPutGet::http_put(std::string const& url,
                                std::vector<std::string> const& headers,
                                std::basic_iostream<char>& payload,
@@ -166,7 +172,7 @@ bool StatementPutGet::http_put(std::string const& url,
     return false;
   }
   SF_CONNECT* sf = m_stmt->connection;
-  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy, sf->tls_version);
   CURL* curl = get_curl_from_desc(curl_desc);
   if (!curl)
   {
@@ -196,7 +202,8 @@ bool StatementPutGet::http_put(std::string const& url,
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
                          &sf->crl_config,
                          sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
-                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                         sf->tls_version);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);
@@ -228,7 +235,7 @@ bool StatementPutGet::http_get(std::string const& url,
   }
   SF_CONNECT* sf = m_stmt->connection;
 
-  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy, sf->tls_version);
   CURL* curl = get_curl_from_desc(curl_desc);
   if (!curl)
   {
@@ -257,7 +264,8 @@ bool StatementPutGet::http_get(std::string const& url,
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
                          &sf->crl_config,
                          sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
-                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                         sf->tls_version);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);

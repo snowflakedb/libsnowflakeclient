@@ -89,6 +89,7 @@ SET(TESTS_CXX
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
+        test_unit_tls_config
         test_crl
         test_unit_ocsp_cache
 )

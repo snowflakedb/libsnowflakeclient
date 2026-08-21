@@ -3,13 +3,6 @@
 #include <iostream>
 #include <thread>
 #include <cstring>
-#include "snowflake/SFURL.hpp"
-#include "../lib/connection.h"
-#include "../lib/authenticator.h"
-#include "../cpp/lib/Authenticator.hpp"
-#include "utils/test_setup.h"
-#include "utils/TestSetup.hpp"
-#include "../cpp/logger/SFLogger.hpp"
 #ifdef _WIN32
 #include <WS2tcpip.h>
 #else
@@ -19,6 +12,14 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #endif
+
+#include "snowflake/SFURL.hpp"
+#include "../lib/connection.h"
+#include "../lib/authenticator.h"
+#include "../cpp/lib/Authenticator.hpp"
+#include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
+#include "../cpp/logger/SFLogger.hpp"
 
 #define MOCK_GET_RESPONSE "GET /?token=Snowflake-token-12345 HTTP/1.1"
 #define MOCK_POST_RESPONSE "POST token=Snowflake-token-12345"

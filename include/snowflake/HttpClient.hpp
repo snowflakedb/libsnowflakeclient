@@ -58,6 +58,7 @@ namespace Snowflake {
       long connectTimeoutInMilliSeconds = 0;
       long requestTimeoutInSeconds = 0;
       long requestTimeoutInMilliSeconds = 0;
+      int tlsVersion = -1;
     };
 
     class IHttpClient {

@@ -11,6 +11,7 @@
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
 #include "SnowflakeS3Client.hpp"
+#include "tls_config.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -97,6 +98,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
     options.Retry.MaxRetries = m_maxRetries;
     Azure::Core::Http::CurlTransportOptions curl_options;
     curl_options.CAInfo = caBundleFile;
+    curl_options.TlsVersion = sf_resolve_tls_version(statement->get_tls_version());
 
     if (proxy) {
       curl_options.Proxy = proxy->getHost().empty() ?

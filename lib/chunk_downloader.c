@@ -207,9 +207,10 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                const SF_CRL_CONFIG *crl_config,
                                const char *proxy,
                                const char *no_proxy,
-                               int64 retry_timeout, int8 retry_max_count) {
+                               int64 retry_timeout, int8 retry_max_count,
+                               int32 tls_version) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy, tls_version);
     CURL *curl = get_curl_from_desc(curl_desc);
 
     if (!curl ||
@@ -218,7 +219,8 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                       SF_BOOLEAN_TRUE, error, insecure_mode, fail_open,
                       crl_config,
                       0, 0, retry_max_count, NULL, NULL, NULL,
-                      SF_BOOLEAN_FALSE, proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
+                      SF_BOOLEAN_FALSE, proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                      tls_version)) {
         // Error set in perform function
         goto cleanup;
     }
@@ -244,7 +246,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    const char *proxy,
                                                    const char *no_proxy,
                                                    int64 retry_timeout,
-                                                   int8 retry_max_count) {
+                                                   int8 retry_max_count,
+                                                   int32 tls_version) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
@@ -284,6 +287,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->no_proxy = NULL;
     chunk_downloader->retry_timeout = retry_timeout;
     chunk_downloader->retry_max_count = retry_max_count;
+    chunk_downloader->tls_version = tls_version;
 
     // Initialize chunk_headers or qrmk
     if (chunk_headers) {
@@ -489,7 +493,8 @@ static void * chunk_downloader_thread(void *downloader) {
                             chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode, chunk_downloader->fail_open,
                             &chunk_downloader->crl_config,
                             chunk_downloader->proxy,
-                            chunk_downloader->no_proxy, chunk_downloader->retry_timeout, chunk_downloader->retry_max_count)) {
+                            chunk_downloader->no_proxy, chunk_downloader->retry_timeout, chunk_downloader->retry_max_count,
+                            chunk_downloader->tls_version)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {
                 copy_snowflake_error(chunk_downloader->sf_error, &err);
