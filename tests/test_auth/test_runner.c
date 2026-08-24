@@ -12,6 +12,7 @@ extern void test_external_browser_mismatched_username(void **state);
 extern void test_external_browser_wrong_credentials(void **state);
 extern void test_mfa_totp_authentication(void **state);
 extern void test_aws_wif_authentication(void **state);
+extern void test_aws_wif_outbound_jwt_authentication(void **state);
 extern void test_gcp_wif_authentication(void **state);
 extern void test_azure_wif_authentication(void **state);
 extern void test_wif_no_cloud_credentials(void **state);
@@ -42,6 +43,7 @@ int main(void) {
             cmocka_unit_test(test_external_browser_wrong_credentials),
             cmocka_unit_test(test_mfa_totp_authentication),
             cmocka_unit_test(test_aws_wif_authentication),
+            cmocka_unit_test(test_aws_wif_outbound_jwt_authentication),
             cmocka_unit_test(test_gcp_wif_authentication),
             cmocka_unit_test(test_azure_wif_authentication),
             cmocka_unit_test(test_wif_no_cloud_credentials),

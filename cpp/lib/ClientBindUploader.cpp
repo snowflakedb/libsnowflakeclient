@@ -192,7 +192,7 @@ _snowflake_stage_bind_upload(SF_STMT* sfstmt)
   if (!bindStage.empty())
   {
     char* bind_stage = (char*) SF_CALLOC(1, bindStage.size() + 1);
-    sf_strncpy(bind_stage, bindStage.size() + 1, bindStage.c_str(), bindStage.size());
+    sf_strncpy(bind_stage, bindStage.size() + 1, bindStage.c_str(), bindStage.size() + 1);
     return bind_stage;
   }
 

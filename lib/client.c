@@ -512,7 +512,8 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         log_set_quiet(SF_BOOLEAN_TRUE);
     }
 
-    client_config clientConfig = { 0 };
+    client_config clientConfig;
+    memset(&clientConfig, 0, sizeof(clientConfig));
     if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
     {
       char client_config_file[MAX_PATH] = { 0 };
@@ -563,7 +564,10 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
-      } else { LOG_PATH = ""; }
+      } else {
+        LOG_PATH = (char*)SF_CALLOC(1, 1);
+        LOG_PATH[0] = '\0';
+      }
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
@@ -594,6 +598,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
 static void STDCALL log_term() {
     log_close();
     SF_FREE(LOG_PATH);
+    SF_FREE(CLIENT_CONFIG_FILE);
     _mutex_term(&gmlocaltime_lock);
     _mutex_term(&log_lock);
 }
@@ -1134,10 +1139,11 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_CA_BUNDLE_FILE:
             if (CA_BUNDLE_FILE) {
-                if (strlen(CA_BUNDLE_FILE) > size - 1) {
+                size_t copylen = strlen(CA_BUNDLE_FILE) + 1;
+                if (copylen > size) {
                     return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
                 }
-                sf_strncpy(value, size, CA_BUNDLE_FILE, size);
+                sf_strncpy(value, size, CA_BUNDLE_FILE, copylen);
             }
             break;
         case SF_GLOBAL_SSL_VERSION:
@@ -1151,26 +1157,30 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             if (CLIENT_CONFIG_FILE) {
-              if (strlen(CLIENT_CONFIG_FILE) > size - 1) {
+              size_t copylen = strlen(CLIENT_CONFIG_FILE) + 1;
+              if (copylen > size) {
                 return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
               }
-              sf_strncpy(value, size, CLIENT_CONFIG_FILE, size);
+              sf_strncpy(value, size, CLIENT_CONFIG_FILE, copylen);
             }
             break;
         case SF_GLOBAL_LOG_LEVEL:
             {
-              if (strlen(log_from_level_to_str(log_get_level())) > size - 1) {
+              const char* levelstr = log_from_level_to_str(log_get_level());
+              size_t copylen = strlen(levelstr) + 1;
+              if (copylen > size) {
                 return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
               }
-              sf_strncpy(value, size, log_from_level_to_str(log_get_level()), size);
+              sf_strncpy(value, size, levelstr, copylen);
               break;
             }
         case SF_GLOBAL_LOG_PATH:
             if (LOG_PATH) {
-              if (strlen(LOG_PATH) > size - 1) {
+              size_t copylen = strlen(LOG_PATH) + 1;
+              if (copylen > size) {
                 return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
               }
-              sf_strncpy(value, size, LOG_PATH, size);
+              sf_strncpy(value, size, LOG_PATH, copylen);
             }
             break;
         default:
@@ -1274,6 +1284,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->wif_token = NULL;
         sf->wif_azure_resource = NULL;
         sf->wif_audience = NULL;
+        sf->wif_aws_use_outbound_token = SF_BOOLEAN_FALSE;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -2039,6 +2050,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_WIF_HOST:
+            alloc_buffer_and_copy(&sf->wif_host, value);
+            break;
+        case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
+            sf->wif_aws_use_outbound_token = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2298,6 +2315,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_LOG_QUERY_PARAMETERS:
             *value = &sf->log_query_parameters;
+            break;
+        case SF_CON_WIF_HOST:
+            *value = sf->wif_host;
+            break;
+        case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
+            *value = &sf->wif_aws_use_outbound_token;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -4235,7 +4258,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
                 "Out of memory in creating a buffer for the error message.",
                 SF_SQLSTATE_APP_REJECT_CONNECTION);
         }
-        sf_strncpy(sf->error.msg, len + 1, sfstmt->error.msg, len);
+        sf_strncpy(sf->error.msg, len + 1, sfstmt->error.msg, len + 1);
     }
     return SF_STATUS_SUCCESS;
 }

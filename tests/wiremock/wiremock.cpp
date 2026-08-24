@@ -238,7 +238,7 @@ namespace Snowflake
                     + " --port " + wiremockAdminPort
                     + " --https-port " + wiremockPort
                     + " --https-keystore ../wiremock/ca-cert.jks"
-                    + " --ca-keystore ..그/wiremock/ca-cert.jks";
+                    + " --ca-keystore ../wiremock/ca-cert.jks";
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock command: %s", command.c_str());
                 exec(command); // blocking call, will be running in a separate thread
             }
