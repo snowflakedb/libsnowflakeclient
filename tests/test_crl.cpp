@@ -1,17 +1,34 @@
 #include <utility>
 #include <thread>
+#include <fstream>
+#include <ctime>
 #include <curl/curl.h>
+#include <openssl/asn1.h>
+#include <openssl/evp.h>
+#include <openssl/obj_mac.h>
+#include <openssl/opensslv.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
 #if defined(_WIN32)
 #include <io.h>
 #include <direct.h>
 #else
 #include <dirent.h>
+#include <unistd.h>
 #endif
 
 #include "client_int.h"
 #include "snowflake/CurlDescPool.hpp"
 #include "utils/test_setup.h"
 #include "EnvOverride.hpp"
+
+extern "C" {
+#ifdef _WIN32
+void __stdcall cleanupCertCRLCache(void);
+#else
+void cleanupCertCRLCache(void);
+#endif
+}
 
 using namespace ::Snowflake::Client;
 
@@ -308,6 +325,157 @@ void test_crl_cache(void **unused) {
   assert_true(dir_has_files(cache_dir));
 }
 
+static bool file_exists(const std::string& path) {
+  return access(path.c_str(), F_OK) == 0;
+}
+
+static std::string join_path(const std::string& dir, const std::string& name) {
+#if defined(_WIN32)
+  return dir + "\\" + name;
+#else
+  return dir + "/" + name;
+#endif
+}
+
+static EVP_PKEY *generate_test_key() {
+  EVP_PKEY *key = nullptr;
+  EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+  if (!ctx) {
+    return nullptr;
+  }
+
+  if (EVP_PKEY_keygen_init(ctx) <= 0 ||
+      EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, NID_X9_62_prime256v1) <= 0 ||
+      EVP_PKEY_keygen(ctx, &key) <= 0) {
+    EVP_PKEY_free(key);
+    key = nullptr;
+  }
+  EVP_PKEY_CTX_free(ctx);
+  return key;
+}
+
+// With bogus_next_update the nextUpdate field is a well-formed UTCTIME holding
+// an out-of-range date, so ASN1_TIME_cmp_time_t fails on it instead of
+// reporting an ordering.
+static bool write_test_crl(const std::string& path, time_t last_update,
+                           time_t next_update, bool bogus_next_update = false) {
+  X509_CRL *crl = X509_CRL_new();
+  X509_NAME *issuer = X509_NAME_new();
+  ASN1_TIME *last = ASN1_TIME_set(NULL, last_update);
+  ASN1_TIME *next = nullptr;
+  EVP_PKEY *key = generate_test_key();
+  BIO *bio = nullptr;
+  bool ok = false;
+
+  if (bogus_next_update) {
+    next = ASN1_STRING_type_new(V_ASN1_UTCTIME);
+    if (next && !ASN1_STRING_set(next, "999999999999Z", 13)) {
+      ASN1_STRING_free(next);
+      next = nullptr;
+    }
+  } else {
+    next = ASN1_TIME_set(NULL, next_update);
+  }
+
+  if (crl && issuer && last && next && key &&
+      X509_NAME_add_entry_by_txt(issuer, "CN", MBSTRING_ASC,
+                                 (const unsigned char *)"test", -1, -1, 0) &&
+      X509_CRL_set_issuer_name(crl, issuer) &&
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+      X509_CRL_set1_lastUpdate(crl, last) &&
+      X509_CRL_set1_nextUpdate(crl, next) &&
+#else
+      X509_CRL_set_lastUpdate(crl, last) &&
+      X509_CRL_set_nextUpdate(crl, next) &&
+#endif
+      X509_CRL_sign(crl, key, EVP_sha256()) > 0) {
+    bio = BIO_new_file(path.c_str(), "w");
+    ok = bio && PEM_write_bio_X509_CRL(bio, crl) == 1;
+  }
+
+  BIO_free(bio);
+  EVP_PKEY_free(key);
+  ASN1_STRING_free(next);
+  ASN1_STRING_free(last);
+  X509_NAME_free(issuer);
+  X509_CRL_free(crl);
+  return ok;
+}
+
+void test_crl_cache_cleanup_removes_expired(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  const std::string expired_path = join_path(cache_dir, "expired.crl");
+  const time_t now = time(NULL);
+  assert_true(write_test_crl(expired_path, now - 7200, now - 3600));
+  assert_true(file_exists(expired_path));
+
+  {
+    EnvOverride cache_dir_env("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    EnvOverride delay_env("SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY", "0");
+    cleanupCertCRLCache();
+  }
+
+  assert_true(!file_exists(expired_path));
+}
+
+void test_crl_cache_cleanup_keeps_fresh(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  const std::string fresh_path = join_path(cache_dir, "fresh.crl");
+  const time_t now = time(NULL);
+  assert_true(write_test_crl(fresh_path, now - 3600, now + 86400));
+  assert_true(file_exists(fresh_path));
+
+  {
+    EnvOverride cache_dir_env("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    EnvOverride delay_env("SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY", "0");
+    cleanupCertCRLCache();
+  }
+
+  assert_true(file_exists(fresh_path));
+}
+
+void test_crl_cache_cleanup_removes_corrupt(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  const std::string corrupt_path = join_path(cache_dir, "corrupt.crl");
+  {
+    std::ofstream out(corrupt_path.c_str());
+    out << "not a crl";
+  }
+  assert_true(file_exists(corrupt_path));
+
+  {
+    EnvOverride cache_dir_env("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    EnvOverride delay_env("SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY", "0");
+    cleanupCertCRLCache();
+  }
+
+  assert_true(!file_exists(corrupt_path));
+}
+
+void test_crl_cache_cleanup_keeps_unparseable_next_update(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  const std::string path = join_path(cache_dir, "bad-next-update.crl");
+  const time_t now = time(NULL);
+  assert_true(write_test_crl(path, now - 3600, 0, true));
+  assert_true(file_exists(path));
+
+  {
+    EnvOverride cache_dir_env("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    EnvOverride delay_env("SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY", "0");
+    cleanupCertCRLCache();
+  }
+
+  assert_true(file_exists(path));
+}
+
 void test_no_crl_cache_if_disabled(void **unused) {
   SF_UNUSED(unused);
 
@@ -351,6 +519,7 @@ void test_no_crl_cache_if_disabled(void **unused) {
 }
 
 int main() {
+    EnvOverride cleanup_interval("SF_CRL_CACHE_CLEANUP_INTERVAL", "0");
     initialize_test(SF_BOOLEAN_FALSE);
     curl_global_init(CURL_GLOBAL_ALL);
     constexpr CMUnitTest tests[] = {
@@ -362,7 +531,11 @@ int main() {
       cmocka_unit_test(test_crl_cache),
       cmocka_unit_test(test_no_crl_cache_if_disabled),
       cmocka_unit_test(test_crl_download_max_size_attribute),
-      cmocka_unit_test(test_success_with_crl_check_custom_max_size)
+      cmocka_unit_test(test_success_with_crl_check_custom_max_size),
+      cmocka_unit_test(test_crl_cache_cleanup_removes_expired),
+      cmocka_unit_test(test_crl_cache_cleanup_keeps_fresh),
+      cmocka_unit_test(test_crl_cache_cleanup_removes_corrupt),
+      cmocka_unit_test(test_crl_cache_cleanup_keeps_unparseable_next_update)
     };
     int ret = cmocka_run_group_tests(tests, nullptr, nullptr);
     snowflake_global_term();
