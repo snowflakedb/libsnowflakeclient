@@ -25,7 +25,7 @@
 
 // A default-declared Stopwatch (no explicit reset) must be stopped and read
 // exactly 0 -- never an uptime-scale value.
-void test_default_initialized_is_zero() {
+void test_default_initialized_is_zero(void **unused) {
   Stopwatch stopwatch;  // relies on Part A default member initializers
   assert_false(stopwatch_isStarted(&stopwatch));
   assert_int_equal(stopwatch_elapsedMillis(&stopwatch), 0);
@@ -33,7 +33,7 @@ void test_default_initialized_is_zero() {
 
 // Start/stop on a default-declared Stopwatch (again, no explicit reset) must
 // measure a small, sane interval -- not host uptime.
-void test_default_initialized_start_is_sane() {
+void test_default_initialized_start_is_sane(void **unused) {
   Stopwatch stopwatch;  // no stopwatch_reset() on purpose
   stopwatch_start(&stopwatch);
   assert_true(stopwatch_isStarted(&stopwatch));
