@@ -260,26 +260,19 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 
 void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCtx)
 {
-  Aws::S3::Model::UploadPartRequest uploadPartRequest;
-
-  uploadPartRequest.WithBucket(uploadCtx->m_bucket)
-                   .WithKey(uploadCtx->m_key);
-
   auto streamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
       "",
       reinterpret_cast<unsigned char*>(uploadCtx->buf->getDataBuffer()),
       uploadCtx->buf->getSize());
 
+  Aws::S3::Model::UploadPartRequest uploadPartRequest;
+
+  uploadPartRequest.WithBucket(uploadCtx->m_bucket)
+                   .WithKey(uploadCtx->m_key);
+
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
-#if defined(_DEBUG) || defined(TEST_DEBUG)
-  // for testing retry with debug build, fail the first attempt
-  if (!uploadCtx->m_isRetry)
-  {
-    uploadPartRequest.SetContentLength(uploadCtx->buf->getSize() + 10);
-  }
-#endif
-  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", streamBuf.get()));
+  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", streamBuf));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
 
