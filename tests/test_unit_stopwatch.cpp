@@ -7,6 +7,10 @@
 /*
  * Regression test for SNOW-4007740.
  *
+ * Symptom in the field: a DEBUG timing line reports an uptime-scale value,
+ * e.g. "HttpPerform took 26228609 ms." for a request that actually took a
+ * few milliseconds.
+ *
  * The C `Stopwatch` struct is routinely declared as a bare `Stopwatch s;`
  * local and then started without an explicit stopwatch_reset(). Before the
  * fix, an uninitialized (garbage-truthy) `isStarted` byte turned
