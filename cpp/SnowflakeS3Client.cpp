@@ -264,6 +264,7 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
       "",
       reinterpret_cast<unsigned char*>(uploadCtx->buf->getDataBuffer()),
       uploadCtx->buf->getSize());
+  auto body = Aws::MakeShared<Aws::IOStream>("", streamBuf.get());
 
   Aws::S3::Model::UploadPartRequest uploadPartRequest;
 
@@ -272,7 +273,7 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
 
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
-  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", streamBuf));
+  uploadPartRequest.SetBody(body);
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
 
