@@ -715,6 +715,23 @@ _snowflake_validate_url_components(SF_CONNECT *sf) {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    char envBuf[MAX_PATH + 1];
+    char* fipsEnv = sf_getenv_s(SF_FIPS_ENABLED_ENV_VAR, envBuf, sizeof(envBuf));
+
+    if (fipsEnv && fipsEnv[0] != '0')
+    {
+      if (!_is_fips_enabled())
+      {
+        log_error(ERR_MSG_FIPS_NOT_ENABLED);
+      }
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_FIPS_NOT_ENABLED,
+            ERR_MSG_FIPS_NOT_ENABLED,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
     if (sf->log_query_text)
     {
         log_info("log_query_text is set to true, query text will be logged on info level.");

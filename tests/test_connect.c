@@ -196,6 +196,21 @@ void test_fips_default_disabled() {
   sf_bool fips_enabled = SF_BOOLEAN_TRUE;
   snowflake_global_get_attribute(SF_GLOBAL_FIPS_ENABLED, &fips_enabled, 0);
   assert_int_equal(fips_enabled, SF_BOOLEAN_FALSE);
+
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "1");
+
+  SF_CONNECT *sf = setup_snowflake_connection();
+
+  SF_STATUS status = snowflake_connect(sf);
+  assert_int_not_equal(ret, SF_STATUS_SUCCESS);
+  SF_ERROR_STRUCT *sferr = snowflake_error(sf);
+
+  if (sferr->error_code != SF_STATUS_ERROR_FIPS_NOT_ENABLED) {
+      dump_error(sferr);
+  }
+  assert_int_equal(sferr->error_code, SF_STATUS_ERROR_FIPS_NOT_ENABLED);
+  snowflake_term(sf);
+  sf_unsetenv(SF_FIPS_ENABLED_ENV_VAR);
 }
 
 int main(void) {
