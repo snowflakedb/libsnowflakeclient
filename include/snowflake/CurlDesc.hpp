@@ -42,6 +42,13 @@ public:
     return m_url.toString();
   }
 
+  // returns SSL version actually being used.
+  // for logging purpose also could be used in test
+  std::string getNegotiatedSSLVersion()
+  {
+      return m_negotiatedSSLVersion;
+  }
+
   /**
    * Reset the descriptor and make it ready to be reused
    *
@@ -49,6 +56,17 @@ public:
    *   if true, descriptor should be re-created
    */
   virtual void reset(bool cleanup = false);
+
+  /**
+   * Callback for CURLOPT_PREREQFUNCTION, to update negotiated SSL version
+   *
+   * @param clientp
+   *   pointer to CurlDesc instance, passed through CURLOPT_PREREQDATA
+   *
+   * @return always CURL_PREREQFUNC_OK
+   */
+  static int prereqCallback(void* clientp,
+      char*, char*, int, int);
 
 protected:
 
@@ -61,6 +79,9 @@ protected:
   /** url set at prepare time */
   SFURL m_url;
 
+  std::string m_negotiatedSSLVersion;
+
+  void updateNegotiatedSSLVersion();
 };
 }
 }

@@ -1,7 +1,7 @@
 /* Shared TLS-version helper. See tls_config.h. */
 
 #include "tls_config.h"
-#include <snowflake/client.h>   /* SF_TLS_VERSION_UNSET */
+#include <snowflake/client.h>
 
 CURLcode sf_apply_tls_version(CURL* handle, int tlsVersion)
 {
