@@ -52,6 +52,7 @@ void test_fips_enabled(void **unused) {
   sf_bool fips_enabled = SF_BOOLEAN_FALSE;
   snowflake_global_get_attribute(SF_GLOBAL_FIPS_ENABLED, &fips_enabled, 0);
   assert_int_equal(fips_enabled, SF_BOOLEAN_TRUE);
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "1");
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -73,6 +74,7 @@ void test_fips_enabled(void **unused) {
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+  sf_unsetenv(SF_FIPS_ENABLED_ENV_VAR);
 }
 
 int main(void) {
