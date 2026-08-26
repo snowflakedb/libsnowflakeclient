@@ -19,7 +19,6 @@ call venv\scripts\activate
 python -m pip install -U pip > nul 2>&1
 python -m pip install -U awscli > nul 2>&1
 set zlib_build_script="%scriptdir%..\scripts\build_zlib.bat"
-set openssl_fips_build_script="%scriptdir%..\scripts\build_openssl_fips.bat"
 set openssl_build_script="%scriptdir%..\scripts\build_openssl.bat"
 set curl_build_script="%scriptdir%..\scripts\build_curl.bat"
 set oob_build_script="%scriptdir%..\scripts\build_oob.bat"

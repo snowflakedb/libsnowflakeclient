@@ -4,7 +4,7 @@
 
 @echo off
 set OPENSSL_SRC_VERSION=3.5.7
-set OPENSSL_BUILD_VERSION=2
+set OPENSSL_BUILD_VERSION=1
 set OPENSSL_VERSION=%OPENSSL_SRC_VERSION%.%OPENSSL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -93,10 +93,10 @@ copy /v /y ^
     ".\deps-build\%build_dir%\openssl\lib\%crypto_target_name%"
 REM get FIPS module from verified version
 copy /v /y ^
-    ".\deps-build\%build_dir%\openssl_fips\lib\fips.dll" ^
+    ".\deps\%OPENSSL_DIR%\providers\fips.dll" ^
     ".\deps-build\%build_dir%\openssl\lib"
 copy /v /y ^
-    ".\deps-build\%build_dir%\openssl_fips\lib\fips.pdb" ^
+    ".\deps\%OPENSSL_DIR%\providers\fips.pdb" ^
     ".\deps-build\%build_dir%\openssl\lib"
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\providers\legacy.dll" ^

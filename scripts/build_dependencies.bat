@@ -25,8 +25,6 @@ call "%scriptdir%build_arrow.bat" :build %platform% %build_type% %vs_version% %d
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_zlib.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
-call "%scriptdir%build_openssl_fips.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
-if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_openssl.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_oob.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
