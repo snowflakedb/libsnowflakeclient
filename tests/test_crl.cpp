@@ -326,7 +326,11 @@ void test_crl_cache(void **unused) {
 }
 
 static bool file_exists(const std::string& path) {
+#if defined(_WIN32)
+  return _access(path.c_str(), 0) == 0;
+#else
   return access(path.c_str(), F_OK) == 0;
+#endif
 }
 
 static std::string join_path(const std::string& dir, const std::string& name) {
