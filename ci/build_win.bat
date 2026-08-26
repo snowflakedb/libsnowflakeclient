@@ -47,8 +47,6 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component zlib "%zlib_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :download_build_component openssl_fips "%openssl_fips_build_script%" "%dynamic_runtime%"
-    if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component openssl "%openssl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component oob "%oob_build_script%" "%dynamic_runtime%"

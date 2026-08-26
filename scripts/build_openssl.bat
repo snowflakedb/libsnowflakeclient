@@ -91,7 +91,6 @@ if %ERRORLEVEL% NEQ 0 goto :error
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\libcrypto.lib" ^
     ".\deps-build\%build_dir%\openssl\lib\%crypto_target_name%"
-REM get FIPS module from verified version
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\providers\fips.dll" ^
     ".\deps-build\%build_dir%\openssl\lib"
