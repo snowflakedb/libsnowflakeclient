@@ -202,7 +202,7 @@ void test_fips_default_disabled() {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   SF_STATUS status = snowflake_connect(sf);
-  assert_int_not_equal(ret, SF_STATUS_SUCCESS);
+  assert_int_not_equal(status, SF_STATUS_SUCCESS);
   SF_ERROR_STRUCT *sferr = snowflake_error(sf);
 
   if (sferr->error_code != SF_STATUS_ERROR_FIPS_NOT_ENABLED) {
