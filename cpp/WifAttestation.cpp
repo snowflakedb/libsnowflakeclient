@@ -109,12 +109,6 @@ namespace Snowflake {
             workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
         }
 
-        if (conn->wif_audience)
-        {
-            audience = std::string(conn->wif_audience);
-            log_debug("Using explicit WIF audience: %s", conn->wif_audience);
-        }
-
         if (conn->wif_host)
         {
             wifHost = std::string(conn->wif_host);

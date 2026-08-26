@@ -1,7 +1,7 @@
 #!/bin/bash -e
 #
-# build azure-cpp-lite
-# GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
+# build Azure sdk for cpp
+# GitHub repo: https://github.com/Azure/azure-sdk-for-cpp.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
@@ -11,9 +11,9 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_SRC_VERSION=0.1.20
-AZURE_BUILD_VERSION=20
-AZURE_DIR=azure-storage-cpplite-$AZURE_SRC_VERSION
+AZURE_SRC_VERSION=12.18.0
+AZURE_BUILD_VERSION=2
+AZURE_DIR=azure-sdk-for-cpp
 AZURE_VERSION=$AZURE_SRC_VERSION.$AZURE_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -26,6 +26,12 @@ AZURE_SOURCE_DIR=$DEPS_DIR/$AZURE_DIR
 AZURE_BUILD_DIR=$DEPENDENCY_DIR/azure
 AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
+rm -rf $AZURE_SOURCE_DIR
+git clone --single-branch --branch azure-storage-blobs_$AZURE_SRC_VERSION --recursive https://github.com/Azure/azure-sdk-for-cpp.git $AZURE_SOURCE_DIR
+pushd $AZURE_SOURCE_DIR
+  git apply ../../patches/azure-sdk-cpp-$AZURE_SRC_VERSION.patch
+popd
+
 azure_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     azure_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
@@ -35,36 +41,28 @@ else
 fi
 azure_configure_opts+=(
     "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
-    "-DCMAKE_CXX_STANDARD=11"
+    "-DCMAKE_CXX_STANDARD=17"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_C_COMPILER=$CC"
     "-DCMAKE_CXX_COMPILER=$CXX"
     "-DCMAKE_INSTALL_PREFIX=$AZURE_BUILD_DIR"
+    "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
     "-DBUILD_SHARED_LIBS=OFF"
-    "-DUSE_OPENSSL=true"
-    "-DOPENSSL_VERSION_NUMBER=0x11100000L"
-    "-DBUILD_SAMPLES=true"
+    "-DBUILD_TESTING=OFF"
+    "-DBUILD_TRANSPORT_CURL=ON"
+    "-DAZ_ALL_LIBRARIES=OFF"
+    "-DDISABLE_RUST_IN_BUILD=ON"
+    "-DDISABLE_AMQP=ON"
+    "-DDISABLE_AZURE_CORE_OPENTELEMETRY=ON"
     "-DOPENSSL_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-DOPENSSL_CRYPTO_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
     "-DOPENSSL_SSL_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libssl.a"
-    "-DCURL_INCLUDE_DIRS=$DEPENDENCY_DIR/curl/include"
-    "-DCURL_LIBRARIES=$DEPENDENCY_DIR/curl/lib/libcurl.a"
+    "-DCURL_INCLUDE_DIR=$DEPENDENCY_DIR/curl/include"
+    "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib/libcurl.a"
+    "-DLIBXML2_INCLUDE_DIR=$DEPENDENCY_DIR/xml2/include"
+    "-DLIBXML2_LIBRARY=$DEPENDENCY_DIR/xml2/lib/libxml2.a"
     "-DEXTRA_INCLUDE=$DEPENDENCY_DIR/zlib/include"
 )
-
-# azure test case is using old version of catch.hpp which is using
-# asm code and can't be built on arm.
-# Disable building test for now until it move to newer version.
-azure_configure_opts+=(
-    "-DBUILD_TESTS=false"
-)
-
-if [[ "$PLATFORM" == "linux" ]]; then
-  azure_configure_opts+=(
-      "-DUUID_INCLUDE_DIR=$DEPENDENCY_DIR/uuid/include"
-      "-DUUID_LIBRARIES=$DEPENDENCY_DIR/uuid/lib/libuuid.a"
-  )
-fi
 
 ADDITIONAL_CXXFLAGS=
 # Check to see if we are doing a universal build or not.
@@ -88,6 +86,9 @@ if [[ "$PLATFORM" == "darwin" ]]; then
 fi
 
 ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations ${ADDITIONAL_CXXFLAGS}"
+if [[ "$PLATFORM" == "linux" ]]; then
+  ADDITIONAL_CXXFLAGS="-Wno-error=maybe-uninitialized ${ADDITIONAL_CXXFLAGS}"
+fi
 
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
@@ -98,7 +99,7 @@ export CXXFLAGS+=$ADDITIONAL_CXXFLAGS
 export LDFLAGS+=$ADDITIONAL_CXXFLAGS
 
 export GIT_DIR=/tmp
-
+export AZURE_SDK_DISABLE_AUTO_VCPKG=1
 cd $AZURE_CMAKE_BUILD_DIR
 if [ "$(uname -s)" == "Linux" ] ; then
   $CMAKE -E env $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
@@ -111,10 +112,10 @@ unset GIT_DIR
 make
 make install
 
-#make install does not do much here
-cp -fr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/
-mkdir -p $DEPENDENCY_DIR/azure/lib
-cp -fr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/
+# keep library in lib folder  consistently
+if [[ -d "$AZURE_BUILD_DIR/lib64" ]]; then
+    mv -f $AZURE_BUILD_DIR/lib64 $AZURE_BUILD_DIR/lib
+fi
 
 cd $DIR
 

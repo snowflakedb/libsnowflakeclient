@@ -52,7 +52,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if not exist %scriptdir%..\deps-build\%build_dir%\aws\lib\aws-cpp-sdk-s3.lib call "%scriptdir%build_awssdk.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-if not exist %scriptdir%..\deps-build\%build_dir%\azure\lib\azure-storage-lite.lib call "%scriptdir%build_azuresdk.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+if not exist %scriptdir%..\deps-build\%build_dir%\azure\lib\azure-storage-blobs.lib call "%scriptdir%build_azuresdk.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === staging cJSON for libsnowflakeclient
