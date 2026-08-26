@@ -86,6 +86,9 @@ if [[ "$PLATFORM" == "darwin" ]]; then
 fi
 
 ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations ${ADDITIONAL_CXXFLAGS}"
+if [[ "$PLATFORM" == "linux" ]]; then
+  ADDITIONAL_CXXFLAGS="-Wno-error=maybe-uninitialized ${ADDITIONAL_CXXFLAGS}"
+fi
 
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
