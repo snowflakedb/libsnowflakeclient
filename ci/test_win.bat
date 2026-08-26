@@ -75,6 +75,11 @@ exit /b 0
     pushd %cmake_dir%
         :: test cases would need this to find data files
         set APPVEYOR_BUILD_FOLDER=%scriptdir%..
+        :: setup FIPS
+        tests\openssl\bin\openssl fipsinstall -module tests\openssl\lib\fips.dll -out tests\openssl\fipsmodule.cnf
+        set "OPENSSL_CONF=%cd%\tests\openssl\openssl.cnf"
+        set "OPENSSL_CONF_INCLUDE=%cd%\tests\openssl"
+        set "OPENSSL_MODULES=%cd%\tests\openssl\lib"
         ctest -V -E "(valgrind.*|test_auth)"
         if %ERRORLEVEL% NEQ 0 (
             call :drop_schema
