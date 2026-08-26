@@ -10,6 +10,10 @@
 
 namespace Snowflake::Client {
   namespace {
+    // AWS WIF (SNOW-2919437): the JWT obtained from STS:GetWebIdentityToken is
+    // bound to this audience and signed with this algorithm. GS verifies both
+    // when validating the inbound JWT.
+    constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
     constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
   }
 
@@ -111,7 +115,7 @@ namespace Snowflake::Client {
           "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
           region.c_str());
       auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-          creds, region, config.getAudience(), AWS_WIF_SIGNING_ALGORITHM, config.getWifHostForAws(), config.tlsVersion);
+          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, config.getWifHostForAws(), config.tlsVersion);
       if (!jwtOpt) {
         CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
         return boost::none;
@@ -132,7 +136,7 @@ namespace Snowflake::Client {
     );
 
     request->SetHeaderValue("Host", host);
-    request->SetHeaderValue("X-Snowflake-Audience", config.getAudience());
+    request->SetHeaderValue("X-Snowflake-Audience", SNOWFLAKE_WIF_AUDIENCE);
 
     auto simpleCredProvider = std::make_shared<Aws::Auth::SimpleAWSCredentialsProvider>(creds);
     AWSAuthV4SignerNoPayload signer(simpleCredProvider, "sts", region);

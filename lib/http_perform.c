@@ -173,7 +173,7 @@ sf_bool STDCALL http_perform(CURL *curl,
       djb.cap = SF_NEW_STRATEGY_BACKOFF_CAP;
     }
     log_debug("Starting http_perform");
-    Stopwatch stopwatch;
+    Stopwatch stopwatch = {0};
     stopwatch_start(&stopwatch);
 
     retry_timeout = (retry_timeout > 0) ? retry_timeout : SF_RETRY_TIMEOUT;

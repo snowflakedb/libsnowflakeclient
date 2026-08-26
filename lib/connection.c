@@ -1823,10 +1823,6 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
     {
         snowflake_set_attribute(sf, SF_CON_WIF_TOKEN, value);
     }
-    else if (strcasecmp(key, "WIF_AUDIENCE") == 0)
-    {
-        snowflake_set_attribute(sf, SF_CON_WIF_AUDIENCE, value);
-    }
     else if (strcasecmp(key, "WIF_AWS_USE_OUTBOUND_TOKEN") == 0)
     {
         if (parse_bool(value, &v))

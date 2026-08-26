@@ -1283,7 +1283,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->wif_provider = NULL;
         sf->wif_token = NULL;
         sf->wif_azure_resource = NULL;
-        sf->wif_audience = NULL;
+        sf->wif_host = NULL;
         sf->wif_aws_use_outbound_token = SF_BOOLEAN_FALSE;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
@@ -1328,7 +1328,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
     cJSON *resp = NULL;
     char *s_resp = NULL;
-    Stopwatch stopwatch;
+    Stopwatch stopwatch = {0};
     stopwatch_start(&stopwatch);
     clear_snowflake_error(&sf->error);
 
@@ -1398,9 +1398,9 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->wif_provider);
     SF_FREE(sf->wif_token);
     SF_FREE(sf->wif_azure_resource);
+    SF_FREE(sf->wif_host);
     SF_FREE(sf->programmatic_access_token);
     SF_FREE(sf->workload_identity_impersonation_path);
-    SF_FREE(sf->wif_audience);
     SF_FREE(sf);
 
     stopwatch_stop(&stopwatch);
@@ -1441,7 +1441,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    Stopwatch stopwatch;
+    Stopwatch stopwatch = {0};
     stopwatch_start(&stopwatch);
 
     // Reset error context
@@ -2043,9 +2043,6 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_AZURE_RESOURCE:
             alloc_buffer_and_copy(&sf->wif_azure_resource, value);
             break;
-        case SF_CON_WIF_AUDIENCE:
-            alloc_buffer_and_copy(&sf->wif_audience, value);
-            break;
         case SF_CON_LOG_QUERY_TEXT:
             sf->log_query_text = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
@@ -2326,9 +2323,6 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_WIF_AZURE_RESOURCE:
             *value = sf->wif_azure_resource;
-            break;
-        case SF_CON_WIF_AUDIENCE:
-            *value = sf->wif_audience;
             break;
         case SF_CON_LOG_QUERY_TEXT:
             *value = &sf->log_query_text;
@@ -3301,7 +3295,7 @@ SF_STATUS STDCALL snowflake_query(
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
-    Stopwatch stopwatch;
+    Stopwatch stopwatch = {0};
     stopwatch_start(&stopwatch);
     log_debug("Starting snowflake query");
     clear_snowflake_error(&sfstmt->error);
@@ -3480,7 +3474,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     // If no more results, set return to SF_STATUS_EOF
     if (sfstmt->chunk_rowcount == 0) {
         if (sfstmt->chunk_downloader) {
-            Stopwatch stopwatch;
+            Stopwatch stopwatch = {0};
             stopwatch_start(&stopwatch);
             log_debug("Fetching next chunk from chunk downloader.");
             _critical_section_lock(&sfstmt->chunk_downloader->queue_lock);
@@ -4056,7 +4050,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         return _snowflake_execute_put_get_native(sfstmt, NULL, 0, 0, result_capture);
     }
 
-    Stopwatch stopwatch;
+    Stopwatch stopwatch = {0};
     stopwatch_start(&stopwatch);
 
     clear_snowflake_error(&sfstmt->error);
