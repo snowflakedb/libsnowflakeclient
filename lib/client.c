@@ -723,13 +723,13 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
       if (!_is_fips_enabled())
       {
         log_error(ERR_MSG_FIPS_NOT_ENABLED);
-      }
         SET_SNOWFLAKE_ERROR(
             &sf->error,
             SF_STATUS_ERROR_FIPS_NOT_ENABLED,
             ERR_MSG_FIPS_NOT_ENABLED,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
+      }
     }
 
     if (sf->log_query_text)
