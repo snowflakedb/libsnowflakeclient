@@ -4,7 +4,7 @@
 ::
 @echo off
 set azure_src_version=12.18.0
-set azure_build_version=3
+set azure_build_version=2
 set azure_version=%azure_src_version%.%azure_build_version%
 call %*
 goto :EOF
