@@ -85,15 +85,23 @@ int _mutex_term(SF_MUTEX_HANDLE *lock) {
 #endif
 }
 
+#ifdef _WIN32
+static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg);
+#endif
+static void *crl_cleanup_thread_proc(void *arg);
+
+#ifdef _WIN32
+static int _thread_init(SF_THREAD_HANDLE *thread, LPTHREAD_START_ROUTINE proc, void *arg)
+{
+  *thread = CreateThread(NULL, 0, proc, arg, 0, NULL);
+  return *thread == NULL;
+}
+#else
 static int _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg)
 {
-#ifdef _WIN32
-  *thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)proc, arg, 0, NULL);
-  return *thread == NULL;
-#else
   return pthread_create(thread, NULL, proc, arg);
-#endif
 }
+#endif
 
 static int _thread_join(SF_THREAD_HANDLE thread)
 {
@@ -859,6 +867,24 @@ static long parse_env_seconds(const char *name, long default_val)
   return parsed;
 }
 
+/* Disk cache files are the URI with : / \\ etc. replaced by '_', so
+ * "http://example.com/crl" becomes "http___example.com_crl". */
+static int is_cached_crl_filename(const char *name)
+{
+  static const char *const prefixes[] = {
+    "http___", "https___", "ldap___", "ldaps___"
+  };
+  size_t i;
+
+  if (!name)
+    return 0;
+  for (i = 0; i < sizeof(prefixes) / sizeof(prefixes[0]); i++) {
+    if (strncmp(name, prefixes[i], strlen(prefixes[i])) == 0)
+      return 1;
+  }
+  return 0;
+}
+
 static int should_remove_cached_crl_file(const char *file_path, time_t threshold)
 {
   BIO *fp;
@@ -868,7 +894,7 @@ static int should_remove_cached_crl_file(const char *file_path, time_t threshold
 
   fp = BIO_new_file(file_path, "r");
   if (!fp)
-    return 1;
+    return 0;
 
   crl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
   BIO_free(fp);
@@ -937,6 +963,8 @@ static void cleanup_disk_cache(void)
 
       if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         continue;
+      if (!is_cached_crl_filename(find_data.cFileName))
+        continue;
 
       strncpy(file_path, cache_dir, PATH_MAX - 1);
       file_path[PATH_MAX - 1] = 0;
@@ -960,6 +988,8 @@ static void cleanup_disk_cache(void)
 
       if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
         continue;
+      if (!is_cached_crl_filename(entry->d_name))
+        continue;
 
       strncpy(file_path, cache_dir, PATH_MAX - 1);
       file_path[PATH_MAX - 1] = 0;
@@ -980,9 +1010,8 @@ SF_PUBLIC(void) cleanupCertCRLCache(void)
 
   _mutex_lock(&crl_response_cache_mutex);
   cleanup_memory_cache_locked();
-  _mutex_unlock(&crl_response_cache_mutex);
-
   cleanup_disk_cache();
+  _mutex_unlock(&crl_response_cache_mutex);
 }
 
 static void *crl_cleanup_thread_proc(void *arg)
@@ -1015,9 +1044,22 @@ static void start_crl_cleanup_thread(void)
     return;
 
   crl_cleanup_stop = 0;
+#ifdef _WIN32
+  crl_cleanup_thread_started =
+    _thread_init(&crl_cleanup_thread, crl_cleanup_thread_win, NULL) == 0;
+#else
   crl_cleanup_thread_started =
     _thread_init(&crl_cleanup_thread, crl_cleanup_thread_proc, NULL) == 0;
+#endif
 }
+
+#ifdef _WIN32
+static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg)
+{
+  crl_cleanup_thread_proc(arg);
+  return 0;
+}
+#endif
 
 static void stop_crl_cleanup_thread(void)
 {

@@ -410,7 +410,7 @@ void test_crl_cache_cleanup_removes_expired(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  const std::string expired_path = join_path(cache_dir, "expired.crl");
+  const std::string expired_path = join_path(cache_dir, "http___example.com_expired");
   const time_t now = time(NULL);
   assert_true(write_test_crl(expired_path, now - 7200, now - 3600));
   assert_true(file_exists(expired_path));
@@ -428,7 +428,7 @@ void test_crl_cache_cleanup_keeps_fresh(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  const std::string fresh_path = join_path(cache_dir, "fresh.crl");
+  const std::string fresh_path = join_path(cache_dir, "http___example.com_fresh");
   const time_t now = time(NULL);
   assert_true(write_test_crl(fresh_path, now - 3600, now + 86400));
   assert_true(file_exists(fresh_path));
@@ -446,7 +446,7 @@ void test_crl_cache_cleanup_removes_corrupt(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  const std::string corrupt_path = join_path(cache_dir, "corrupt.crl");
+  const std::string corrupt_path = join_path(cache_dir, "http___example.com_corrupt");
   {
     std::ofstream out(corrupt_path.c_str());
     out << "not a crl";
@@ -462,11 +462,31 @@ void test_crl_cache_cleanup_removes_corrupt(void **unused) {
   assert_true(!file_exists(corrupt_path));
 }
 
+void test_crl_cache_cleanup_keeps_unrelated_file(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  const std::string unrelated_path = join_path(cache_dir, "notes.txt");
+  {
+    std::ofstream out(unrelated_path.c_str());
+    out << "not a crl";
+  }
+  assert_true(file_exists(unrelated_path));
+
+  {
+    EnvOverride cache_dir_env("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    EnvOverride delay_env("SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY", "0");
+    cleanupCertCRLCache();
+  }
+
+  assert_true(file_exists(unrelated_path));
+}
+
 void test_crl_cache_cleanup_keeps_unparseable_next_update(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  const std::string path = join_path(cache_dir, "bad-next-update.crl");
+  const std::string path = join_path(cache_dir, "http___example.com_bad-next-update");
   const time_t now = time(NULL);
   assert_true(write_test_crl(path, now - 3600, 0, true));
   assert_true(file_exists(path));
@@ -539,6 +559,7 @@ int main() {
       cmocka_unit_test(test_crl_cache_cleanup_removes_expired),
       cmocka_unit_test(test_crl_cache_cleanup_keeps_fresh),
       cmocka_unit_test(test_crl_cache_cleanup_removes_corrupt),
+      cmocka_unit_test(test_crl_cache_cleanup_keeps_unrelated_file),
       cmocka_unit_test(test_crl_cache_cleanup_keeps_unparseable_next_update)
     };
     int ret = cmocka_run_group_tests(tests, nullptr, nullptr);
