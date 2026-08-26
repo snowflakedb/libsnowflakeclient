@@ -18,9 +18,9 @@ char* load_data(const char* filename) {
   size_t fsize = ftell(fp);
   fseek(fp, 0, SEEK_SET);
   char *string = malloc(fsize + 1);
-  size_t nread = fread(string, fsize, 1, fp);
+  fread(string, fsize, 1, fp);
   fclose(fp);
-  string[nread] = '\0';
+  string[fsize] = '\0';
   return string;
 }
 
