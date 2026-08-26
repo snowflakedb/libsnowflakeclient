@@ -128,11 +128,6 @@ extern "C" {
 #define SF_SPCS_ENV_VAR "SNOWFLAKE_RUNNING_INSIDE_SPCS"
 
 /**
-* DEFAULT WIF AUDIENCE
-*/
-#define SF_SNOWFLAKE_WIF_AUDIENCE "snowflakecomputing.com"
-
-/**
  * CRL configuration parameters.
  */
 typedef struct SF_CRL_CONFIG {
@@ -397,7 +392,6 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_APPLICATION_PATH,
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
-    SF_CON_WIF_AUDIENCE,
     /**
     * Overrides the STS/IAM endpoint used for Workload Identity Federation.
     * May be given as either a bare hostname (e.g. "sts.us-gov-east-1.amazonaws.com")
@@ -637,7 +631,6 @@ typedef struct SF_CONNECT {
     sf_bool log_query_text;
     sf_bool log_query_parameters;
 
-    char* wif_audience;
     char* wif_host;
     sf_bool wif_aws_use_outbound_token;
 } SF_CONNECT;

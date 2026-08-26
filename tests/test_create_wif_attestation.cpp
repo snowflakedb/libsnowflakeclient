@@ -142,7 +142,7 @@ namespace {
 // and asserts the signed GetCallerIdentity request shape.
 void assertAwsLegacyPresignedAttestation(const boost::optional<Attestation> &attestationOpt,
                                          const std::string &expectedHost,
-                                         const std::string &expectedAudience = SF_SNOWFLAKE_WIF_AUDIENCE) {
+                                         const std::string &expectedAudience = "snowflakecomputing.com") {
   assert_true(attestationOpt.has_value());
   const auto &attestation = attestationOpt.get();
   assert_true(attestation.type == AttestationType::AWS);
@@ -294,7 +294,6 @@ void test_unit_aws_attestation_jwt_success_with_custom_wif_config(void**) {
     config.type = AttestationType::AWS;
     config.awsSdkWrapper = &awsSdkWrapper;
     config.awsUseOutboundToken = true;
-    config.audience = "custom-audience-for-testing";
     config.wifHost = "custom-wif-host-for-testing";
 
     const auto attestationOpt = createAttestation(config);
@@ -311,7 +310,7 @@ void test_unit_aws_attestation_jwt_success_with_custom_wif_config(void**) {
     // STS call shape matches the Python implementation.
     assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAudience.c_str(),
-        "custom-audience-for-testing");
+        "snowflakecomputing.com");
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
         "custom-wif-host-for-testing");
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenAlgorithm.c_str(),
@@ -693,7 +692,6 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
     const std::vector<char>& idToken,
     const std::vector<std::string>& expectedDelegates,
     const std::string& expectedTargetServiceAccount,
-    const std::string& expectedAudience = GCP_TEST_AUDIENCE,
     const std::string& expectedWifHost = "") {
   return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     HttpResponse response;
@@ -728,7 +726,7 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
         assert_true(bodyJson.is<picojson::object>());
 
         auto bodyObj = bodyJson.get<picojson::object>();
-        assert_true(bodyObj["audience"].get<std::string>() == expectedAudience);
+        assert_true(bodyObj["audience"].get<std::string>() == GCP_TEST_AUDIENCE);
         assert_true(bodyObj["includeEmail"].get<bool>() == true);
 
         if (!expectedDelegates.empty()) {
@@ -786,7 +784,6 @@ void test_unit_gcp_impersonation_single_account_success_with_custom_wif_config(v
     const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
     const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
     const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
-    const std::string testingAudience = "custom-audience-for-testing";
     const std::string testingHost = "https://" + GCP_TEST_CUSTOM_ENDPOINT_HOST + "/v1";
 
     auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
@@ -794,14 +791,12 @@ void test_unit_gcp_impersonation_single_account_success_with_custom_wif_config(v
         idToken,
         {},
         targetServiceAccount,
-        testingAudience,
         testingHost);
 
     AttestationConfig config;
     config.type = AttestationType::GCP;
     config.httpClient = &fakeHttpClient;
     config.workloadIdentityImpersonationPath = targetServiceAccount;
-    config.audience = testingAudience;
     config.wifHost = testingHost;
 
     const auto attestationOpt = createAttestation(config);
@@ -825,7 +820,6 @@ void test_unit_gcp_impersonation_single_account_success_with_bare_host_wif_confi
         idToken,
         {},
         targetServiceAccount,
-        GCP_TEST_AUDIENCE,
         GCP_TEST_CUSTOM_ENDPOINT_HOST);
 
     AttestationConfig config;
@@ -1332,15 +1326,11 @@ void test_unit_wif_attestation_config(void**)
     assert_true(config.type.has_value());
     assert_int_equal(config.type.get(), AttestationType::AWS);
 
-    assert_false(config.audience.has_value());
-    assert_string_equal(config.getAudience().c_str(), SF_SNOWFLAKE_WIF_AUDIENCE);
-
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
     assert_string_equal(config.getWifHost().c_str(), "");
 
     snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "GCP");
-    snowflake_set_attribute(conn, SF_CON_WIF_AUDIENCE, "dummy_audience.com");
     snowflake_set_attribute(conn, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, "dummy_impersonation_path");
     snowflake_set_attribute(conn, SF_CON_WIF_TOKEN, "dummy_token");
     snowflake_set_attribute(conn, SF_CON_WIF_HOST, "dummy_host");
@@ -1355,9 +1345,6 @@ void test_unit_wif_attestation_config(void**)
 
     assert_true(config.token.has_value());
     assert_string_equal(config.token.get().c_str(), "dummy_token");
-
-    assert_true(config.audience.has_value());
-    assert_string_equal(config.getAudience().c_str(), "dummy_audience.com");
 
     assert_true(config.snowflakeEntraResource.has_value());
     assert_string_equal(config.snowflakeEntraResource.get().c_str(), "dummy_resource");
