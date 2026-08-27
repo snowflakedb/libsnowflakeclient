@@ -70,8 +70,11 @@ goto :EOF
     )
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
+    :: PDO vendor packaging needs deps-build; skip cleanup when PDO_VENDOR_BUILD is set.
     if defined GITHUB_ACTIONS (
-        rd /S /Q %scriptdir%\..\deps-build
+        if not defined PDO_VENDOR_BUILD (
+            rd /S /Q %scriptdir%\..\deps-build
+        )
     )
     exit /b 0
 
@@ -140,7 +143,9 @@ goto :EOF
     set dynamic_runtime=%~3
 
     echo === build: %component_name% ===
-    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
+    set build_tests=ON
+    if /I "%BUILD_SOURCE_ONLY%"=="true" set build_tests=OFF
+    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% %build_tests%
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version
