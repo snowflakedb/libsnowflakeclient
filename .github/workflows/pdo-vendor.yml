@@ -239,15 +239,23 @@ jobs:
           $installer = "$env:TEMP\vs_buildtools.exe"
           Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vs_buildtools.exe" -OutFile $installer
           $installPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools"
+          # Single ArgumentList string so the path with spaces is not split.
           $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
-            "--quiet", "--wait", "--norestart", "--nocache",
-            "--installPath", $installPath,
-            "--add", "Microsoft.VisualStudio.Workload.VCTools",
+            "--quiet --wait --norestart --nocache " +
+            "--installPath `"$installPath`" " +
+            "--add Microsoft.VisualStudio.Workload.VCTools " +
+            "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
             "--includeRecommended"
           )
           if ($p.ExitCode -notin 0, 3010) {
             throw "VS2019 Build Tools install failed with exit code $($p.ExitCode)"
           }
+          $vcvars = Join-Path $installPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (-not (Test-Path $vcvars)) {
+            & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
+            throw "VS2019 vcvarsall.bat not found at $vcvars"
+          }
+          Write-Host "VS2019 Build Tools ready: $vcvars"
       - name: Install CMake
         shell: cmd
         run: |
