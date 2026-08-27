@@ -59,6 +59,9 @@ function test_component()
         export OPENSSL_CONF_INCLUDE=$(pwd)/tests/openssl
         export OPENSSL_MODULES=$(pwd)/tests/openssl/lib/ossl-modules
         $CTEST -V -E "(valgrind.*|test_auth)"
+        unset OPENSSL_CONF
+        unset OPENSSL_CONF_INCLUDE
+        unset OPENSSL_MODULES
     popd
 }
 

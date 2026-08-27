@@ -81,6 +81,9 @@ exit /b 0
         set "OPENSSL_CONF_INCLUDE=%cd%\tests\openssl"
         set "OPENSSL_MODULES=%cd%\tests\openssl\lib"
         ctest -V -E "(valgrind.*|test_auth)"
+        set "OPENSSL_CONF="
+        set "OPENSSL_CONF_INCLUDE="
+        set "OPENSSL_MODULES="
         if %ERRORLEVEL% NEQ 0 (
             call :drop_schema
             goto :error
