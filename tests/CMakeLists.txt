@@ -90,7 +90,7 @@ SET(TESTS_CXX
         test_manual_wif
         test_create_wif_attestation
         test_unit_tls_config
-        test_manual_tls_negotiation
+        test_tls_negotiation
         test_crl
         test_unit_ocsp_cache
         test_unit_stopwatch
