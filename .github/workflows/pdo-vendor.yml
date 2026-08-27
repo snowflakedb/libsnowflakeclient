@@ -2,6 +2,18 @@ name: PDO vendor artifacts
 
 on:
   workflow_dispatch:
+  # pull_request lets you exercise this workflow from a branch before it exists
+  # on master (workflow_dispatch only lists workflows already on the default branch).
+  pull_request:
+    paths:
+      - ".github/workflows/pdo-vendor.yml"
+      - "scripts/package_for_pdo.py"
+      - "scripts/package_for_pdo.sh"
+      - "scripts/package_for_pdo.bat"
+
+permissions:
+  contents: read
+  actions: write
 
 concurrency:
   cancel-in-progress: true
