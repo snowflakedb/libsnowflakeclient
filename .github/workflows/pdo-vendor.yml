@@ -245,6 +245,7 @@ jobs:
             "--installPath `"$installPath`" " +
             "--add Microsoft.VisualStudio.Workload.VCTools " +
             "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
+            "--add Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre " +
             "--includeRecommended"
           )
           if ($p.ExitCode -notin 0, 3010) {
