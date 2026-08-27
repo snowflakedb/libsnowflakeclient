@@ -1,24 +1,48 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-WIREMOCK_VERSION="3.8.0"
+WIREMOCK_VERSION="3.13.2"
 WIREMOCK_JAR="${HOME}/.m2/repository/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
 WIREMOCK_URL="https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
+WIREMOCK_SHA256="d097b19bd483c5038479b13a5c71e9faf8f2f5106584f0c120a7770ab0bdb367" # pragma: allowlist secret
 
 mkdir -p "$(dirname "$WIREMOCK_JAR")"
 
-echo "WireMock JAR is downlaoding${WIREMOCK_URL}"
-curl -L -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
-CURL_STATUS=$? 
+jar_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
 
-if [ "$CURL_STATUS" -ne 0 ]; then
-    echo "ERROR: Failed to download WireMock JAR. (curl code: $CURL_STATUS)"
+verify_wiremock_jar() {
+  [[ -f "$WIREMOCK_JAR" ]] || return 1
+  [[ "$(jar_sha256 "$WIREMOCK_JAR")" == "$WIREMOCK_SHA256" ]]
+}
+
+download_wiremock_jar() {
+  echo "Downloading WireMock JAR from ${WIREMOCK_URL}"
+  curl -L --fail -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
+}
+
+if ! verify_wiremock_jar; then
+  echo "WireMock JAR missing or checksum mismatch; redownloading."
+  rm -f "$WIREMOCK_JAR"
+  download_wiremock_jar
+  if ! verify_wiremock_jar; then
+    echo "ERROR: WireMock JAR checksum failed after download."
+    rm -f "$WIREMOCK_JAR"
     exit 1
+  fi
+else
+  echo "WireMock JAR already present and checksum matches."
 fi
 
 chmod +r "$WIREMOCK_JAR"
+FILE_SIZE="$(wc -c < "$WIREMOCK_JAR" | tr -d ' ')"
 
-echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
+echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) is ready."
 echo "   - location: $WIREMOCK_JAR"
 echo "   - size: ${FILE_SIZE} bytes"
 

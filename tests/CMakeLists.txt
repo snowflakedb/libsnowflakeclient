@@ -92,6 +92,7 @@ SET(TESTS_CXX
         test_crl
         test_unit_token_cache_key
         test_unit_ocsp_cache
+        test_unit_stopwatch
 )
 
 if (LINUX)
