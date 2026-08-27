@@ -590,7 +590,7 @@ index 010bbb9825..59223d307e 100644
  #ifdef HAVE_OPENSSL3
  #define HAVE_EVP_PKEY_GET_PARAMS 1
  #endif
-@@ -1641,6 +1676,12 @@ static int ossl_init(void)
+@@ -1641,13 +1676,21 @@ static int ossl_init(void)
    Curl_tls_keylog_open();
  #endif
  
@@ -603,7 +603,16 @@ index 010bbb9825..59223d307e 100644
    return 1;
  }
  
-@@ -3309,6 +3350,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+ /* Global cleanup */
+ static void ossl_cleanup(void)
+ {
++  /* Stop CRL cache cleanup before OpenSSL teardown. */
++  termCertCRL();
+ #ifndef HAVE_KEYLOG_UPSTREAM
+   Curl_tls_keylog_close();
+ #endif
+ }
+@@ -3309,6 +3352,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
    if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
      SSL_CTX_set_cert_store(octx->ssl_ctx, cached_store);
      octx->store_is_empty = is_empty;
@@ -623,7 +632,7 @@ index 010bbb9825..59223d307e 100644
    }
    else {
      X509_STORE *store = SSL_CTX_get_cert_store(octx->ssl_ctx);
-@@ -3317,6 +3371,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3317,6 +3373,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
      if(result == CURLE_OK && cache_criteria_met) {
        ossl_set_cached_x509_store(cf, data, store, (bool)octx->store_is_empty);
      }
@@ -642,7 +651,7 @@ index 010bbb9825..59223d307e 100644
    }
  
    ERR_pop_to_mark();
-@@ -4422,8 +4488,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
+@@ -4422,8 +4490,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
  }
  
  #ifdef CURLVERBOSE
@@ -652,7 +661,7 @@ index 010bbb9825..59223d307e 100644
  static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
  {
    STACK_OF(X509) *certstack;
-@@ -4779,6 +4844,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
+@@ -4779,6 +4846,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
    infof_certstack(data, octx->ssl);
  #endif
  
