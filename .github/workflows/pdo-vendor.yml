@@ -43,6 +43,7 @@ jobs:
             scripts/package_for_pdo.bat \
             scripts/_init.bat \
             scripts/utils.bat \
+            scripts/build_arrow_source.bat \
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
@@ -95,6 +96,7 @@ jobs:
             scripts/package_for_pdo.bat \
             scripts/_init.bat \
             scripts/utils.bat \
+            scripts/build_arrow_source.bat \
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
@@ -167,6 +169,7 @@ jobs:
             scripts/package_for_pdo.bat \
             scripts/_init.bat \
             scripts/utils.bat \
+            scripts/build_arrow_source.bat \
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
@@ -229,6 +232,7 @@ jobs:
             scripts/package_for_pdo.bat \
             scripts/_init.bat \
             scripts/utils.bat \
+            scripts/build_arrow_source.bat \
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
@@ -328,6 +332,7 @@ jobs:
             scripts/package_for_pdo.bat \
             scripts/_init.bat \
             scripts/utils.bat \
+            scripts/build_arrow_source.bat \
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
