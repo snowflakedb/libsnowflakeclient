@@ -22,12 +22,6 @@ BUILD_IMAGE_VERSION_UBUNTU_AARCH64=5
 TEST_IMAGE_VERSION_X64=1
 TEST_IMAGE_VERSION_AARCH64=2
 
-# Docker Hub only publishes rhel8-aarch64:1; tag 2 exists on the internal registry.
-if [[ -n "$GITHUB_ACTIONS" ]]; then
-  BUILD_IMAGE_VERSION_AARCH64=1
-  TEST_IMAGE_VERSION_AARCH64=1
-fi
-
 PLATFORM_ARCH=$(uname -p)
 if [[ -z "$TARGET_PLATFORM" ]]; then
   if [[ "$PLATFORM_ARCH" == "aarch64" ]]; then

@@ -10,7 +10,6 @@ on:
       - "scripts/package_for_pdo.py"
       - "scripts/package_for_pdo.sh"
       - "scripts/package_for_pdo.bat"
-      - "ci/_init.sh"
       - "ci/build_linux.sh"
       - "ci/build_mac.sh"
       - "ci/build_win.bat"
@@ -60,41 +59,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: pdo-vendor-linux-x86
-          path: pdo-vendor
-          if-no-files-found: error
-          retention-days: 30
-
-  linux-aarch64:
-    name: PDO-vendor-Linux-aarch64
-    runs-on: ubuntu-22.04-arm
-    timeout-minutes: 240
-    steps:
-      - uses: actions/checkout@v5
-      - name: Restore cached deps
-        uses: actions/cache/restore@v5
-        with:
-          path: dep-cache
-          key: pdo-vendor-Release-linux-aarch64-${{ github.sha }}
-          restore-keys: |
-            pdo-vendor-Release-linux-aarch64-
-      - name: Build
-        shell: bash
-        env:
-          BUILD_TYPE: ${{ env.BUILD_TYPE }}
-          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
-        run: ci/build_linux.sh
-      - name: Cache deps
-        uses: actions/cache/save@v5
-        continue-on-error: true
-        with:
-          path: dep-cache
-          key: pdo-vendor-Release-linux-aarch64-${{ github.sha }}
-      - name: Package for PDO
-        shell: bash
-        run: python3 scripts/package_for_pdo.py package --platform linux-aarch64 --output pdo-vendor
-      - uses: actions/upload-artifact@v7
-        with:
-          name: pdo-vendor-linux-aarch64
           path: pdo-vendor
           if-no-files-found: error
           retention-days: 30
@@ -203,7 +167,7 @@ jobs:
 
   merge:
     name: PDO-vendor-all
-    needs: [linux-x86, linux-aarch64, macos-arm64, windows-vs17-x64]
+    needs: [linux-x86, macos-arm64, windows-vs17-x64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -219,7 +183,6 @@ jobs:
           python3 scripts/package_for_pdo.py merge \
             --inputs \
               merged/pdo-vendor-linux-x86 \
-              merged/pdo-vendor-linux-aarch64 \
               merged/pdo-vendor-darwin-arm64 \
               merged/pdo-vendor-win64-vs17 \
             --output pdo-vendor
