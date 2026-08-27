@@ -10,6 +10,10 @@ on:
       - "scripts/package_for_pdo.py"
       - "scripts/package_for_pdo.sh"
       - "scripts/package_for_pdo.bat"
+      - "ci/_init.sh"
+      - "ci/build_linux.sh"
+      - "ci/build_mac.sh"
+      - "ci/build_win.bat"
 
 permissions:
   contents: read
