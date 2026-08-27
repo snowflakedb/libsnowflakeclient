@@ -209,9 +209,6 @@ void test_set_get_all_attributes(void **unused)
     }
 }
 
-// SF_CON_TLS_VERSION is an int32 (a CURL_SSLVERSION_* value). Verify the
-// default, a valid round-trip, and that an invalid value is rejected without
-// clobbering the stored value.
 void test_set_get_tls_version_attribute(void **unused)
 {
     SF_UNUSED(unused);

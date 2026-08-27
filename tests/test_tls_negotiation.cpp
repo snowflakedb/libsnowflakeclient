@@ -1,22 +1,3 @@
-/*
- * Manual test: verify the per-connection TLS version actually governs the
- * protocol negotiated on the wire.
- *
- * Run manually against a real account (like test_manual_connect):
- *   set SNOWFLAKE_MANUAL_TEST_TYPE=test_manual_tls_negotiation
- *   plus SNOWFLAKE_TEST_ACCOUNT/USER/PASSWORD (+ HOST/PORT/PROTOCOL/CA_BUNDLE).
- * Otherwise it self-skips.
- *
- * Flow: connect with an exact-pinned TLS version (real creds -> the handshake
- * completes and the pooled CurlDesc captures the negotiated version via its
- * PREREQ callback), then pull that CurlDesc from the same ClientCurlDescPool
- * sub-pool (keyed by endpoint + TLS version) and read getNegotiatedSSLVersion().
- * Exact pinning (| CURL_SSLVERSION_MAX_*) makes it deterministic: TLS 1.2 and
- * TLS 1.3 must produce different, matching strings.
- */
-
-// C++ (std-lib-bearing) headers must precede cmocka (utils/test_setup.h):
-// cmocka macroizes "inline", which the C++ standard headers reject afterwards.
 #include <cstring>
 #include <memory>
 #include <string>
@@ -28,9 +9,6 @@
 
 using namespace Snowflake::Client;
 
-// Connect with the given exact-pinned TLS version (same attribute setup as
-// test_mfa_connect_with_duo_push), then read the negotiated protocol back from
-// the CurlDesc the connection used.
 static std::string connect_and_get_negotiated(int tlsVersion)
 {
   SF_CONNECT * sf = setup_snowflake_connection();
@@ -43,9 +21,6 @@ static std::string connect_and_get_negotiated(int tlsVersion)
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  // Rebuild the endpoint URL from the fields the C core used
-  // (connection.c builds "<protocol>://<host>:<port>"), so the sub-pool key
-  // matches exactly regardless of whether host came from env or the account.
   SFURL url = SFURL::parse(std::string(sf->protocol) + "://" + sf->host + ":" + sf->port);
   url.setTlsVersion(tlsVersion);
 
