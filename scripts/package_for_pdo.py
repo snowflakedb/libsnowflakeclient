@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 """Remap libsnowflakeclient build output into the pdo_snowflake vendor layout.
-
-Extract the resulting pdo-vendor/ tree over pdo_snowflake/ so paths such as
-libsnowflakeclient/lib/linux/libsnowflakeclient.a land in the right place.
-
-Azure libraries follow the current libsnowflakeclient build (azure-core,
-azure-storage-common, azure-storage-blobs), not the older azure-storage-lite
-name still listed in pdo_snowflake.
 """
 
 from __future__ import annotations
@@ -99,7 +92,96 @@ AZURE_WIN = [
     "azure-storage-blobs.lib",
 ]
 
-# dep name -> destination lib folder name used by PDO
+# cmocka and zlib are unused by the PDO link line on unix (and cmocka on Windows)
+# but they are present in the current pdo_snowflake vendor tree.
+UNIX_DEPS_LINUX = [
+    "openssl",
+    "curl",
+    "oob",
+    "aws",
+    "azure",
+    "uuid",
+    "arrow",
+    "arrow_deps",
+    "boost",
+    "cmocka",
+    "zlib",
+]
+UNIX_DEPS_DARWIN = [
+    "openssl",
+    "curl",
+    "oob",
+    "aws",
+    "azure",
+    "arrow",
+    "arrow_deps",
+    "boost",
+    "cmocka",
+    "zlib",
+]
+WIN_DEPS = [
+    "aws",
+    "azure",
+    "curl",
+    "oob",
+    "openssl",
+    "zlib",
+    "arrow",
+    "boost",
+    "cmocka",
+]
+
+
+def _unix_required(aws_names: list[str], aws_libdir: str, with_uuid: bool) -> tuple[str, ...]:
+    required = [
+        "openssl/lib/libcrypto.a",
+        "openssl/lib/libssl.a",
+        "curl/lib/libcurl.a",
+        "oob/lib/libtelemetry.a",
+    ]
+    required += [f"aws/{aws_libdir}/{name}" for name in aws_names]
+    required += [f"azure/lib/{name}" for name in AZURE_UNIX]
+    if with_uuid:
+        required.append("uuid/lib/libuuid.a")
+    required += [
+        "arrow/lib/libarrow.a",
+        "arrow_deps/lib/libjemalloc_pic.a",
+        "cmocka/lib/libcmocka.a",
+        "zlib/lib/libz.a",
+    ]
+    required += [f"boost/lib/{name}" for name in BOOST_UNIX]
+    return tuple(required)
+
+
+def _win_required() -> tuple[str, ...]:
+    return tuple(
+        [f"aws/lib/{name}" for name in AWS_WIN]
+        + [f"azure/lib/{name}" for name in AZURE_WIN]
+        + [
+            "curl/lib/libcurl_a.lib",
+            "oob/lib/libtelemetry_a.lib",
+            "openssl/lib/libssl_a.lib",
+            "openssl/lib/libcrypto_a.lib",
+            "zlib/lib/zlib_a.lib",
+            "arrow/lib/arrow_static.lib",
+            "cmocka/lib/cmocka_a.lib",
+        ]
+        + [f"boost/lib/{name}" for name in BOOST_WIN]
+    )
+
+
+def _win_platform(vsdir: str) -> dict:
+    return {
+        "src_deps": Path(f"deps-build/win64/{vsdir}/Release"),
+        "dest_deps": Path(f"libsnowflakeclient/deps-build/win64/{vsdir}"),
+        "client_src": Path(f"deps-build/win64/{vsdir}/Release/libsnowflakeclient/lib/snowflakeclient.lib"),
+        "client_dst": Path(f"libsnowflakeclient/lib/win64/{vsdir}/snowflakeclient.lib"),
+        "deps": WIN_DEPS,
+        "aws_libdir": "lib",
+        "required": _win_required(),
+    }
+
+
 # "lib64" only for Linux AWS; everything else is "lib" (lib64 source is remapped).
 PLATFORMS = {
     "linux": {
@@ -107,124 +189,48 @@ PLATFORMS = {
         "dest_deps": Path("libsnowflakeclient/deps-build/linux"),
         "client_src": Path("deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a"),
         "client_dst": Path("libsnowflakeclient/lib/linux/libsnowflakeclient.a"),
-        "deps": [
-            "openssl",
-            "curl",
-            "oob",
-            "aws",
-            "azure",
-            "uuid",
-            "arrow",
-            "arrow_deps",
-            "boost",
-        ],
+        "deps": UNIX_DEPS_LINUX,
         "aws_libdir": "lib64",
-        "required": (
-            ["openssl/lib/libcrypto.a", "openssl/lib/libssl.a", "curl/lib/libcurl.a", "oob/lib/libtelemetry.a"]
-            + [f"aws/lib64/{name}" for name in AWS_LINUX]
-            + [f"azure/lib/{name}" for name in AZURE_UNIX]
-            + [
-                "uuid/lib/libuuid.a",
-                "arrow/lib/libarrow.a",
-                "arrow_deps/lib/libjemalloc_pic.a",
-            ]
-            + [f"boost/lib/{name}" for name in BOOST_UNIX]
-        ),
+        "required": _unix_required(AWS_LINUX, "lib64", with_uuid=True),
     },
     "linux-aarch64": {
         "src_deps": Path("deps-build/linux/Release"),
         "dest_deps": Path("libsnowflakeclient/deps-build/linux/aarch64"),
         "client_src": Path("deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a"),
         "client_dst": Path("libsnowflakeclient/lib/linux/aarch64/libsnowflakeclient.a"),
-        "deps": [
-            "openssl",
-            "curl",
-            "oob",
-            "aws",
-            "azure",
-            "uuid",
-            "arrow",
-            "arrow_deps",
-            "boost",
-        ],
+        "deps": UNIX_DEPS_LINUX,
         "aws_libdir": "lib64",
-        "required": (
-            ["openssl/lib/libcrypto.a", "openssl/lib/libssl.a", "curl/lib/libcurl.a", "oob/lib/libtelemetry.a"]
-            + [f"aws/lib64/{name}" for name in AWS_LINUX]
-            + [f"azure/lib/{name}" for name in AZURE_UNIX]
-            + [
-                "uuid/lib/libuuid.a",
-                "arrow/lib/libarrow.a",
-                "arrow_deps/lib/libjemalloc_pic.a",
-            ]
-            + [f"boost/lib/{name}" for name in BOOST_UNIX]
-        ),
+        "required": _unix_required(AWS_LINUX, "lib64", with_uuid=True),
     },
     "darwin": {
         "src_deps": Path("deps-build/darwin/Release"),
         "dest_deps": Path("libsnowflakeclient/deps-build/darwin"),
         "client_src": Path("deps-build/darwin/Release/libsnowflakeclient/lib/libsnowflakeclient.a"),
         "client_dst": Path("libsnowflakeclient/lib/darwin/libsnowflakeclient.a"),
-        "deps": [
-            "openssl",
-            "curl",
-            "oob",
-            "aws",
-            "azure",
-            "arrow",
-            "arrow_deps",
-            "boost",
-        ],
+        "deps": UNIX_DEPS_DARWIN,
         "aws_libdir": "lib",
-        "required": (
-            ["openssl/lib/libcrypto.a", "openssl/lib/libssl.a", "curl/lib/libcurl.a", "oob/lib/libtelemetry.a"]
-            + [f"aws/lib/{name}" for name in AWS_DARWIN]
-            + [f"azure/lib/{name}" for name in AZURE_UNIX]
-            + [
-                "arrow/lib/libarrow.a",
-                "arrow_deps/lib/libjemalloc_pic.a",
-            ]
-            + [f"boost/lib/{name}" for name in BOOST_UNIX]
-        ),
+        "required": _unix_required(AWS_DARWIN, "lib", with_uuid=False),
     },
-    "win64-vs17": {
-        "src_deps": Path("deps-build/win64/vs17/Release"),
-        "dest_deps": Path("libsnowflakeclient/deps-build/win64/vs17"),
-        "client_src": Path("deps-build/win64/vs17/Release/libsnowflakeclient/lib/snowflakeclient.lib"),
-        "client_dst": Path("libsnowflakeclient/lib/win64/vs17/snowflakeclient.lib"),
-        "deps": [
-            "aws",
-            "azure",
-            "curl",
-            "oob",
-            "openssl",
-            "zlib",
-            "arrow",
-            "boost",
-        ],
-        "aws_libdir": "lib",
-        "required": (
-            [f"aws/lib/{name}" for name in AWS_WIN]
-            + [f"azure/lib/{name}" for name in AZURE_WIN]
-            + [
-                "curl/lib/libcurl_a.lib",
-                "oob/lib/libtelemetry_a.lib",
-                "openssl/lib/libssl_a.lib",
-                "openssl/lib/libcrypto_a.lib",
-                "zlib/lib/zlib_a.lib",
-                "arrow/lib/arrow_static.lib",
-            ]
-            + [f"boost/lib/{name}" for name in BOOST_WIN]
-        ),
-    },
+    "win64-vs17": _win_platform("vs17"),
+    "win64-vs16": _win_platform("vs16"),
 }
 
 
-def iter_binaries(directory: Path):
+def is_shared_lib(path: Path) -> bool:
+    """Match .so/.dylib including versioned names like libcmocka.so.0.4.1."""
+    suffix = path.suffix.lower()
+    if suffix in {".so", ".dylib"}:
+        return True
+    return ".so." in path.name
+
+
+def iter_binaries(directory: Path, include_shared: bool = False):
     if not directory.is_dir():
         return
     for path in directory.iterdir():
-        if path.is_file() and path.suffix.lower() in BIN_SUFFIXES:
+        if not path.is_file():
+            continue
+        if path.suffix.lower() in BIN_SUFFIXES or (include_shared and is_shared_lib(path)):
             yield path
 
 
@@ -254,9 +260,10 @@ def copy_dep(src_deps: Path, dest_deps: Path, name: str, aws_libdir: str) -> Non
     if not src_dep.is_dir():
         raise SystemExit(f"missing dependency directory: {src_dep}")
     dest_libdir = aws_libdir if name == "aws" else "lib"
+    include_shared = name == "cmocka"
     copied = 0
     for src_dir, dest_subdir in source_lib_dirs(src_dep, dest_libdir):
-        for binary in iter_binaries(src_dir):
+        for binary in iter_binaries(src_dir, include_shared=include_shared):
             copy_file(binary, dest_deps / name / dest_subdir / binary.name)
             copied += 1
     # Windows oob stages libtelemetry_a.lib as a file named "release"/"debug".

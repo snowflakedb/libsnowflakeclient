@@ -85,6 +85,24 @@ if /I "%vs_version%"=="VS17" (
 if /I "%vs_version%"=="VS16" (
     set cmake_generator=Visual Studio 16 2019
     set vsdir=vs16
+    if "%VCINSTALLDIR%" == "" (
+        if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC" (
+            set "VCINSTALLDIR=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC"
+        ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\VC" (
+            set "VCINSTALLDIR=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\VC"
+        ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC" (
+            set "VCINSTALLDIR=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC"
+        ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\VC" (
+            set "VCINSTALLDIR=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\VC"
+        ) else (
+            set "VCINSTALLDIR="
+            for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version "[16.0,17.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
+            if not defined VCINSTALLDIR (
+                echo Set environment variable VCINSTALLDIR to specify Visual Studio 2019 install path.
+                goto :error
+            )
+        )
+    )
 )
 if /I "%vs_version%"=="VS15" (
     set cmake_generator=Visual Studio 15 2017
