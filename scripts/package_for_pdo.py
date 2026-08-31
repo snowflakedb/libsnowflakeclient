@@ -101,6 +101,7 @@ UNIX_DEPS_LINUX = [
     "aws",
     "azure",
     "uuid",
+    "xml2",
     "arrow",
     "arrow_deps",
     "boost",
@@ -113,6 +114,7 @@ UNIX_DEPS_DARWIN = [
     "oob",
     "aws",
     "azure",
+    "xml2",
     "arrow",
     "arrow_deps",
     "boost",
@@ -144,6 +146,7 @@ def _unix_required(aws_names: list[str], aws_libdir: str, with_uuid: bool) -> tu
     if with_uuid:
         required.append("uuid/lib/libuuid.a")
     required += [
+        "xml2/lib/libxml2.a",
         "arrow/lib/libarrow.a",
         "arrow_deps/lib/libjemalloc_pic.a",
         "cmocka/lib/libcmocka.a",
