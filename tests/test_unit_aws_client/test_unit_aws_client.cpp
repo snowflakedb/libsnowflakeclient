@@ -48,14 +48,15 @@ void test_retry_parts_uploading(void** unused)
 {
   SF_UNUSED(unused);
   wiremock->resetMapping();
-  wiremock->initMappingFromFile("fail_first_upload_attempt.json", 65000);
+  wiremock->initMappingFromFile("fail_first_upload_attempt.json");
   TransferConfig transferConfig;
   memset(&transferConfig, 0, sizeof(transferConfig));
   char cafile[] = "/tmp/cafile";
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
-  stageInfo.endPoint = "http://localhost:65000";
+  stageInfo.endPoint = std::string("http://localhost:") + wirmockPort;
+  stageInfo.location = "testbucket/"
   char aws_token[] = "AWS_TOKEN";
   char aws_key_id[] = "AWS_KEY_ID";
   char aws_secret_key[] = "AWS_SECRET_KEY";

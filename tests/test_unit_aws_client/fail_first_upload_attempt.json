@@ -1,60 +1,114 @@
 {
   "mappings": [
     {
-      "scenarioName": "USR_PWD_MFA login",
-      "newScenarioState": "Logged in",
+      "scenarioName": "retry parts upload",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "First part failed",
       "request": {
-        "urlPathPattern": "/session/v1/login-request.*",
-        "method": "POST"
+        "urlPathPattern": "/.*",
+        "method": "POST",
+        "queryParameters": {
+          "uploads": {
+            "matches": ".*"
+          }
+        }
       },
       "response": {
         "status": 200,
-        "jsonBody": {
-          "data": {
-            "masterToken": "master-token",
-            "token": "session-token",
-            "validityInSeconds": 3600,
-            "masterValidityInSeconds": 14400,
-            "parameters": [
-              {
-                "name": "AUTOCOMMIT",
-                "value": true
-              }
-            ],
-            "sessionInfo": {
-              "databaseName": "TEST",
-              "schemaName": "TEST",
-              "warehouseName": "TEST_WH",
-              "roleName": "ANALYST"
-            },
-            "idToken": null,
-            "idTokenValidityInSeconds": 0,
-            "responseData": null,
-            "mfaToken": "cached-mfa-token-value",
-            "mfaTokenValidityInSeconds": 3600
+        "headers": {
+          "Content-Type": "application/xml"
+        },
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<InitiateMultipartUploadResult>\n  <Bucket>testbucket</Bucket>\n  <Key>dummydst.csv.gz</Key>\n  <UploadId>test-upload-id-12345</UploadId>\n</InitiateMultipartUploadResult>"
+      }
+    },
+    {
+      "scenarioName": "retry parts upload",
+      "requiredScenarioState": "First part failed",
+      "newScenarioState": "Second part failed",
+      "request": {
+        "urlPathPattern": "/.*",
+        "method": "PUT",
+        "queryParameters": {
+          "partNumber": {
+            "matches": ".*"
           },
-          "code": null,
-          "message": null,
-          "success": true
+          "uploadId": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/xml"
+        },
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error>\n  <Code>InternalError</Code>\n  <Message>We encountered an internal error. Please try again.</Message>\n</Error>"
+      }
+    },
+    {
+      "scenarioName": "retry parts upload",
+      "requiredScenarioState": "Second part failed",
+      "newScenarioState": "All retries succeed",
+      "request": {
+        "urlPathPattern": "/.*",
+        "method": "PUT",
+        "queryParameters": {
+          "partNumber": {
+            "matches": ".*"
+          },
+          "uploadId": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/xml"
+        },
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error>\n  <Code>InternalError</Code>\n  <Message>We encountered an internal error. Please try again.</Message>\n</Error>"
+      }
+    },
+    {
+      "scenarioName": "retry parts upload",
+      "requiredScenarioState": "All retries succeed",
+      "request": {
+        "urlPathPattern": "/.*",
+        "method": "PUT",
+        "queryParameters": {
+          "partNumber": {
+            "matches": ".*"
+          },
+          "uploadId": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "ETag": "\"abc123etag\""
         }
       }
     },
     {
-      "scenarioName": "USR_PWD_MFA login",
-      "requiredScenarioState": "Logged in",
-      "newScenarioState": "Disconnected",
+      "scenarioName": "retry parts upload",
+      "requiredScenarioState": "All retries succeed",
       "request": {
-        "urlPathPattern": "/session.*",
-        "method": "POST"
+        "urlPathPattern": "/.*",
+        "method": "POST",
+        "queryParameters": {
+          "uploadId": {
+            "matches": ".*"
+          }
+        }
       },
       "response": {
         "status": 200,
-        "jsonBody": {
-          "data": null,
-          "code": null,
-          "message": null,
-          "success": true
-        }
+        "headers": {
+          "Content-Type": "application/xml"
+        },
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CompleteMultipartUploadResult>\n  <Location>http://localhost:65000/testbucket/dummydst.csv.gz</Location>\n  <Bucket>testbucket</Bucket>\n  <Key>dummydst.csv.gz</Key>\n  <ETag>\"finaletag123\"</ETag>\n</CompleteMultipartUploadResult>"
       }
     }
   ]
