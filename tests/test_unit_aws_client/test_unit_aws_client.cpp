@@ -13,13 +13,20 @@
 
 using namespace Snowflake::Client;
 
+WiremockRunner* wiremock = NULL;
 static int group_setup(void**)
 {
+  wiremock = new WiremockRunner();
   return 0;
 }
 
 static int group_teardown(void**)
 {
+  if (wiremock)
+  {
+    delete wiremock;
+    wiremock = nullptr;
+  }
   return 0;
 }
 
@@ -40,13 +47,15 @@ public:
 void test_retry_parts_uploading(void** unused)
 {
   SF_UNUSED(unused);
+  wiremock->resetMapping();
+  wiremock->initMappingFromFile("fail_first_upload_attempt.json", 65000);
   TransferConfig transferConfig;
   memset(&transferConfig, 0, sizeof(transferConfig));
   char cafile[] = "/tmp/cafile";
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
-  stageInfo.endPoint = "s3.us-east-1.amazonaws.com";
+  stageInfo.endPoint = "http://localhost:65000";
   char aws_token[] = "AWS_TOKEN";
   char aws_key_id[] = "AWS_KEY_ID";
   char aws_secret_key[] = "AWS_SECRET_KEY";
