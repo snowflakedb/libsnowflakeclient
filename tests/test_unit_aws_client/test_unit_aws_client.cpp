@@ -56,7 +56,7 @@ void test_retry_parts_uploading(void** unused)
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
   stageInfo.endPoint = std::string("http://localhost:") + wirmockPort;
-  stageInfo.location = "testbucket/"
+  stageInfo.location = "testbucket/";
   char aws_token[] = "AWS_TOKEN";
   char aws_key_id[] = "AWS_KEY_ID";
   char aws_secret_key[] = "AWS_SECRET_KEY";
