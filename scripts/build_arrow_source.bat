@@ -60,14 +60,23 @@ if /I "%dynamic_runtime%"=="on" (
 	set runtimelink=%runtimelink%DLL
 )
 
+set "arrow_c_flags=/guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl"
+set "arrow_cxx_flags=/std:c++17 /guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl"
+set "arrow_msvc_debug=-DCMAKE_POLICY_DEFAULT_CMP0141=OLD"
+if defined PDO_VENDOR_BUILD (
+    set "arrow_c_flags=/guard:cf /ZH:SHA_256 /Qspectre /sdl"
+    set "arrow_cxx_flags=/std:c++17 /guard:cf /ZH:SHA_256 /Qspectre /sdl"
+    set "arrow_msvc_debug=-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Empty"
+)
+
 cmake ..\ ^
 -G "%cmake_generator%" -A "%cmake_architecture%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DCMAKE_INSTALL_PREFIX=%ARROW_INSTALL_DIR% ^
 -DCMAKE_MSVC_RUNTIME_LIBRARY=%runtimelink% ^
--DCMAKE_C_FLAGS="/guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl" ^
--DCMAKE_CXX_FLAGS="/std:c++17 /guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl" ^
+-DCMAKE_C_FLAGS="%arrow_c_flags%" ^
+-DCMAKE_CXX_FLAGS="%arrow_cxx_flags%" ^
 -DARROW_USE_STATIC_CRT=ON ^
 -DARROW_BOOST_USE_SHARED=OFF ^
 -DARROW_BUILD_SHARED=OFF ^
@@ -89,7 +98,8 @@ cmake ..\ ^
 -DARROW_BUILD_TESTS=OFF ^
 -DBoost_INCLUDE_DIR=%DEPENDENCY_DIR%\boost\include ^
 -DBOOST_SYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_system.lib ^
--DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib
+-DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib ^
+%arrow_msvc_debug%
 
 if %ERRORLEVEL% NEQ 0 goto :error
 
