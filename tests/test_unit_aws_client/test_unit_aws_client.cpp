@@ -55,7 +55,7 @@ void test_retry_parts_uploading(void** unused)
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
-  stageInfo.endPoint = std::string("http://localhost:") + wirmockPort;
+  stageInfo.endPoint = std::string("http://localhost:") + wiremockPort;
   stageInfo.location = "testbucket/";
   char aws_token[] = "AWS_TOKEN";
   char aws_key_id[] = "AWS_KEY_ID";
