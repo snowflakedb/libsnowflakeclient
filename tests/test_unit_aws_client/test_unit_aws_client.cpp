@@ -51,11 +51,20 @@ void test_retry_parts_uploading(void** unused)
   wiremock->initMappingFromFile("fail_first_upload_attempt.json");
   TransferConfig transferConfig;
   memset(&transferConfig, 0, sizeof(transferConfig));
-  char cafile[] = "/tmp/cafile";
+  char cafile[MAX_PATH + 1];
+  const char *cabundle_path = getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+  if (cabundle_path)
+  {
+	strcpy(cafile, cabundle_path);
+  }
+  else
+  {
+	strcpy(cafile, "../../../cacert.pem");
+  }
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
-  stageInfo.endPoint = std::string("http://localhost:") + wiremockPort;
+  stageInfo.endPoint = std::string("https://") + wiremockHost + ":" + wiremockPort;
   stageInfo.location = "testbucket/";
   char aws_token[] = "AWS_TOKEN";
   char aws_key_id[] = "AWS_KEY_ID";
