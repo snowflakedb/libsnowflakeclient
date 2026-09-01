@@ -130,7 +130,7 @@ extern "C" {
 /**
 * FIPS ENABLE ENVIRONMENT VARIABLE
 */
-#define SF_FIPS_ENABLED_ENV_VAR "FIPS_ENABLED"
+#define SF_FIPS_ENABLED_ENV_VAR "SF_FIPS_ENABLED"
 
 /**
  * CRL configuration parameters.
