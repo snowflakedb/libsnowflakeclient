@@ -51,16 +51,7 @@ void test_retry_parts_uploading(void** unused)
   wiremock->initMappingFromFile("fail_first_upload_attempt.json");
   TransferConfig transferConfig;
   memset(&transferConfig, 0, sizeof(transferConfig));
-  char cafile[MAX_PATH + 1];
-  const char *cabundle_path = getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-  if (cabundle_path)
-  {
-	strcpy(cafile, cabundle_path);
-  }
-  else
-  {
-	strcpy(cafile, "../../../cacert.pem");
-  }
+  char cafile[] = "../wiremock/ca-cert.pem";
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
   stageInfo.stageType = StageType::S3;
