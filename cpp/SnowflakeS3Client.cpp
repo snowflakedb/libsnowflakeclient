@@ -260,12 +260,13 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 
 void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCtx)
 {
+/*
   auto streamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
       "",
       reinterpret_cast<unsigned char*>(uploadCtx->buf->getDataBuffer()),
       uploadCtx->buf->getSize());
   auto body = Aws::MakeShared<Aws::IOStream>("", streamBuf.get());
-
+*/
   Aws::S3::Model::UploadPartRequest uploadPartRequest;
 
   uploadPartRequest.WithBucket(uploadCtx->m_bucket)
@@ -273,7 +274,8 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
 
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
-  uploadPartRequest.SetBody(body);
+  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
+//  uploadPartRequest.SetBody(body);
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
 

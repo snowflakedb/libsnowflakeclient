@@ -82,7 +82,12 @@
           "uploadId": {
             "matches": ".*"
           }
-        }
+        },
+        "bodyPatterns": [
+          {
+            "matches": ".{20000000,}"
+          }
+        ]
       },
       "response": {
         "status": 200,
@@ -113,3 +118,4 @@
     }
   ]
 }
+
