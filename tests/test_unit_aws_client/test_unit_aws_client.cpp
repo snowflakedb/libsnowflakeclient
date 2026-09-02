@@ -93,7 +93,8 @@ void test_retry_parts_uploading(void** unused)
 
   MockedStatementPutGet mockedStatement;
   SnowflakeS3Client s3Client(&stageInfo, 2, 40 * 1024 * 1024, &transferConfig, &mockedStatement);
-  s3Client.upload(&fileMetadata, (std::basic_iostream<char>*)&dataStream);
+  auto outcome = s3Client.upload(&fileMetadata, (std::basic_iostream<char>*)&dataStream);
+  assert_true(outcome == RemoteStorageRequestOutcome::SUCCESS);
 
   dataStream.close();
 }
