@@ -50,7 +50,7 @@ set AZURE_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\azure
 rd /S /Q %AZURE_SOURCE_DIR%
 git clone --single-branch --branch azure-storage-blobs_%azure_src_version% --recursive https://github.com/Azure/azure-sdk-for-cpp.git %AZURE_SOURCE_DIR%
 cd %AZURE_SOURCE_DIR%
-git apply ..\..\patches\azure-sdk-cpp-%azure_src_version%.patch
+git apply --verbose ..\..\patches\azure-sdk-cpp-%azure_src_version%.patch
 
 rd /S /Q %AZURE_CMAKE_BUILD_DIR%
 md %AZURE_CMAKE_BUILD_DIR%
