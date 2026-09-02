@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include <boost/url.hpp>
+#include <curl/curl.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <picojson.h>
@@ -73,10 +74,12 @@ public:
   // every call so tests can assert on chain ordering and per-step inputs.
   boost::optional<Aws::Auth::AWSCredentials> assumeRole(
       const Aws::Auth::AWSCredentials& currentCreds,
-      const std::string& roleArn) override {
+      const std::string& roleArn,
+      int tlsVersion = SF_TLS_VERSION_UNSET) override {
     assumeRoleCallCount++;
     assumeRoleArns.push_back(roleArn);
     assumeRoleInputCreds.push_back(currentCreds);
+    lastAssumeRoleTlsVersion = tlsVersion;
     auto it = assumeRoleResults.find(roleArn);
     if (it == assumeRoleResults.end()) {
       return boost::none;
@@ -89,13 +92,15 @@ public:
       const std::string& r,
       const std::string& aud,
       const std::string& alg,
-      const std::string& host) override {
+      const std::string& host,
+      int tlsVersion = SF_TLS_VERSION_UNSET) override {
     getWebIdentityTokenCallCount++;
     lastGetWebIdentityTokenCreds = c;
     lastGetWebIdentityTokenRegion = r;
     lastGetWebIdentityTokenAudience = aud;
     lastGetWebIdentityTokenAlgorithm = alg;
     lastGetWebIdentityTokenHost = host;
+    lastGetWebIdentityTokenTlsVersion = tlsVersion;
     return webIdentityTokenResult;
   }
 
@@ -110,10 +115,12 @@ public:
   std::string lastGetWebIdentityTokenAudience;
   std::string lastGetWebIdentityTokenAlgorithm;
   std::string lastGetWebIdentityTokenHost;
+  int lastGetWebIdentityTokenTlsVersion = SF_TLS_VERSION_UNSET;
 
   int assumeRoleCallCount = 0;
   std::vector<std::string> assumeRoleArns;
   std::vector<Aws::Auth::AWSCredentials> assumeRoleInputCreds;
+  int lastAssumeRoleTlsVersion = SF_TLS_VERSION_UNSET;
 
 private:
   boost::optional<std::string> region;
@@ -322,8 +329,8 @@ void test_unit_aws_attestation_jwt_success_with_custom_wif_config(void**) {
         AWS_TEST_CREDS.GetAWSAccessKeyId().c_str());
 }
 
-// SF_CON_WIF_HOST may also be supplied as a full URL (GCP's native format);
-// AWS must still extract the bare host from it.
+// The session's TLS version must reach the STS GetWebIdentityToken call so the
+// AWS SDK curl handle can pin it. Default (no override) => SF_TLS_VERSION_UNSET.
 void test_unit_aws_attestation_jwt_success_with_full_url_wif_host(void**) {
     auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
     awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
@@ -331,11 +338,27 @@ void test_unit_aws_attestation_jwt_success_with_full_url_wif_host(void**) {
     AttestationConfig config;
     config.type = AttestationType::AWS;
     config.awsSdkWrapper = &awsSdkWrapper;
-    config.awsUseOutboundToken = true;
-    config.wifHost = "https://sts.custom.example.com/";
 
     const auto attestationOpt = createAttestation(config);
     assert_true(attestationOpt.has_value());
+    assert_int_equal(awsSdkWrapper.lastGetWebIdentityTokenTlsVersion, SF_TLS_VERSION_UNSET);
+}
+
+void test_unit_aws_attestation_jwt_tls_version_passed_through(void**) {
+    auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+    awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+    AttestationConfig config;
+    config.type = AttestationType::AWS;
+    config.awsSdkWrapper = &awsSdkWrapper;
+    config.tlsVersion = CURL_SSLVERSION_TLSv1_2;
+
+    const auto attestationOpt = createAttestation(config);
+    assert_true(attestationOpt.has_value());
+    // The configured TLS version reached the STS call unchanged.
+    assert_int_equal(awsSdkWrapper.lastGetWebIdentityTokenTlsVersion, CURL_SSLVERSION_TLSv1_2);
+    config.awsUseOutboundToken = true;
+    config.wifHost = "https://sts.custom.example.com/";
 
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
         "sts.custom.example.com");
@@ -397,6 +420,42 @@ void test_unit_aws_attestation_jwt_with_impersonation(void **) {
   assert_string_equal(
       awsSdkWrapper.lastGetWebIdentityTokenCreds.GetSessionToken().c_str(),
       "ASSUMED_SESSION_TOKEN");
+}
+
+// The session's TLS version must reach the STS AssumeRole call in the
+// impersonation chain so the AWS SDK curl handle can pin it.
+void test_unit_aws_attestation_assume_role_tls_version_passed_through(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  const std::string roleArn = "arn:aws:iam::123456789012:role/TestRole";
+  awsSdkWrapper.assumeRoleResults[roleArn] =
+      Aws::Auth::AWSCredentials("ASSUMED_AK", "ASSUMED_SK", "ASSUMED_ST");
+  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.awsUseOutboundToken = true;
+  config.workloadIdentityImpersonationPath = roleArn;
+  config.tlsVersion = CURL_SSLVERSION_TLSv1_2;
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+
+  // The configured TLS version reached the STS AssumeRole call unchanged.
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 1);
+  assert_int_equal(awsSdkWrapper.lastAssumeRoleTlsVersion, CURL_SSLVERSION_TLSv1_2);
+}
+
+// createAttestation's default (non-injected) HTTP client config must carry the
+// session's TLS version (Azure/GCP attestation raw-curl path) and keep the
+// existing 5s connect timeout.
+void test_unit_attestation_http_client_config_carries_tls_version(void **) {
+  auto cfg = defaultAttestationHttpClientConfig(CURL_SSLVERSION_TLSv1_2);
+  assert_int_equal((int)cfg.tlsVersion, CURL_SSLVERSION_TLSv1_2);
+  assert_int_equal((int)cfg.connectTimeoutInSeconds, 5);
+
+  auto unset = defaultAttestationHttpClientConfig(SF_TLS_VERSION_UNSET);
+  assert_int_equal((int)unset.tlsVersion, SF_TLS_VERSION_UNSET);
 }
 
 // Chain variant: each step's output feeds the next step's input, and the
@@ -1435,6 +1494,8 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_full_url_wif_host),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
+      cmocka_unit_test(test_unit_aws_attestation_assume_role_tls_version_passed_through),
+      cmocka_unit_test(test_unit_attestation_http_client_config_carries_tls_version),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
       cmocka_unit_test(test_unit_aws_attestation_jwt_impersonation_failure),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_whitespace_trimming),

@@ -74,6 +74,9 @@ struct SF_CHUNK_DOWNLOADER {
     // retry settings
     int64 retry_timeout;
     int8 retry_max_count;
+
+    // per-connection TLS version override (CURL_SSLVERSION_* value, or SF_TLS_VERSION_UNSET)
+    int32 tls_version;
 };
 
 SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
@@ -89,7 +92,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    const char *proxy,
                                                    const char *no_proxy,
                                                    int64 retry_timeout,
-                                                   int8 retry_max_count);
+                                                   int8 retry_max_count,
+                                                   int32 tls_version);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);

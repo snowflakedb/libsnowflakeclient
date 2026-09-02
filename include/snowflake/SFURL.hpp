@@ -420,6 +420,17 @@ public:
     return m_proxy;
   }
 
+  // TLS version (CURL_SSLVERSION_* value; -1 = unset). Used as a subpool key.
+  inline int getTlsVersion() const
+  {
+    return m_tlsVersion;
+  }
+
+  inline void setTlsVersion(int tlsVersion)
+  {
+    m_tlsVersion = tlsVersion;
+  }
+
 private:
 
   /**
@@ -441,6 +452,7 @@ private:
   std::string m_path;
   QueryParams m_params;
   std::string m_fragment;
+  int m_tlsVersion = -1;
 
   /**
   * proxy settings

@@ -1314,6 +1314,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         
         sf->log_query_text = SF_BOOLEAN_FALSE;
         sf->log_query_parameters = SF_BOOLEAN_FALSE;
+
+        sf->tls_version = SF_TLS_VERSION_UNSET;
     }
 
     return sf;
@@ -2047,6 +2049,24 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_PARAMETERS:
             sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_TLS_VERSION: {
+            int32 v = value ? *((int32 *)value) : SF_TLS_VERSION_UNSET;
+            if (v != SF_TLS_VERSION_UNSET) {
+                long minv = (long)v & 0xffff;
+                if (minv != CURL_SSLVERSION_TLSv1 &&
+                    minv != CURL_SSLVERSION_TLSv1_0 &&
+                    minv != CURL_SSLVERSION_TLSv1_1 &&
+                    minv != CURL_SSLVERSION_TLSv1_2 &&
+                    minv != CURL_SSLVERSION_TLSv1_3) {
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
+                                        "Invalid TLS version value",
+                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    return SF_STATUS_ERROR_APPLICATION_ERROR;
+                }
+            }
+            sf->tls_version = v;
+            break;
+        }
         case SF_CON_WIF_HOST:
             alloc_buffer_and_copy(&sf->wif_host, value);
             break;
@@ -2316,6 +2336,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
             *value = &sf->wif_aws_use_outbound_token;
             break;
+        case SF_CON_TLS_VERSION:
+            *value = &sf->tls_version;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2477,7 +2500,8 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             sfstmt->connection->proxy,
             sfstmt->connection->no_proxy,
             get_retry_timeout(sfstmt->connection),
-            sfstmt->connection->retry_count);
+            sfstmt->connection->retry_count,
+            sfstmt->connection->tls_version);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
           // Unable to create chunk downloader.

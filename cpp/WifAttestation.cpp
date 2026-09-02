@@ -1,5 +1,7 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/WifAttestation.hpp"
+#include "snowflake/HttpClient.hpp"
+#include "tls_config.h"
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
@@ -7,6 +9,7 @@
 #include "logger/SFLogger.hpp"
 #include "jwt/Jwt.hpp"
 #include <boost/url.hpp>
+#include <memory>
 
 namespace Snowflake {
   namespace Client {
@@ -116,13 +119,26 @@ namespace Snowflake {
         }
 
         awsUseOutboundToken = (conn->wif_aws_use_outbound_token == SF_BOOLEAN_TRUE);
+        tlsVersion = sf_resolve_tls_version(conn->tls_version);
 
         return SF_STATUS_SUCCESS;
     }
 
+    HttpClientConfig defaultAttestationHttpClientConfig(int tlsVersion) {
+      HttpClientConfig cfg{};
+      cfg.connectTimeoutInSeconds = 5;   // match defaultHttpClientConfig
+      cfg.tlsVersion = tlsVersion;       // session TLS version (or UNSET)
+      return cfg;
+    }
+
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
-      if (config.httpClient == NULL)
-        config.httpClient = IHttpClient::getInstance();
+      // Default HTTP client carries the session's TLS version; owned for this call.
+      std::unique_ptr<IHttpClient> ownedHttpClient;
+      if (config.httpClient == NULL) {
+        HttpClientConfig cfg = defaultAttestationHttpClientConfig(config.tlsVersion);
+        ownedHttpClient.reset(IHttpClient::createSimple(cfg));
+        config.httpClient = ownedHttpClient.get();
+      }
       if (config.awsSdkWrapper == NULL)
         config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
 

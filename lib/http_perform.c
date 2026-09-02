@@ -27,6 +27,7 @@
 #include "constants.h"
 #include "client_int.h"
 #include "snowflake_util.h"
+#include "tls_config.h"
 
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
@@ -157,7 +158,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              const char *proxy,
                              const char *no_proxy,
                              sf_bool include_retry_reason,
-                             sf_bool is_new_strategy_request) {
+                             sf_bool is_new_strategy_request,
+                             int32 tls_version) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -398,7 +400,8 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
+        int chosen_tls = sf_resolve_tls_version(tls_version);
+        res = sf_apply_tls_version(curl, chosen_tls);
         if (res != CURLE_OK) {
             log_error("Unable to set SSL Version [%s]",
                       curl_easy_strerror(res));

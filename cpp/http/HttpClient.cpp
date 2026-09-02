@@ -2,6 +2,8 @@
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
 #include <curl/curl.h>
+#include <openssl/ssl.h>
+#include <tls_config.h>
 
 namespace Snowflake {
   namespace Client {
@@ -45,6 +47,10 @@ namespace Snowflake {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req.body.size());
         }
 
+        if (config.tlsVersion != -1) {
+            sf_apply_tls_version(curl, config.tlsVersion);
+        }
+
         struct curl_slist *header_list = nullptr;
         for (const auto &h: req.headers) {
           std::string hdr = h.first + ": " + h.second;
@@ -60,6 +66,16 @@ namespace Snowflake {
           curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
           response.code = response_code;
           responseOpt = response;
+
+          // diagnostic: log the negotiated SSL version (raw handle, no CurlDesc here)
+          const struct curl_tlssessioninfo *tlsinfo = nullptr;
+          if (curl_easy_getinfo(curl, CURLINFO_TLS_SSL_PTR, &tlsinfo) == CURLE_OK &&
+              tlsinfo && tlsinfo->backend == CURLSSLBACKEND_OPENSSL && tlsinfo->internals) {
+            const char *ver = SSL_get_version(static_cast<SSL*>(tlsinfo->internals));
+            if (ver) {
+              CXX_LOG_DEBUG("SimpleHttpClient: negotiated SSL version %s", ver);
+            }
+          }
         }
         else {
           CXX_LOG_ERROR("Curl error: %s", curl_easy_strerror(res));

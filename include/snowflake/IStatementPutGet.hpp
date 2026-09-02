@@ -73,6 +73,12 @@ public:
     return NULL;
   }
 
+  // Per-connection TLS version (CURL_SSLVERSION_* value); -1 = unset.
+  virtual int get_tls_version()
+  {
+    return -1;
+  }
+
   // Utility functions to convert enconding between UTF-8 to the encoding
   // from system locale. No coversion by default.
   virtual std::string UTF8ToPlatformString(const std::string& utf8_str)

@@ -132,12 +132,16 @@ namespace Snowflake {
         // call through the same DI seam they use for getWebIdentityToken.
         boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials &currentCreds,
-            const std::string &roleArn) override {
+            const std::string &roleArn,
+            int tlsVersion) override {
           auto awsSdk = initAwsSdk();
 
           CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
 
-          const Aws::STS::STSClient stsClient(currentCreds);
+          // Session TLS version via the patched ClientConfiguration field.
+          Aws::Client::ClientConfiguration clientConfig;
+          clientConfig.tlsVersion = tlsVersion;
+          const Aws::STS::STSClient stsClient(currentCreds, clientConfig);
 
           Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
           assumeRoleRequest.SetRoleArn(roleArn.c_str());
@@ -168,7 +172,8 @@ namespace Snowflake {
             const std::string &region,
             const std::string &audience,
             const std::string &signingAlgorithm,
-            const std::string &configuredHost
+            const std::string &configuredHost,
+            int tlsVersion
         ) override {
           auto awsSdk = initAwsSdk();
 
@@ -208,6 +213,7 @@ namespace Snowflake {
           clientConfig.region = region;
           clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
           clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
+          clientConfig.tlsVersion = tlsVersion;
           auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
           auto response = httpClient->MakeRequest(request);
           if (!response) {

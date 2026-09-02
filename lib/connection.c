@@ -311,7 +311,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
                           elapsed_time, retried_count, is_renew,
                           renew_injection, sf->proxy, sf->no_proxy,
-                          sf->include_retry_reason, is_new_strategy_url) ||
+                          sf->include_retry_reason, is_new_strategy_url,
+                          sf->tls_version) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -428,7 +429,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** json)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;
@@ -440,7 +441,8 @@ sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* he
         sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
         &elapsed_time, &retried_count, NULL,
         SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-        sf->include_retry_reason, is_new_retry_strategy_url(url)) &&
+        sf->include_retry_reason, is_new_retry_strategy_url(url),
+        sf->tls_version) &&
         *json;
 
     free_curl_desc(curl_desc);
@@ -474,7 +476,8 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           &sf->crl_config,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count, elapsed_time, retried_count, NULL,
-                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
+                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                          sf->tls_version) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -536,7 +539,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** json, NON_JSON_RESP* raw_resp, sf_bool is_json_format)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;
@@ -550,7 +553,8 @@ sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* hea
             sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
             &elapsed_time, &retried_count, NULL,
             SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-            sf->include_retry_reason, is_new_retry_strategy_url(url));
+            sf->include_retry_reason, is_new_retry_strategy_url(url),
+            sf->tls_version);
     }
     else
     {
@@ -561,7 +565,8 @@ sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* hea
             sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
             &elapsed_time, &retried_count, NULL,
             SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-            sf->include_retry_reason, is_new_retry_strategy_url(url));
+            sf->include_retry_reason, is_new_retry_strategy_url(url),
+            sf->tls_version);
     }
     free_curl_desc(curl_desc);
     if (sf->error.error_code != SF_STATUS_SUCCESS || ret != SF_BOOLEAN_TRUE)
@@ -955,7 +960,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
       (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
     char *url = (char *)SF_CALLOC(1, url_size);
     sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy, sf->tls_version);
     CURL *curl = get_curl_from_desc(curl_desc);
     char *encoded_url = NULL;
     SF_HEADER *my_header = NULL;

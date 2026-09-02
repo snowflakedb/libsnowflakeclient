@@ -71,6 +71,7 @@ namespace Client {
   };
 
   class IHttpClient;
+  struct HttpClientConfig;
   namespace AwsUtils {
     class ISdkWrapper;
   }
@@ -83,6 +84,9 @@ namespace Client {
     IHttpClient* httpClient = NULL;
     AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
 
+    // Per-connection TLS version override (a CURL_SSLVERSION_* value) applied to
+    // the AWS SDK STS call. SF_TLS_VERSION_UNSET means no override.
+    int tlsVersion = SF_TLS_VERSION_UNSET;
     boost::optional<std::string> wifHost;
 
     // When true, AWS WIF uses STS:GetWebIdentityToken (JWT) instead of the
@@ -101,6 +105,8 @@ namespace Client {
   };
 
   boost::optional<Attestation> createAttestation(AttestationConfig& config);
+
+  HttpClientConfig defaultAttestationHttpClientConfig(int tlsVersion);
 }
 
 }

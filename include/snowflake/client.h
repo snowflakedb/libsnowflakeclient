@@ -410,7 +410,11 @@ typedef enum SF_ATTRIBUTE {
     * presigned-URL credential format.
     */
     SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN,
+    SF_CON_TLS_VERSION,
 } SF_ATTRIBUTE;
+
+// SF_CON_TLS_VERSION sentinel: no per-connection override.
+#define SF_TLS_VERSION_UNSET (-1)
 
 /**
  * Attributes for Snowflake global context.
@@ -631,8 +635,14 @@ typedef struct SF_CONNECT {
     sf_bool log_query_text;
     sf_bool log_query_parameters;
 
+    char* wif_audience;
     char* wif_host;
     sf_bool wif_aws_use_outbound_token;
+  
+    // Per-connection TLS version override (CURL_SSLVERSION_* value).
+    // SF_TLS_VERSION_UNSET means no override; fall back to the global
+    // SSL_VERSION setting.
+    int32 tls_version;
 } SF_CONNECT;
 
 /**

@@ -51,3 +51,53 @@ index 8b1524b337d..db14a0c1182 100644
          input->seekg(0, input->beg);
  
          AWS_LOGSTREAM_TRACE(AWS_REQUEST_COMPRESSION_LOG_TAG, "Uncompressing request of " << streamSize << " bytes.");
+diff --git a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h b/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
+index 203022fa225..130ebb999d6 100644
+--- a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
++++ b/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
+@@ -301,6 +301,7 @@ namespace Aws
+              * You probably shouldn't use this flag in a production scenario.
+              */
+             bool verifySSL = true;
++            int tlsVersion = -1;
+             /**
+              * If your Certificate Authority path is different from the default, you can tell
+              * clients that aren't using the default trust store where to find your CA trust store.
+diff --git a/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h b/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
+index 087ed8d2c6f..529aa211010 100644
+--- a/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
++++ b/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
+@@ -65,6 +65,7 @@ private:
+     unsigned m_proxyPort = 0;
+     Aws::String m_nonProxyHosts;
+     bool m_verifySSL = true;
++    int m_tlsVersion = -1;
+     Aws::String m_caPath;
+     Aws::String m_caFile;
+     Aws::String m_proxyCaPath;
+diff --git a/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp b/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
+index 657193f2e11..6849ebaf752 100644
+--- a/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
++++ b/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
+@@ -608,7 +608,8 @@ CurlHttpClient::CurlHttpClient(const ClientConfiguration& clientConfig) :
+     m_proxySSLCertPath(clientConfig.proxySSLCertPath), m_proxySSLCertType(clientConfig.proxySSLCertType),
+     m_proxySSLKeyPath(clientConfig.proxySSLKeyPath), m_proxySSLKeyType(clientConfig.proxySSLKeyType),
+     m_proxyKeyPasswd(clientConfig.proxySSLKeyPassword),
+-    m_proxyPort(clientConfig.proxyPort), m_verifySSL(clientConfig.verifySSL), m_caPath(clientConfig.caPath),
++    m_proxyPort(clientConfig.proxyPort), m_verifySSL(clientConfig.verifySSL), m_tlsVersion(clientConfig.tlsVersion),
++    m_caPath(clientConfig.caPath),
+     m_caFile(clientConfig.caFile), m_proxyCaPath(clientConfig.proxyCaPath), m_proxyCaFile(clientConfig.proxyCaFile),
+     m_disableExpectHeader(clientConfig.disableExpectHeader),
+     m_enableHttpClientTrace(clientConfig.enableHttpClientTrace || FORCE_ENABLE_CURL_LOGGING),
+@@ -751,6 +752,11 @@ std::shared_ptr<HttpResponse> CurlHttpClient::MakeRequest(const std::shared_ptr<
+             curl_easy_setopt(connectionHandle, CURLOPT_SSL_VERIFYHOST, 0L);
+         }
+ 
++        if (m_tlsVersion >= 0)
++        {
++            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, (long)m_tlsVersion);
++        }
++
+         if (m_allowRedirects)
+         {
+             curl_easy_setopt(connectionHandle, CURLOPT_FOLLOWLOCATION, 1L);
