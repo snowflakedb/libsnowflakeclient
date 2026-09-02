@@ -167,7 +167,6 @@ void test_col_buffer_copy_concat_multiple_rows_helper(sf_bool use_arrow) {
     // Begin timing
     clock_gettime(clk_id, &begin);
 
-    int row = 0;
     // Store ID to use as array index
     int64 id = 0;
     // Use max buffer size since we have to assume the largest buffer size for each row of text
@@ -216,34 +215,42 @@ void test_col_buffer_copy_concat_multiple_rows_helper(sf_bool use_arrow) {
 }
 
 void test_col_string_read_fixed_size_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_col_string_read_fixed_size_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_string_read_fixed_size_json(void **unused) {
+    SF_UNUSED(unused);
     test_col_string_read_fixed_size_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_string_manipulate_fixed_size_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_col_string_manipulate_fixed_size_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_string_manipulate_fixed_size_json(void **unused) {
+    SF_UNUSED(unused);
     test_col_string_manipulate_fixed_size_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_buffer_copy_unknown_size_dynamic_memory_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_col_buffer_copy_unknown_size_dynamic_memory_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_buffer_copy_unknown_size_dynamic_memory_json(void **unused) {
+    SF_UNUSED(unused);
     test_col_buffer_copy_unknown_size_dynamic_memory_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_buffer_copy_concat_multiple_rows_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_col_buffer_copy_concat_multiple_rows_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_buffer_copy_concat_multiple_rows_json(void **unused) {
+    SF_UNUSED(unused);
     test_col_buffer_copy_concat_multiple_rows_helper(SF_BOOLEAN_FALSE);
 }
 
