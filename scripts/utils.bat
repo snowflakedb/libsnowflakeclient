@@ -5,7 +5,6 @@
 call %*
 goto :EOF
 
-:: VC16 is for Github Workflow windows-2019 virtual machine
 :setup_visual_studio
     if /I "%~1"=="VS17" (
         if not "%ToolSetVersion%"=="v143" (
