@@ -21,6 +21,9 @@ namespace Client {
     Unsupported
   };
 
+  // Returns the canonical, uppercase token-type string used in the cache key.
+  // These strings must match across all Snowflake drivers so that token cache
+  // entries are interoperable.
   inline std::string keyTypeToString(SecureStorageKeyType type) {
     switch (type) {
       case SecureStorageKeyType::MFA_TOKEN:
@@ -31,15 +34,62 @@ namespace Client {
         return "OAUTH_REFRESH_TOKEN";
       case SecureStorageKeyType::OAUTH_ACCESS_TOKEN:
         return "OAUTH_ACCESS_TOKEN";
+      case SecureStorageKeyType::DPOP_BUNDLED_ACCESS_TOKEN:
+        return "DPOP_BUNDLED_ACCESS_TOKEN";
       default:
         return "UNKNOWN";
     }
   }
+
+  /**
+   * Identifies a cached token across drivers.
+   *
+   * The cache key (see SecureStorage::convertTarget) is derived from the five
+   * v2 dimensions below. `host` is kept for logging and backward-compatible
+   * construction only; it is not part of the v2 key. `idp`, `snowflake`, `user`
+   * and `role` are stored raw here and normalized when the key is built.
+   *
+   * For non-OAuth flows (MFA, external-browser ID token) set both `idp` and
+   * `snowflake` to the Snowflake server URL; `role` is empty for MFA.
+   */
   struct SecureStorageKey {
-    std::string host;
-    std::string user;
+    std::string host;       // logging / backward-compat only, not part of the v2 key
+    std::string user;       // raw username (normalized when the key is built)
     SecureStorageKeyType type;
+    std::string idp;        // raw IdP / token-endpoint URL (normalized when built)
+    std::string snowflake;  // raw Snowflake server URL (normalized when built)
+    std::string role;       // raw role (normalized when built); empty for MFA
+
+    SecureStorageKey() : type(SecureStorageKeyType::MFA_TOKEN) {}
+
+    // Backward-compatible constructor for non-OAuth flows: idp == snowflake ==
+    // host and no role. Existing callers that only know (host, user, type)
+    // continue to produce a valid v2 key.
+    SecureStorageKey(std::string host_, std::string user_, SecureStorageKeyType type_)
+      : host(host_), user(std::move(user_)), type(type_),
+        idp(host_), snowflake(std::move(host_)), role() {}
+
+    // Full v2 constructor.
+    SecureStorageKey(std::string host_, std::string user_, SecureStorageKeyType type_,
+                     std::string idp_, std::string snowflake_, std::string role_)
+      : host(std::move(host_)), user(std::move(user_)), type(type_),
+        idp(std::move(idp_)), snowflake(std::move(snowflake_)), role(std::move(role_)) {}
   };
+
+  /**
+   * Normalizes a URL for use as a cache key component: strips the scheme, drops
+   * the query string and fragment, strips any userinfo prefix from the authority
+   * (an '@' inside the path is preserved), trims trailing slashes, and uppercases
+   * the remainder (authority + optional :port + optional /path).
+   */
+  std::string normalizeUrl(const std::string& url);
+
+  /**
+   * Normalizes a Snowflake identifier for use as a cache key component:
+   * uppercases every character outside double-quoted segments while preserving
+   * the contents (and surrounding quotes) of double-quoted segments verbatim.
+   */
+  std::string normalizeIdentifier(const std::string& identifier);
 
   /**
    * Class SecureStorage
@@ -49,6 +99,20 @@ namespace Client {
   {
 
   public:
+    /**
+     * Builds the versioned, uniformly-hashed cache key for `key`:
+     *
+     *   SnowflakeTokenCache.v2.<lowercase sha256 hex of canonical JSON>
+     *
+     * The canonical JSON is a compact object with lexicographically sorted keys
+     * (idp, role, snowflake, token_type, username) whose values are normalized
+     * (see normalizeUrl / normalizeIdentifier). The returned string is used
+     * verbatim by every backend (macOS Keychain, Windows Credential Manager and
+     * the Linux JSON file); hashing happens exactly once, here.
+     *
+     * Returns boost::none if the required `snowflake` or `user` components are
+     * empty, or if hashing fails.
+     */
     static boost::optional<std::string> convertTarget(const SecureStorageKey& key);
 
     /**
