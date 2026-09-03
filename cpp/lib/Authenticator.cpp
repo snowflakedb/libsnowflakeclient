@@ -204,11 +204,27 @@ extern "C" {
       }
       if (AUTH_WIF == authenticator)
       {
+          // Verify the host is a recognized Snowflake endpoint before
+          // fetching cloud credentials.
+          if (!Snowflake::Client::isSnowflakeHostForWorkloadIdentity(
+                  conn->host ? conn->host : ""))
+          {
+              const char* errorMessage =
+                  "WORKLOAD_IDENTITY requires a recognized Snowflake host "
+                  "(*.snowflakecomputing.com, .cn or .mil)";
+              log_error("%s. Got: '%s'", errorMessage,
+                        conn->host ? conn->host : "(null)");
+              SET_SNOWFLAKE_ERROR(&conn->error,
+                                  SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                                  errorMessage,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+              return;
+          }
+
           Snowflake::Client::AttestationConfig config;
-          
+
           if (config.configureWIFAttestation(conn) != SF_STATUS_SUCCESS)
           {
-              log_error("Failed to configure WIF attestation");
               return;
           }
 
@@ -224,7 +240,15 @@ extern "C" {
               snowflake_cJSON_AddStringToObject(data, "PROVIDER",
                   Snowflake::Client::stringFromAttestationType(attestation.type));
           } else {
-              log_error("Failed to create WIF attestation - not running in a supported cloud environment?");
+              const char* errorMessage =
+                  "Failed to create WIF attestation; verify the workload "
+                  "identity provider configuration and environment";
+              log_error("%s", errorMessage);
+              SET_SNOWFLAKE_ERROR(&conn->error,
+                                  SF_STATUS_ERROR_GENERAL,
+                                  errorMessage,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+              return;
           }
       }
 
