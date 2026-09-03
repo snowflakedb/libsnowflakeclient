@@ -10,6 +10,7 @@
 
 void test_init( void **unused)
 {
+    SF_UNUSED(unused);
     TREE_MAP * test_map = sf_treemap_init();
     assert_non_null(test_map);;
     SF_FREE(test_map);
@@ -79,5 +80,5 @@ int main (void) {
                     cmocka_unit_test(test_set_bulk),
                     cmocka_unit_test(test_get)
             };
-    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }
