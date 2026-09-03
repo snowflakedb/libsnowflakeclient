@@ -37,8 +37,7 @@ public:
   {
   }
 
-  bool parsePutGetCommand(std::string *sql,
-      PutGetParseResponse *putGetParseResponse)
+  bool parsePutGetCommand(std::string, PutGetParseResponse*)
   {
     return true;
   }
