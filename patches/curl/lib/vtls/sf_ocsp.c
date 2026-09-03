@@ -988,14 +988,14 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     /* Debugfunction disabled for now to avoid missing symbol issues */
 
     // copy proxy settings from original curl handle if it's set
-    curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPORT, data->set.proxyport);
-    if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
+    if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
     {
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
     }
-    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
+    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
 
     if (ACTIVATE_SSD)
     {
@@ -1702,14 +1702,14 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last
   curl_easy_setopt(curlh, CURLOPT_WRITEDATA, &ocsp_response_cache_json_mem);
 
   // copy proxy settings from original curl handle if it's set
-  curl_easy_setopt(curlh, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
+  curl_easy_setopt(curlh, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
   curl_easy_setopt(curlh, CURLOPT_PROXYPORT, data->set.proxyport);
-  if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
+  if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
   {
-      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
-      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
+      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
+      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
   }
-  curl_easy_setopt(curlh, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
+  curl_easy_setopt(curlh, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
 
   res = CURLE_OK;
 
