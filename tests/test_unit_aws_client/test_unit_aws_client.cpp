@@ -50,7 +50,6 @@ void test_retry_parts_uploading(void** unused)
   wiremock->resetMapping();
   wiremock->initMappingFromFile("fail_first_upload_attempt.json");
   TransferConfig transferConfig;
-  memset(&transferConfig, 0, sizeof(transferConfig));
   char cafile[] = "../wiremock/ca-cert.pem";
   transferConfig.caBundleFile = cafile;
   StageInfo stageInfo;
