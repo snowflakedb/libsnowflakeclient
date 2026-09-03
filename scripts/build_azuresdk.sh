@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 AZURE_SRC_VERSION=12.18.0
-AZURE_BUILD_VERSION=2
+AZURE_BUILD_VERSION=3
 AZURE_DIR=azure-sdk-for-cpp
 AZURE_VERSION=$AZURE_SRC_VERSION.$AZURE_BUILD_VERSION
 
@@ -86,6 +86,9 @@ if [[ "$PLATFORM" == "darwin" ]]; then
 fi
 
 ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations ${ADDITIONAL_CXXFLAGS}"
+if [[ "$PLATFORM" == "linux" ]]; then
+  ADDITIONAL_CXXFLAGS="-Wno-error=maybe-uninitialized ${ADDITIONAL_CXXFLAGS}"
+fi
 
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
