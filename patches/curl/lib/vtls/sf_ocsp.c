@@ -258,7 +258,11 @@ static char default_ocsp_cache_retry_url[sizeof(OCSP_RESPONDER_RETRY_URL) + MAX_
 SF_PUBLIC(CURLcode) checkTelemetryHosts(char *hostname)
 {
   struct connectdata conn;
-  conn.host.name = hostname;
+  struct Curl_peer origin;
+  memset(&conn, 0, sizeof(conn));
+  memset(&origin, 0, sizeof(origin));
+  origin.hostname = hostname;
+  conn.origin = &origin;
   return checkCertOCSP(&conn, NULL, NULL, NULL, 0, 0);
 }
 
@@ -984,14 +988,14 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     /* Debugfunction disabled for now to avoid missing symbol issues */
 
     // copy proxy settings from original curl handle if it's set
-    curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPORT, data->set.proxyport);
-    if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+    if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
     {
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
     }
-    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
 
     if (ACTIVATE_SSD)
     {
@@ -1698,14 +1702,14 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last
   curl_easy_setopt(curlh, CURLOPT_WRITEDATA, &ocsp_response_cache_json_mem);
 
   // copy proxy settings from original curl handle if it's set
-  curl_easy_setopt(curlh, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
+  curl_easy_setopt(curlh, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
   curl_easy_setopt(curlh, CURLOPT_PROXYPORT, data->set.proxyport);
-  if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+  if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
   {
-      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
-      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
+      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
   }
-  curl_easy_setopt(curlh, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
+  curl_easy_setopt(curlh, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
 
   res = CURLE_OK;
 
@@ -1861,7 +1865,11 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     }
 
     ocsp_url_invalid = false;
-    resp = queryResponderUsingCurl(ocsp_url, certid, conn->host.name, req, data, ocsp_fail_open, ocsp_log_data, last_timeout_host);
+    /* just in case check whether conn->origin->hostname is valid before using */
+    if (conn && conn->origin && conn->origin->hostname)
+    {
+      resp = queryResponderUsingCurl(ocsp_url, certid, conn->origin->hostname, req, data, ocsp_fail_open, ocsp_log_data, last_timeout_host);
+    }
     /* update local cache */
     OPENSSL_free(host);
     OPENSSL_free(path);
@@ -2508,7 +2516,12 @@ void initOCSPCacheServer(struct Curl_easy *data)
 
   if (ocsp_cache_server_url_env == NULL)
   {
-    char* top_domain = strrchr(data->conn->host.name, '.');
+    char* top_domain = NULL;
+    /* just in case check whether data->conn->origin->hostname is valid before using */
+    if (data->conn && data->conn->origin && data->conn->origin->hostname)
+    {
+      top_domain = strrchr(data->conn->origin->hostname, '.');
+    }
     if (top_domain)
     {
       top_domain++;
@@ -2652,7 +2665,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 // Do not use OCSP/failsafe on Out of band telemetry endpoints
   for (int i = 0; i < telemetry_endpoints_num; i++)
   {
-    if (strncasecmp(conn->host.name, telemetry_endpoints[i], strlen(telemetry_endpoints[i])) == 0)
+    if (strncasecmp(conn->origin->hostname, telemetry_endpoints[i], strlen(telemetry_endpoints[i])) == 0)
     {
       return rs;
     }
@@ -2722,4 +2735,4 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 end:
   infof(data, "End SF OCSP Validation... Result: %d", rs);
   return rs;
-}
+}
