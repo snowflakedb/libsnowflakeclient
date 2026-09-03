@@ -990,12 +990,12 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     // copy proxy settings from original curl handle if it's set
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPORT, data->set.proxyport);
-    if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+    if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
     {
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
-        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
     }
-    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
 
     if (ACTIVATE_SSD)
     {
@@ -1704,12 +1704,12 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last
   // copy proxy settings from original curl handle if it's set
   curl_easy_setopt(curlh, CURLOPT_PROXY, CURL_EASY_STR(data, STRING_PROXY));
   curl_easy_setopt(curlh, CURLOPT_PROXYPORT, data->set.proxyport);
-  if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+  if (CURL_EASY_STR(data, STRING_PROXYUSERNAME) || CURL_EASY_STR(data, STRING_PROXYPASSWORD))
   {
-      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
-      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, CURL_EASY_STR(data, STRING_PROXYUSERNAME));
+      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, CURL_EASY_STR(data, STRING_PROXYPASSWORD));
   }
-  curl_easy_setopt(curlh, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
+  curl_easy_setopt(curlh, CURLOPT_NOPROXY, CURL_EASY_STR(data, STRING_NOPROXY));
 
   res = CURLE_OK;
 
