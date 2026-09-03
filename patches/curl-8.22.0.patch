@@ -554,7 +554,7 @@ index 6eeae43d0d..d19c1bdfc9 100644
    if(CURL_EASY_STR(data, STRING_DEVICE)) {
      conn->localdev = curlx_strdup(CURL_EASY_STR(data, STRING_DEVICE));
 diff --git a/deps/curl/lib/vtls/openssl.c b/deps/curl/lib/vtls/openssl.c
-index dedd8f3e70..3216130b83 100644
+index dedd8f3e70..e40852ebe2 100644
 --- a/deps/curl/lib/vtls/openssl.c
 +++ b/deps/curl/lib/vtls/openssl.c
 @@ -52,6 +52,8 @@
@@ -606,7 +606,7 @@ index dedd8f3e70..3216130b83 100644
  #ifdef HAVE_OPENSSL3
  #define HAVE_EVP_PKEY_GET_PARAMS 1
  #endif
-@@ -1642,12 +1677,20 @@ static int ossl_init(void)
+@@ -1642,6 +1677,12 @@ static int ossl_init(void)
    Curl_tls_keylog_open();
  #endif
  
@@ -619,15 +619,7 @@ index dedd8f3e70..3216130b83 100644
    return 1;
  }
  
- /* Global cleanup */
- static void ossl_cleanup(void)
- {
-+  /* Stop CRL cache cleanup before OpenSSL teardown. */
-+  termCertCRL();
- #ifndef HAVE_KEYLOG_UPSTREAM
-   Curl_tls_keylog_close();
- #endif
-@@ -3313,6 +3356,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3313,6 +3354,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
    if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
      SSL_CTX_set_cert_store(octx->ssl_ctx, cached_store);
      octx->store_is_empty = is_empty;
@@ -647,7 +639,7 @@ index dedd8f3e70..3216130b83 100644
    }
    else {
      X509_STORE *store = SSL_CTX_get_cert_store(octx->ssl_ctx);
-@@ -3321,6 +3377,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3321,6 +3375,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
      if(result == CURLE_OK && cache_criteria_met) {
        ossl_set_cached_x509_store(cf, data, store, (bool)octx->store_is_empty);
      }
@@ -666,7 +658,7 @@ index dedd8f3e70..3216130b83 100644
    }
  
    ERR_pop_to_mark();
-@@ -4440,8 +4508,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
+@@ -4440,8 +4506,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509 *cert,
  }
  
  #ifdef CURLVERBOSE
@@ -676,7 +668,7 @@ index dedd8f3e70..3216130b83 100644
  static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
  {
    STACK_OF(X509) *certstack;
-@@ -4809,6 +4876,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
+@@ -4809,6 +4874,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
    infof_certstack(data, octx->ssl);
  #endif
  
