@@ -2735,4 +2735,4 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 end:
   infof(data, "End SF OCSP Validation... Result: %d", rs);
   return rs;
-}
+}
