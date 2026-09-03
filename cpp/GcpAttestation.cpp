@@ -7,6 +7,7 @@
 #include <sstream>
 
 namespace Snowflake::Client {
+  constexpr auto SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
   constexpr auto GCP_METADATA_SERVER_BASE_URL = "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/";
   constexpr auto GCP_IAM_CREDENTIALS_BASE_URL = "https://iamcredentials.googleapis.com/v1";
 
@@ -73,7 +74,7 @@ namespace Snowflake::Client {
     IHttpClient *httpClient,
     const std::string &accessToken,
     const std::vector<std::string> &serviceAccountChain,
-    const std::string& audience) {
+    const std::string& wifHost) {
     if (serviceAccountChain.empty()) {
       CXX_LOG_ERROR("Service account chain is empty");
       return boost::none;
@@ -86,12 +87,12 @@ namespace Snowflake::Client {
       serviceAccountChain.end() - 1
     );
 
-    std::string idTokenUrl = std::string(GCP_IAM_CREDENTIALS_BASE_URL)
+    std::string idTokenUrl = (wifHost.empty() ? std::string(GCP_IAM_CREDENTIALS_BASE_URL) : wifHost)
                              + "/projects/-/serviceAccounts/"
                              + targetServiceAccount + ":generateIdToken";
 
     picojson::object requestBody;
-    requestBody["audience"] = picojson::value(audience);
+    requestBody["audience"] = picojson::value(std::string(SNOWFLAKE_AUDIENCE));
     requestBody["includeEmail"] = picojson::value(true);
 
     if (!delegates.empty()) {
@@ -182,7 +183,7 @@ namespace Snowflake::Client {
         config.httpClient,
         accessTokenOpt.get(),
         serviceAccountChain,
-        config.getAudience());
+        config.getWifHostForGcp());
       if (!idTokenOpt) {
         CXX_LOG_ERROR("Failed to get identity token with delegation");
         return boost::none;
@@ -194,7 +195,7 @@ namespace Snowflake::Client {
       CXX_LOG_INFO("Using direct GCP identity token from metadata server");
 
       auto url = boost::urls::url(std::string(GCP_METADATA_SERVER_BASE_URL) + "identity");
-      url.params().append({"audience", config.getAudience()});
+      url.params().append({"audience", SNOWFLAKE_AUDIENCE});
 
       HttpRequest req{
         HttpRequest::Method::GET,

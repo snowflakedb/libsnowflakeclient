@@ -1,17 +1,30 @@
 #include "snowflake/AWSUtils.hpp"
 #include "snowflake/WifAttestation.hpp"
+#include <picojson.h>
+#include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"
+#include <aws/core/Aws.h>
+#include <aws/core/auth/AWSCredentialsProvider.h>
 #include <sstream>
 #include <string>
-#include <vector>
 
 namespace Snowflake::Client {
   namespace {
     // AWS WIF (SNOW-2919437): the JWT obtained from STS:GetWebIdentityToken is
     // bound to this audience and signed with this algorithm. GS verifies both
     // when validating the inbound JWT.
+    constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
     constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
   }
+
+  // STS rejects x-amz-content-sha256 on empty-body requests ("unacceptable headers"),
+  // so we subclass AWSAuthV4Signer to suppress that header.
+  class AWS_CORE_API AWSAuthV4SignerNoPayload : public Aws::Client::AWSAuthV4Signer
+  {
+  public:
+    AWSAuthV4SignerNoPayload(const std::shared_ptr<Aws::Auth::AWSCredentialsProvider>& credentialsProvider, const char* serviceName, const Aws::String& region)
+        : AWSAuthV4Signer(credentialsProvider, serviceName, region) { m_includeSha256HashHeader = false; }
+  };
 
   // Splits comma-separated role ARN impersonation path
   std::vector<std::string> parseRoleArnChain(const std::string &path) {
@@ -96,17 +109,54 @@ namespace Snowflake::Client {
       creds = assumedCredsOpt.get();
     }
 
-    CXX_LOG_INFO(
-        "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
-        region.c_str());
-    auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-        creds, region, config.getAudience(), AWS_WIF_SIGNING_ALGORITHM);
-    if (!jwtOpt) {
-      CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
+    if (config.awsUseOutboundToken) {
+      CXX_LOG_INFO(
+          "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
+          region.c_str());
+      auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
+          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, config.getWifHostForAws());
+      if (!jwtOpt) {
+        CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
+        return boost::none;
+      }
+      const auto &jwt = jwtOpt.get();
+      CXX_LOG_DEBUG("AWS WIF JWT token obtained (length=%zu)", jwt.size());
+      return Attestation::makeAws(jwt);
+    }
+
+    const std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
+    const std::string host = std::string("sts") + "." + region + "." + domain;
+    const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
+
+    auto request = Aws::Http::CreateHttpRequest(
+      Aws::String(url),
+      Aws::Http::HttpMethod::HTTP_POST,
+      Aws::Utils::Stream::DefaultResponseStreamFactoryMethod
+    );
+
+    request->SetHeaderValue("Host", host);
+    request->SetHeaderValue("X-Snowflake-Audience", SNOWFLAKE_WIF_AUDIENCE);
+
+    auto simpleCredProvider = std::make_shared<Aws::Auth::SimpleAWSCredentialsProvider>(creds);
+    AWSAuthV4SignerNoPayload signer(simpleCredProvider, "sts", region);
+
+    if (!signer.SignRequest(*request)) {
+      CXX_LOG_ERROR("Failed to sign GetCallerIdentity request");
       return boost::none;
     }
-    const auto &jwt = jwtOpt.get();
-    CXX_LOG_DEBUG("AWS WIF JWT token prefix: %.10s", jwt.c_str());
-    return Attestation::makeAws(jwt);
+
+    picojson::object obj;
+    obj["url"] = picojson::value(request->GetURIString());
+    obj["method"] = picojson::value(Aws::Http::HttpMethodMapper::GetNameForHttpMethod(request->GetMethod()));
+    picojson::object headers;
+    for (const auto &h: request->GetHeaders()) {
+      headers[h.first] = picojson::value(h.second);
+    }
+    obj["headers"] = picojson::value(headers);
+    std::string json = picojson::value(obj).serialize(true);
+    std::string base64;
+    Util::Base64::encodePadding(json.begin(), json.end(), std::back_inserter(base64));
+    CXX_LOG_DEBUG("AWS WIF legacy credential obtained (length=%zu)", base64.size());
+    return Attestation::makeAws(base64);
   }
 }
