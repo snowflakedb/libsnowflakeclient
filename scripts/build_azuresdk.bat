@@ -4,7 +4,7 @@
 ::
 @echo off
 set azure_src_version=12.18.0
-set azure_build_version=1
+set azure_build_version=3
 set azure_version=%azure_src_version%.%azure_build_version%
 call %*
 goto :EOF
@@ -62,6 +62,7 @@ set AZURE_SDK_DISABLE_AUTO_VCPKG=1
 cmake %AZURE_SOURCE_DIR% ^
 -G "%cmake_generator%" -A "%cmake_architecture%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
+-DCMAKE_CXX_STANDARD=17 ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^
 -DMSVC_USE_STATIC_CRT=%staticcrt% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
