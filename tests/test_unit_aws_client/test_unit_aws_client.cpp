@@ -37,8 +37,11 @@ public:
   {
   }
 
-  bool parsePutGetCommand(std::string, PutGetParseResponse*)
+  bool parsePutGetCommand(std::string *sql,
+      PutGetParseResponse *putGetParseResponse)
   {
+    SF_UNUSED(sql);
+    SF_UNUSED(putGetParseResponse);
     return true;
   }
 };
