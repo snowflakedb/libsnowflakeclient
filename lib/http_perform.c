@@ -35,6 +35,17 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
 
+static size_t trace_append(char *out, size_t out_size, size_t used,
+                           const char *text, size_t len);
+
+static size_t http_header_name_len(const char *line, size_t len);
+
+static int http_is_method_char(char c);
+
+static int http_request_line_parts(const char *line, size_t len,
+                                   size_t *method_len,
+                                   size_t *version_offset);
+
 /* Enable curl verbose logging when the environment variable SF_CURL_VERBOSE is set.
  * This allows turning on libcurl debug without recompiling with DEBUG. */
 
@@ -89,6 +100,197 @@ void dump(const char *text,
     fflush(stream);
 }
 
+/* Stands in for an HTTP header field value in the curl trace. */
+#define SF_TRACE_HEADER_VALUE "****"
+
+/*
+ * Append at most len bytes of text to out, stopping at the end of the buffer,
+ * and return the number of bytes out holds afterwards. out stays NUL
+ * terminated.
+ */
+static
+size_t trace_append(char *out, size_t out_size, size_t used,
+                    const char *text, size_t len) {
+    size_t room;
+
+    if (used + 1 >= out_size) {
+        return used;
+    }
+    room = out_size - used - 1;
+    if (len > room) {
+        len = room;
+    }
+    if (sf_memcpy(out + used, room, text, len) == NULL) {
+        return used;
+    }
+    used += len;
+    out[used] = '\0';
+    return used;
+}
+
+/*
+ * Length of the field name at the start of one HTTP header line, or 0 when the
+ * line does not start with a field name. The name is the text in front of the
+ * first colon; a field name is a token, so a colon that comes after whitespace
+ * (the target of a request line, for instance) does not end a name. The line
+ * does not have to be NUL terminated: only the first len bytes are read.
+ */
+static
+size_t http_header_name_len(const char *line, size_t len) {
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        if (line[i] == ':') {
+            return i;
+        }
+        if (line[i] == ' ' || line[i] == '\t') {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+/*
+ * HTTP methods use the RFC 9110 token grammar. Restricting request-line
+ * recognition to that grammar prevents arbitrary header value text containing
+ * " HTTP/" from being mistaken for a request line and copied into the trace.
+ */
+static
+int http_is_method_char(char c) {
+    if ((c >= '0' && c <= '9') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z')) {
+        return 1;
+    }
+    return c != '\0' && strchr("!#$%&'*+-.^_`|~", c) != NULL;
+}
+
+/*
+ * Parse METHOD SP request-target SP HTTP-version. On success, return the
+ * method length and the offset of HTTP-version. Request targets cannot contain
+ * a literal space, and HTTP-version must be the final token on the line.
+ */
+static
+int http_request_line_parts(const char *line, size_t len,
+                            size_t *method_len, size_t *version_offset) {
+    size_t first_space = 0;
+    size_t second_space;
+    size_t i;
+
+    if (len == 0 || line[0] == ' ' || line[0] == '\t') {
+        return 0;
+    }
+    while (first_space < len && line[first_space] != ' ') {
+        if (!http_is_method_char(line[first_space])) {
+            return 0;
+        }
+        first_space++;
+    }
+    if (first_space == 0 || first_space == len) {
+        return 0;
+    }
+
+    second_space = first_space + 1;
+    while (second_space < len && line[second_space] != ' ') {
+        second_space++;
+    }
+    if (second_space == first_space + 1 || second_space == len ||
+        second_space + 6 > len ||
+        strncmp(line + second_space + 1, "HTTP/", 5) != 0) {
+        return 0;
+    }
+    for (i = second_space + 1; i < len; i++) {
+        if (line[i] == ' ' || line[i] == '\t') {
+            return 0;
+        }
+    }
+
+    *method_len = first_space;
+    *version_offset = second_space + 1;
+    return 1;
+}
+
+/*
+ * Rewrite an HTTP header block so that it holds field names but no field
+ * values. CURLINFO_HEADER_OUT passes the whole request head in one call and
+ * CURLINFO_HEADER_IN one response line per call, so the input is split on
+ * newlines and each line is treated the same way:
+ *   - a line with a field name keeps the name, the value is replaced;
+ *   - a response status line is copied as-is;
+ *   - a request line keeps its method and HTTP version, while its target is
+ *     replaced because signed query parameters can contain credentials;
+ *   - the empty line that ends the head stays empty;
+ *   - anything else, including a line that continues the value of the line
+ *     before it, is value text as far as this function is concerned and none of
+ *     it is kept.
+ * Every emitted line ends with CRLF, as the header text does. data does not
+ * have to be NUL terminated: only the first size bytes are read. out is always
+ * NUL terminated. Returns the number of bytes written to out.
+ */
+size_t sf_trace_header_names_only(const char *data, size_t size, char *out,
+                                  size_t out_size) {
+    size_t pos = 0;
+    size_t used = 0;
+
+    if (out == NULL || out_size == 0) {
+        return 0;
+    }
+    out[0] = '\0';
+    if (data == NULL) {
+        return 0;
+    }
+
+    while (pos < size) {
+        size_t eol = pos;
+        size_t len;
+        size_t name_len;
+        size_t method_len;
+        size_t version_offset;
+
+        while (eol < size && data[eol] != '\n') {
+            eol++;
+        }
+        len = eol - pos;
+        if (len > 0 && data[pos + len - 1] == '\r') {
+            len--; /* the CR of a CRLF pair */
+        }
+
+        if (len > 0) {
+            name_len = 0;
+            /* A line that opens with whitespace continues the value of the
+             * line before it, and one that opens with a colon has no name. */
+            if (data[pos] != ' ' && data[pos] != '\t' && data[pos] != ':') {
+                name_len = http_header_name_len(data + pos, len);
+            }
+            if (name_len > 0) {
+                used = trace_append(out, out_size, used, data + pos, name_len);
+                used = trace_append(out, out_size, used, ": ", 2);
+                used = trace_append(out, out_size, used, SF_TRACE_HEADER_VALUE,
+                                    sizeof(SF_TRACE_HEADER_VALUE) - 1);
+            } else if (len >= 5 && strncmp(data + pos, "HTTP/", 5) == 0) {
+                used = trace_append(out, out_size, used, data + pos, len);
+            } else if (http_request_line_parts(data + pos, len, &method_len,
+                                               &version_offset)) {
+                used = trace_append(out, out_size, used, data + pos,
+                                    method_len);
+                used = trace_append(out, out_size, used, " ", 1);
+                used = trace_append(out, out_size, used, SF_TRACE_HEADER_VALUE,
+                                    sizeof(SF_TRACE_HEADER_VALUE) - 1);
+                used = trace_append(out, out_size, used, " ", 1);
+                used = trace_append(out, out_size, used,
+                                    data + pos + version_offset,
+                                    len - version_offset);
+            } else {
+                used = trace_append(out, out_size, used, SF_TRACE_HEADER_VALUE,
+                                    sizeof(SF_TRACE_HEADER_VALUE) - 1);
+            }
+        }
+        used = trace_append(out, out_size, used, "\r\n", 2);
+        pos = (eol < size) ? eol + 1 : size;
+    }
+    return used;
+}
+
 static
 int my_trace(CURL *handle, curl_infotype type,
              char *data, size_t size,
@@ -107,16 +309,26 @@ int my_trace(CURL *handle, curl_infotype type,
             return 0;
 
         case CURLINFO_HEADER_OUT:
-            text = "=> Send header";
-            break;
+            /* Header text is logged as field names only. The callback gets the
+             * header text as it goes on the wire, and field values such as
+             * Authorization, x-amz-server-side-encryption-customer-key,
+             * X-Amz-Security-Token or Set-Cookie carry credentials. */
+            sf_trace_header_names_only(data, size, masked, sizeof(masked));
+            dump("=> Send header", stderr, (unsigned char *) masked,
+                 strlen(masked), config->trace_ascii);
+            return 0;
+        case CURLINFO_HEADER_IN:
+            /* One response header line per call; names only, as above. */
+            sf_trace_header_names_only(data, size, masked, sizeof(masked));
+            dump("<= Recv header", stderr, (unsigned char *) masked,
+                 strlen(masked), config->trace_ascii);
+            return 0;
+
         case CURLINFO_DATA_OUT:
             text = "=> Send data";
             break;
         case CURLINFO_SSL_DATA_OUT:
             text = "=> Send SSL data";
-            break;
-        case CURLINFO_HEADER_IN:
-            text = "<= Recv header";
             break;
         case CURLINFO_DATA_IN:
             text = "<= Recv data";
