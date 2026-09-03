@@ -101,7 +101,7 @@ void test_retry_parts_uploading(void** unused)
 }
 
 int main(void) {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_retry_parts_uploading),
   };
