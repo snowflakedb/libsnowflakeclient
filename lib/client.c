@@ -4,6 +4,8 @@
 #include <string.h>
 #include <errno.h>
 #include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/provider.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
 #include <snowflake/Stopwatch.h>
@@ -713,6 +715,23 @@ _snowflake_validate_url_components(SF_CONNECT *sf) {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    char envBuf[MAX_PATH + 1];
+    char* fipsEnv = sf_getenv_s(SF_FIPS_ENABLED_ENV_VAR, envBuf, sizeof(envBuf));
+
+    if (fipsEnv && fipsEnv[0] != '0')
+    {
+      if (!_is_fips_enabled())
+      {
+        log_error(ERR_MSG_FIPS_NOT_ENABLED);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_FIPS_NOT_ENABLED,
+            ERR_MSG_FIPS_NOT_ENABLED,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+      }
+    }
+
     if (sf->log_query_text)
     {
         log_info("log_query_text is set to true, query text will be logged on info level.");
@@ -1131,6 +1150,20 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
     return SF_STATUS_SUCCESS;
 }
 
+sf_bool STDCALL _is_fips_enabled() {
+    // check whether fips module is loaded
+    if (!OSSL_PROVIDER_available(NULL, "fips")) {
+        return SF_BOOLEAN_FALSE;
+    }
+
+    // check whether fips is enforced
+    if (!EVP_default_properties_is_fips_enabled(NULL)) {
+        return SF_BOOLEAN_FALSE;
+    }
+
+    return SF_BOOLEAN_TRUE;
+}
+
 SF_STATUS STDCALL
 snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t size) {
     switch (type) {
@@ -1154,6 +1187,9 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_OCSP_CHECK:
             *((sf_bool *) value) = SF_OCSP_CHECK;
+            break;
+        case SF_GLOBAL_FIPS_ENABLED:
+            *((sf_bool*)value) = _is_fips_enabled();
             break;
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             if (CLIENT_CONFIG_FILE) {

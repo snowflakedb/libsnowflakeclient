@@ -102,6 +102,12 @@ copy /v /y ^
     .\include\snowflake\* ^
 	.\deps-build\%build_dir%\libsnowflakeclient\include\snowflake\*
 
+:: copy openssl for FIPS testing
+xcopy .\deps-build\%build_dir%\openssl .\%cmake_dir%\tests\openssl /Y /s /i
+copy /v /y ^
+    .\tests\data\openssl.cnf ^
+    .\%cmake_dir%\tests\openssl
+
 :: Prune unnecessary files that result in a large archive (~8GB)
 for %%f in (%cmake_dir%\tests\%build_type%\*.exp) do del %%f
 for %%f in (%cmake_dir%\tests\%build_type%\*.lib) do del %%f
