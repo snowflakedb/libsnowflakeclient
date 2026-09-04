@@ -1578,6 +1578,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         sf->timezone,
         sf->autocommit);
     log_debug("Created body");
+    if (sf->error.error_code != SF_STATUS_SUCCESS)
+    {
+        goto cleanup;
+    }
     s_body = snowflake_cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
