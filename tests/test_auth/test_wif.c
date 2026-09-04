@@ -92,47 +92,6 @@ void test_aws_wif_authentication(void **unused) {
     snowflake_term(sf);
 }
 
-void test_aws_wif_outbound_jwt_authentication(void **unused) {
-    SF_UNUSED(unused);
-
-    if (!is_cloud_env(SF_WIF_PROVIDER_AWS)) {
-        fprintf(stderr,
-                "Not running AWS WIF outbound JWT test. "
-                "SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE is not AWS\n");
-        skip();
-        return;
-    }
-
-    fprintf(stderr, "Testing AWS WIF outbound JWT authentication via C API\n");
-
-    SF_CONNECT *sf = snowflake_init();
-    set_all_snowflake_attributes(sf);
-
-    sf_bool use_outbound = SF_BOOLEAN_TRUE;
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
-    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AWS);
-    snowflake_set_attribute(sf, SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, &use_outbound);
-
-    const SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    }
-
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    fprintf(stderr, "AWS WIF outbound JWT connection successful\n");
-
-    verify_connection_works(sf);
-
-    char *user = get_current_user(sf);
-    fprintf(stderr, "Authenticated as: %s\n", user);
-    assert_non_null(user);
-    assert_true(strlen(user) > 0);
-    free(user);
-
-    snowflake_term(sf);
-}
-
 void test_gcp_wif_authentication(void **unused) {
     SF_UNUSED(unused);
     

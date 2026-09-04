@@ -36,8 +36,7 @@ namespace Snowflake {
             const Aws::Auth::AWSCredentials& creds,
             const std::string& region,
             const std::string& audience,
-            const std::string& signingAlgorithm,
-            const std::string& configuredHost) = 0;
+            const std::string& signingAlgorithm) = 0;
         virtual ~ISdkWrapper() = default;
         static ISdkWrapper* getInstance();
       };

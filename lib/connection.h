@@ -178,14 +178,6 @@ typedef struct put_payload {
     size_t length;
 } PUT_PAYLOAD;
 
-/*
- * Sanitize the HTTP header bytes received by curl's debug callback. Exposed
- * internally so tests can verify that request targets and header values never
- * reach verbose logs. The input does not need to be NUL terminated.
- */
-size_t sf_trace_header_names_only(const char *data, size_t size, char *out,
-                                  size_t out_size);
-
 /**
  * Macro to get a custom error message to pass to the Snowflake Error object.
  */

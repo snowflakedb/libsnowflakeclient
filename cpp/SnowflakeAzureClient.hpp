@@ -7,8 +7,9 @@
 #include "FileMetadata.hpp"
 #include "util/ThreadPool.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
-#include "azure/storage/blobs.hpp"
-#include <memory>
+#include "storage_credential.h"
+#include "storage_account.h"
+#include "blob/blob_client.h"
 #include <sstream>
 #include <string>
 
@@ -30,12 +31,10 @@ namespace Client
 
 struct MultiUploadCtx_a
 {
-  MultiUploadCtx_a(unsigned int partNumber,
-                   std::string &uploadId)
-    : buf(NULL),
-      m_partNumber(partNumber),
-      m_uploadId(uploadId),
-      m_outcome(RemoteStorageRequestOutcome::FAILED)
+  MultiUploadCtx_a(std::string &uploadId,
+    unsigned int partNumber,
+    std::string &key,
+    std::string &bucket)
   {
 
   }
@@ -45,9 +44,6 @@ struct MultiUploadCtx_a
 
   /// part number
   unsigned int m_partNumber;
-
-  /// uploadId
-  std::string m_uploadId;
 
   /// upload outcome
   RemoteStorageRequestOutcome m_outcome;
@@ -59,43 +55,13 @@ struct MultiDownloadCtx_a
   Util::ByteArrayStreamBuf *buf;
 
   ///Start byte of the chunk.
-  long long startbyte;
+  unsigned long long startbyte;
 
   /// part number
   unsigned int m_partNumber;
 
   /// upload outcome
   RemoteStorageRequestOutcome m_outcome;
-};
-
-class AzureStreamAdapter : public Azure::Core::IO::BodyStream
-{
-public:
-  explicit AzureStreamAdapter(std::iostream& stream, int64_t length) :
-    m_stream(stream), m_length(length) {}
-
-private:
-  std::iostream& m_stream;
-  int64_t m_length;
-
-  size_t OnRead(uint8_t* buffer, size_t count, Azure::Core::Context const& /*context*/) override
-  {
-    this->m_stream.read(reinterpret_cast<char*>(buffer), count);
-    return m_stream.gcount();
-  }
-
-  int64_t Length() const override
-  {
-    return m_length;
-  }
-
-  void Rewind() override
-  {
-    ;// Do nothing
-    /* The data stream could be Crypto::CipherIOStream which doesn't allow reset.
-     * We've retried on FileTransferAgent level.
-     */
-  }
 };
 
 /**
@@ -105,8 +71,7 @@ class SnowflakeAzureClient : public Snowflake::Client::IStorageClient
 {
 public:
   SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel, size_t uploadThreshold,
-                       TransferConfig *transferConfig, IStatementPutGet* statement,
-                       unsigned int maxRetries);
+                       TransferConfig *transferConfig, IStatementPutGet* statement);
 
   ~SnowflakeAzureClient();
 
@@ -138,17 +103,10 @@ private:
   StageInfo * m_stageInfo;
 
   Util::ThreadPool * m_threadPool;
-  std::shared_ptr<Azure::Storage::Blobs::BlobServiceClient> m_blobServiceClient;
-  // client with retry disabled for single uploading
-  std::shared_ptr<Azure::Storage::Blobs::BlobServiceClient> m_blobServiceClientNoRetry;
+  azure::storage_lite::blob_client_wrapper *m_blobclient;
 
   const size_t m_uploadThreshold;
   unsigned int m_parallel;
-
-  /**
-   * Max retries for multipart upload
-   */
-  unsigned int m_maxRetries;
 
   /**
    * Add snowflake specific metadata to the put object metadata.
@@ -157,7 +115,7 @@ private:
    * @param userMetadata
    * @param fileMetadata
    */
-  void addUserMetadata(Azure::Storage::Metadata &userMetadata,
+  void addUserMetadata(std::vector<std::pair<std::string, std::string>> *userMetadata,
                        FileMetadata *fileMetadata);
 
   /**
@@ -175,10 +133,10 @@ private:
   RemoteStorageRequestOutcome doMultiPartUpload(FileMetadata * fileMetadata,
                                     std::basic_iostream<char> *dataStream);
 
-  void uploadParts(Azure::Storage::Blobs::BlockBlobClient* blobClient,
-                   MultiUploadCtx_a* uploadCtx);
+  void uploadParts(MultiUploadCtx_a * uploadCtx);
 
-  void setMaxRetries(unsigned int maxRetries);
+  //RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
+
 };
 }
 }

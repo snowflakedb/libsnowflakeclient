@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <snowflake/IFileTransferAgent.hpp>
 #include "snowflake/IStatementPutGet.hpp"
 #include "snowflake/IFileTransferAgent.hpp"
 #include "snowflake/ITransferResult.hpp"

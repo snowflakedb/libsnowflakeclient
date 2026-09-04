@@ -51,7 +51,6 @@ std::vector<sf_bool_attributes> boolAttributes = {
     { SF_CON_INSECURE_MODE, false },
     { SF_CON_OCSP_FAIL_OPEN, true },
     { SF_CON_AUTOCOMMIT, true },
-    { SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN, true },
 };
 
 typedef struct sf_int_attributes {

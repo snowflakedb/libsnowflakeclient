@@ -50,7 +50,6 @@ docker run \
         -e BUILD_TYPE \
         -e JOB_NAME \
         -e BUILD_NUMBER \
-        -e JENKINS_HOME \
         -e PARAMETERS_SECRET \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \

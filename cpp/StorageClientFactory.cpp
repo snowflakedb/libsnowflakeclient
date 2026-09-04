@@ -16,35 +16,26 @@ IStorageClient * StorageClientFactory::getClient(StageInfo *stageInfo,
                                                  unsigned int parallel,
                                                  size_t uploadThreshold,
                                                  TransferConfig *transferConfig,
-                                                 IStatementPutGet * statement,
-                                                 unsigned int maxPutRetries)
+                                                 IStatementPutGet * statement)
 {
-  IStorageClient * client = NULL;
   switch (stageInfo->stageType)
   {
     case StageType::S3:
       CXX_LOG_INFO("Creating S3 client");
-      client =  new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig, statement);
-      break;
+      return new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig, statement);
     case StageType::MOCKED_STAGE_TYPE:
-      client = injectedClient;
-      break;
+      return injectedClient;
     case StageType::AZURE:
       CXX_LOG_INFO("Creating Azure client");
-      client = new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold,
-                                      transferConfig, statement, maxPutRetries);
-      break;
+      return new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold, transferConfig, statement);
     case StageType::GCS:
       CXX_LOG_INFO("Creating GCS client");
-      client = new SnowflakeGCSClient(stageInfo, parallel, transferConfig, statement);
-      break;
+      return new SnowflakeGCSClient(stageInfo, parallel, transferConfig, statement);
     default:
       // invalid stage type
       throw SnowflakeTransferException(TransferError::UNSUPPORTED_FEATURE,
         "Remote storage not supported.");
   }
-  client->setMaxRetries(maxPutRetries);
-  return client;
 }
 
 void StorageClientFactory::injectMockedClient(IStorageClient *client)

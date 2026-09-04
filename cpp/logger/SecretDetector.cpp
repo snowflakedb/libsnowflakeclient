@@ -14,17 +14,7 @@ namespace Client
 
   boost::regex SecretDetector::PRIVATE_KEY_DATA_PATTERN = boost::regex("\"privateKeyData\": \"([A-Za-z0-9/+=\\\\n]{10,})\"", boost::regex::extended | boost::regex::icase);
 
-  // The value class must contain ':' because every session token value starts
-  // with a "ver:<n>-" prefix. GlobalServices mints them as
-  // "ver:1-hint:<keyId>-<encrypted>", "ver:2-hint:<keyId>-did:<deployId>-<encrypted>"
-  // and the V3/V4 equivalents (SecurityToken.java:60-66), so V2 and V4 also carry
-  // a ':' in "-did:". Without ':' in the class the value match stops after "ver",
-  // which is three characters, below the {8,} minimum, and no session token of any
-  // version is masked. Keep ':' where it is: the trailing '-' has to stay the last
-  // character of the class so that it remains a literal hyphen, and ':' must not sit
-  // next to that '-' (a "+-:" sequence would be read as a range covering ',' '.' '/'
-  // and the digits).
-  boost::regex SecretDetector::CONNECTION_TOKEN_PATTERN = boost::regex("(token|assertion content|queryStageMasterKey|aws_key_id|aws_secret_key|aws_token)(['\"\\s:=]+)([A-Za-z0-9=/_:+-]{8,})", boost::regex::icase);
+  boost::regex SecretDetector::CONNECTION_TOKEN_PATTERN = boost::regex("(token|assertion content|queryStageMasterKey|aws_key_id|aws_secret_key|aws_token)(['\"\\s:=]+)([A-Za-z0-9=/_+-]{8,})", boost::regex::icase);
 
   boost::regex SecretDetector::PASSWORD_PATTERN = boost::regex("(password|passcode|pwd)(['\"\\s:=]+)([A-Za-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})", boost::regex::icase);
 

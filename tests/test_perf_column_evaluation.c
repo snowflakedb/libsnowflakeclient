@@ -193,52 +193,42 @@ void test_skip_all_rows_no_bind_helper(sf_bool use_arrow) {
 }
 
 void test_eval_all_cols_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_eval_all_cols_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_eval_all_cols_json(void **unused) {
-    SF_UNUSED(unused);
     test_eval_all_cols_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_eval_half_cols_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_eval_half_cols_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_eval_half_cols_json(void **unused) {
-    SF_UNUSED(unused);
     test_eval_half_cols_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_skip_rows_half_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_skip_rows_half_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_skip_rows_half_json(void **unused) {
-    SF_UNUSED(unused);
     test_skip_rows_half_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_skip_all_rows_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_skip_all_rows_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_skip_all_rows_json(void **unused) {
-    SF_UNUSED(unused);
     test_skip_all_rows_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_skip_all_rows_no_bind_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_skip_all_rows_no_bind_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_skip_all_rows_no_bind_json(void **unused) {
-    SF_UNUSED(unused);
     test_skip_all_rows_no_bind_helper(SF_BOOLEAN_FALSE);
 }
 

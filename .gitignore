@@ -10,7 +10,6 @@
 .idea/
 .libs
 artifacts/
-pdo-vendor/
 build.log
 build/
 callgrind.out.*
