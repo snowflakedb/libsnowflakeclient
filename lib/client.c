@@ -1431,6 +1431,7 @@ static char* sf_oauth_idp_url(SF_CONNECT* sf) {
     if (sf->oauth_token_endpoint && sf->oauth_token_endpoint[0] != '\0') {
         size_t len = strlen(sf->oauth_token_endpoint) + 1;
         char* url = (char*)SF_CALLOC(1, len);
+        if (!url) { return NULL; }
         sf_strncpy(url, len, sf->oauth_token_endpoint, len);
         return url;
     }
@@ -1439,6 +1440,7 @@ static char* sf_oauth_idp_url(SF_CONNECT* sf) {
     const char* postfix = "/oauth/token-request";
     size_t len = strlen("https://") + strlen(host) + strlen(postfix) + 1;
     char* url = (char*)SF_CALLOC(1, len);
+    if (!url) { return NULL; }
     sf_sprintf(url, len, "https://%s%s", host, postfix);
     return url;
 }

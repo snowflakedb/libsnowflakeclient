@@ -27,9 +27,11 @@ secure_storage_ptr secure_storage_init();
 /*
  * Backward-compatible accessors. The cache key is derived from a canonical-JSON
  * document (see SecureStorage::convertTarget). These wrappers set idp == snowflake
- * == host and leave the role empty, which matches the wiring for MFA tokens.
- * OAuth and ID-token flows must use the *_v2 variants below so the idp URL and
- * role dimensions are included in the key.
+ * == host and leave the role empty.  For MFA_TOKEN and ID_TOKEN the idp/role
+ * dimensions are not part of the key (only snowflake + username matter), so
+ * these wrappers produce identical results to the *_v2 variants for those types.
+ * Only OAuth flows require non-trivial idp and role values; the *_v2 variants
+ * below MUST be used for OAUTH_* and DPOP_* token types.
  */
 char* secure_storage_get_credential(secure_storage_ptr tc, const char* host, const char* user, SecureStorageKeyType type);
 void secure_storage_free_credential(char* cred);

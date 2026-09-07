@@ -60,6 +60,10 @@ bool secure_storage_save_credential(secure_storage_ptr tc, const char* host, con
 
 bool secure_storage_save_credential_v2(secure_storage_ptr tc, const char* host, const char* user, SecureStorageKeyType type, const char* idp, const char* snowflake, const char* role, const char *cred)
 {
+  if (!cred)
+  {
+    return false;
+  }
   Snowflake::Client::SecureStorageKey key(orEmpty(host), orEmpty(user), type, orEmpty(idp), orEmpty(snowflake), orEmpty(role));
   return reinterpret_cast<Snowflake::Client::SecureStorage *>(tc)->storeToken(key, std::string(cred)) == SecureStorageStatus::Success;
 }

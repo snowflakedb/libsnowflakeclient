@@ -4,7 +4,6 @@
 
 #include "snowflake/SecureStorage.hpp"
 
-#include <cctype>
 #include <cstdio>
 #include <string>
 
@@ -80,6 +79,13 @@ namespace {
     return json;
   }
 
+  // ASCII-only lowercase: avoids locale-dependent std::tolower behaviour for
+  // URL and identifier normalization which must be byte-stable across locales.
+  char ascii_tolower(char c)
+  {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + ('a' - 'A')) : c;
+  }
+
   // Returns true for OAuth flow types that require idp + role in keyData.
   bool isOAuthFlow(SecureStorageKeyType type)
   {
@@ -121,7 +127,7 @@ std::string normalizeUrl(const std::string& url)
 
     for (char& c : result)
     {
-      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      c = ascii_tolower(c);
     }
     return result;
   }
@@ -139,7 +145,7 @@ std::string normalizeIdentifier(const std::string& identifier)
     result.reserve(identifier.size());
     for (char c : identifier)
     {
-      result += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      result += ascii_tolower(c);
     }
     return result;
   }
@@ -166,6 +172,11 @@ boost::optional<std::string> SecureStorage::convertTarget(const SecureStorageKey
     {
       // OAuth flows: 4-field keyData — idp, role, snowflake, username.
       const std::string idp = normalizeUrl(key.idp);
+      if (idp.empty())
+      {
+        CXX_LOG_ERROR("Cannot build secure storage key: idp URL is empty for OAuth flow (host='%s').", key.host.c_str());
+        return {};
+      }
       const std::string role = normalizeIdentifier(key.role);
       json = canonicalJsonOAuth(idp, role, snowflake, username);
     }
