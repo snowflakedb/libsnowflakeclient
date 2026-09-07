@@ -4,7 +4,6 @@
 
 #include "snowflake/SecureStorage.hpp"
 
-#include <cctype>
 #include <cstdio>
 #include <string>
 
@@ -69,6 +68,13 @@ namespace {
     return json;
   }
 
+  // ASCII-only lowercase: avoids locale-dependent std::tolower/toupper behaviour
+  // for URL and identifier normalization, which must be byte-stable across locales.
+  char ascii_tolower(char c)
+  {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + ('a' - 'A')) : c;
+  }
+
 }
 
 std::string normalizeUrl(const std::string& url)
@@ -102,7 +108,7 @@ std::string normalizeUrl(const std::string& url)
 
     for (char& c : result)
     {
-      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+      c = ascii_tolower(c);
     }
     return result;
   }
@@ -125,7 +131,7 @@ std::string normalizeIdentifier(const std::string& identifier)
       }
       else
       {
-        result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        result += ascii_tolower(c);
       }
     }
     return result;

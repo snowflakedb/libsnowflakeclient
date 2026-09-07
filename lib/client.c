@@ -1431,6 +1431,7 @@ static char* sf_oauth_idp_url(SF_CONNECT* sf) {
     if (sf->oauth_token_endpoint && sf->oauth_token_endpoint[0] != '\0') {
         size_t len = strlen(sf->oauth_token_endpoint) + 1;
         char* url = (char*)SF_CALLOC(1, len);
+        if (!url) { return NULL; }
         sf_strncpy(url, len, sf->oauth_token_endpoint, len);
         return url;
     }
@@ -1439,6 +1440,7 @@ static char* sf_oauth_idp_url(SF_CONNECT* sf) {
     const char* postfix = "/oauth/token-request";
     size_t len = strlen("https://") + strlen(host) + strlen(postfix) + 1;
     char* url = (char*)SF_CALLOC(1, len);
+    if (!url) { return NULL; }
     sf_sprintf(url, len, "https://%s%s", host, postfix);
     return url;
 }
@@ -1533,7 +1535,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 }
                 const char* role = sf->role ? sf->role : "";
                 if (authtype == AUTH_EXTERNALBROWSER) {
-                    sf->sso_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, role);
+                    sf->sso_token = secure_storage_get_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, "");
                 }
                 else {
                     char* oauth_idp = sf_oauth_idp_url(sf);
@@ -1667,7 +1669,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             if (sf->token_cache) {
                 const char* role = sf->role ? sf->role : "";
                 if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
-                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, role, auth_token);
+                    secure_storage_save_credential_v2(sf->token_cache, sf->host, sf->user, ID_TOKEN, sf->host, sf->host, "", auth_token);
                 }
                 else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
                     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
