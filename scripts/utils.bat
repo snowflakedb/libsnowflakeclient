@@ -5,7 +5,6 @@
 call %*
 goto :EOF
 
-:: VC16 is for Github Workflow windows-2019 virtual machine
 :setup_visual_studio
     if /I "%~1"=="VS17" (
         if not "%VisualStudioVersion%"=="17.0" (
@@ -17,7 +16,11 @@ goto :EOF
     if /I "%~1"=="VS16" (
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments
-            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+            if "%VCINSTALLDIR%" == "" (
+                echo === ERROR: VCINSTALLDIR is not set for VS16
+                goto :error
+            )
+            call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch%
         )
         goto :EOF
     )

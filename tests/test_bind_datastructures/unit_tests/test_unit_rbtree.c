@@ -10,6 +10,7 @@
 
 void test_init( void **unused)
 {
+    SF_UNUSED(unused);
     RedBlackTree * test_tree = rbtree_init();
     assert_non_null(test_tree);
     assert_null(test_tree->key);
@@ -91,5 +92,5 @@ int main (void) {
                 cmocka_unit_test(test_multi_insert),
                 cmocka_unit_test(test_search)
             };
-    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }

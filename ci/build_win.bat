@@ -13,11 +13,13 @@ set curdir=%cd%
 set utils_script="%scriptdir%..\scripts\utils.bat"
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
-echo === creating venv
-py -3.7 -m venv venv
-call venv\scripts\activate
-python -m pip install -U pip > nul 2>&1
-python -m pip install -U awscli > nul 2>&1
+if not defined GITHUB_ACTIONS (
+    echo === creating venv
+    py -3.7 -m venv venv
+    call venv\scripts\activate
+    python -m pip install -U pip > nul 2>&1
+    python -m pip install -U awscli > nul 2>&1
+)
 set zlib_build_script="%scriptdir%..\scripts\build_zlib.bat"
 set openssl_build_script="%scriptdir%..\scripts\build_openssl.bat"
 set curl_build_script="%scriptdir%..\scripts\build_curl.bat"
@@ -70,8 +72,11 @@ goto :EOF
     )
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
+    :: PDO vendor packaging needs deps-build; skip cleanup when PDO_VENDOR_BUILD is set.
     if defined GITHUB_ACTIONS (
-        rd /S /Q %scriptdir%\..\deps-build
+        if not defined PDO_VENDOR_BUILD (
+            rd /S /Q %scriptdir%\..\deps-build
+        )
     )
     exit /b 0
 
@@ -140,7 +145,9 @@ goto :EOF
     set dynamic_runtime=%~3
 
     echo === build: %component_name% ===
-    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
+    set build_tests=ON
+    if /I "%BUILD_SOURCE_ONLY%"=="true" set build_tests=OFF
+    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% %build_tests%
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version

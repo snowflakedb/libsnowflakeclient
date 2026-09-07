@@ -10,20 +10,32 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <stdio.h>
 
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #include <windows.h>
 typedef HANDLE SF_MUTEX_HANDLE;
+typedef HANDLE SF_THREAD_HANDLE;
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
 #else
+#include <pthread.h>
+#include <unistd.h>
+#include <dirent.h>
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
+typedef pthread_t SF_THREAD_HANDLE;
 #endif
 
 static SF_MUTEX_HANDLE crl_response_cache_mutex;
+static SF_THREAD_HANDLE crl_cleanup_thread;
+static volatile int crl_cleanup_stop = 0;
+static int crl_cleanup_thread_started = 0;
+static int crl_cache_initialized = 0;
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
 static int _mutex_lock(SF_MUTEX_HANDLE *lock);
@@ -70,6 +82,44 @@ int _mutex_term(SF_MUTEX_HANDLE *lock) {
   return CloseHandle(*lock) == 0;
 #else
   return pthread_mutex_destroy(lock);
+#endif
+}
+
+#ifdef _WIN32
+static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg);
+#endif
+static void *crl_cleanup_thread_proc(void *arg);
+
+#ifdef _WIN32
+static int _thread_init(SF_THREAD_HANDLE *thread, LPTHREAD_START_ROUTINE proc, void *arg)
+{
+  *thread = CreateThread(NULL, 0, proc, arg, 0, NULL);
+  return *thread == NULL;
+}
+#else
+static int _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg)
+{
+  return pthread_create(thread, NULL, proc, arg);
+}
+#endif
+
+static int _thread_join(SF_THREAD_HANDLE thread)
+{
+#ifdef _WIN32
+  DWORD ret = WaitForSingleObject(thread, INFINITE);
+  CloseHandle(thread);
+  return ret == WAIT_OBJECT_0 ? 0 : 1;
+#else
+  return pthread_join(thread, NULL);
+#endif
+}
+
+static void _sleep_sec(void)
+{
+#ifdef _WIN32
+  Sleep(1000);
+#else
+  sleep(1);
 #endif
 }
 
@@ -209,6 +259,7 @@ static bool is_crl_expired(const X509_CRL *crl) {
 struct uri_crl_entry {
   char *uri;
   X509_CRL *crl;
+  time_t download_time;
 };
 
 struct uri_crl_array {
@@ -235,7 +286,7 @@ static int ucrl_ensure_capacity()
   return 1;
 }
 
-static void ucrl_register(const char *uri, const X509_CRL *crl)
+static void ucrl_register(const char *uri, const X509_CRL *crl, time_t download_time)
 {
   if (!ucrl_ensure_capacity())
     return;
@@ -243,7 +294,9 @@ static void ucrl_register(const char *uri, const X509_CRL *crl)
   if (ucrl_registry.entries[ucrl_registry.size].uri)
   {
     strncpy(ucrl_registry.entries[ucrl_registry.size].uri, uri, PATH_MAX);
+    ucrl_registry.entries[ucrl_registry.size].uri[PATH_MAX - 1] = 0;
     ucrl_registry.entries[ucrl_registry.size].crl = X509_CRL_dup(crl);
+    ucrl_registry.entries[ucrl_registry.size].download_time = download_time;
     ucrl_registry.size++;
   }
 }
@@ -270,6 +323,19 @@ static void ucrl_clear()
   ucrl_registry.size = 0;
 }
 
+static void ucrl_remove_at(size_t i)
+{
+  X509_CRL_free(ucrl_registry.entries[i].crl);
+  OPENSSL_free(ucrl_registry.entries[i].uri);
+
+  ucrl_registry.entries[i] = ucrl_registry.entries[ucrl_registry.size - 1];
+  ucrl_registry.size--;
+
+  if (ucrl_registry.size == 0) {
+    ucrl_clear();
+  }
+}
+
 static void ucrl_unregister(const char *uri)
 {
   if (!ucrl_registry.entries || !uri) {
@@ -277,19 +343,8 @@ static void ucrl_unregister(const char *uri)
   }
 
   for (size_t i = 0; i < ucrl_registry.size; ++i) {
-    if (ucrl_registry.entries[i].uri == uri) {
-
-      /* Release objects */
-      X509_CRL_free(ucrl_registry.entries[i].crl);
-      OPENSSL_free(ucrl_registry.entries[i].uri);
-
-      /* Move last entry to freed spot for fast removal */
-      ucrl_registry.entries[i] = ucrl_registry.entries[ucrl_registry.size - 1];
-      ucrl_registry.size--;
-
-      if (ucrl_registry.size == 0) {
-        ucrl_clear();
-      }
+    if (strcmp(ucrl_registry.entries[i].uri, uri) == 0) {
+      ucrl_remove_at(i);
       return;
     }
   }
@@ -347,11 +402,13 @@ static const char* mkdir_if_not_exists(const struct Curl_easy *data, const char*
 #endif
   if (result != 0 && errno != EEXIST)
   {
-    failf(data, "Failed to create %s directory. Ignored. Error: %d",
-          dir, errno);
+    if (data)
+      failf(data, "Failed to create %s directory. Ignored. Error: %d",
+            dir, errno);
     return NULL;
   }
-  infof(data, "Created %s directory.", dir);
+  if (data)
+    infof(data, "Created %s directory.", dir);
   return dir;
 }
 
@@ -446,8 +503,9 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
 
   cache_dir[0] = 0;
 
-  env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
-  infof(data, "CRL cache directory from environment: %s", env_dir ? env_dir : "(not set)");
+  env_dir = getenv(SF_CRL_RESPONSE_CACHE_DIR_ENV);
+  if (data)
+    infof(data, "CRL cache directory from environment: %s", env_dir ? env_dir : "(not set)");
   if (env_dir) {
     strncpy(cache_dir, env_dir, PATH_MAX);
 #if defined(_WIN32)
@@ -479,13 +537,13 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
 }
 
 static void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
-                               X509_CRL **pcrl)
+                               X509_CRL **pcrl, time_t download_time)
 {
   if (!data->crl_memory_caching)
     return;
 
   ucrl_unregister(uri);
-  ucrl_register(uri, *pcrl);
+  ucrl_register(uri, *pcrl, download_time);
 }
 
 static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
@@ -547,7 +605,7 @@ static void get_crl_from_memory(const struct store_ctx_entry *data, const char *
 #endif
 
 static void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
-                              X509_CRL **pcrl)
+                              X509_CRL **pcrl, time_t *download_time)
 {
   BIO *fp;
   char file_path[PATH_MAX] = {0};
@@ -569,6 +627,8 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
       if (fd != -1) {
         if (sf_fstat(fd, &file_stats) == 0) {
           *pcrl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
+          if (*pcrl && download_time)
+            *download_time = file_stats.st_mtime;
         }
         else {
           infof(data->data, "Cannot get file status: %s", file_path);
@@ -598,9 +658,10 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
 
   get_crl_from_memory(data, uri, pcrl);
   if (!*pcrl) {
-    get_crl_from_disk(data, uri, pcrl);
+    time_t disk_time = time(NULL);
+    get_crl_from_disk(data, uri, pcrl, &disk_time);
     if (*pcrl) {
-      save_crl_in_memory(data, uri, pcrl);
+      save_crl_in_memory(data, uri, pcrl, disk_time);
     }
   }
 
@@ -623,7 +684,7 @@ static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X50
   _mutex_lock(&crl_response_cache_mutex);
 
   save_crl_to_disk(data, uri, &crl);
-  save_crl_in_memory(data, uri, &crl);
+  save_crl_in_memory(data, uri, &crl, time(NULL));
 
   _mutex_unlock(&crl_response_cache_mutex);
 }
@@ -792,14 +853,242 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
   return 0;
 }
 
-static void term_crl()
+static long parse_env_seconds(const char *name, long default_val)
 {
-  /* terminate the mutex */
-  _mutex_term(&crl_response_cache_mutex);
+  const char *v = getenv(name);
+  char *end = NULL;
+  long parsed;
 
-  /* clear caches */
+  if (!v || !*v)
+    return default_val;
+  parsed = strtol(v, &end, 10);
+  if (end == v || *end != '\0' || parsed < 0)
+    return default_val;
+  return parsed;
+}
+
+/* Disk cache files are the URI with : / \\ etc. replaced by '_', so
+ * "http://example.com/crl" becomes "http___example.com_crl". */
+static int is_cached_crl_filename(const char *name)
+{
+  static const char *const prefixes[] = {
+    "http___", "https___", "ldap___", "ldaps___"
+  };
+  size_t i;
+
+  if (!name)
+    return 0;
+  for (i = 0; i < sizeof(prefixes) / sizeof(prefixes[0]); i++) {
+    if (strncmp(name, prefixes[i], strlen(prefixes[i])) == 0)
+      return 1;
+  }
+  return 0;
+}
+
+static int should_remove_cached_crl_file(const char *file_path, time_t threshold)
+{
+  BIO *fp;
+  X509_CRL *crl;
+  const ASN1_TIME *next_update;
+  int cmp;
+
+  fp = BIO_new_file(file_path, "r");
+  if (!fp)
+    return 0;
+
+  crl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
+  BIO_free(fp);
+  if (!crl)
+    return 1;
+
+  next_update = X509_CRL_get0_nextUpdate(crl);
+  if (!next_update) {
+    X509_CRL_free(crl);
+    return 1;
+  }
+
+  cmp = ASN1_TIME_cmp_time_t(next_update, threshold);
+  X509_CRL_free(crl);
+  /* OpenSSL returns -2 when the comparison fails; keep the file. */
+  if (cmp == -2)
+    return 0;
+  return cmp <= 0;
+}
+
+static void cleanup_memory_cache_locked(void)
+{
+  time_t now = time(NULL);
+  long validity = parse_env_seconds(SF_CRL_CACHE_VALIDITY_TIME_ENV,
+                                    SF_CRL_CACHE_VALIDITY_TIME_DEFAULT);
+  size_t i = 0;
+
+  while (i < ucrl_registry.size) {
+    struct uri_crl_entry *entry = &ucrl_registry.entries[i];
+    const int expired = is_crl_expired(entry->crl);
+    const int evicted = (entry->download_time + validity) < now;
+    if (expired || evicted)
+      ucrl_remove_at(i);
+    else
+      i++;
+  }
+}
+
+static void cleanup_disk_cache(void)
+{
+  char cache_dir[PATH_MAX] = "";
+  time_t now = time(NULL);
+  long removal_delay = parse_env_seconds(SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_ENV,
+                                         SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_DEFAULT);
+  time_t threshold = now - removal_delay;
+
+  get_cache_dir(NULL, cache_dir);
+  if (!*cache_dir)
+    return;
+
+#ifdef _WIN32
+  {
+    char search_path[PATH_MAX];
+    WIN32_FIND_DATA find_data;
+    HANDLE handle;
+
+    strncpy(search_path, cache_dir, PATH_MAX - 1);
+    search_path[PATH_MAX - 1] = 0;
+    strncat(search_path, "*", PATH_MAX);
+    handle = FindFirstFile(search_path, &find_data);
+    if (handle == INVALID_HANDLE_VALUE)
+      return;
+
+    do {
+      char file_path[PATH_MAX];
+
+      if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        continue;
+      if (!is_cached_crl_filename(find_data.cFileName))
+        continue;
+
+      strncpy(file_path, cache_dir, PATH_MAX - 1);
+      file_path[PATH_MAX - 1] = 0;
+      strncat(file_path, find_data.cFileName, PATH_MAX);
+      if (should_remove_cached_crl_file(file_path, threshold))
+        DeleteFile(file_path);
+    } while (FindNextFile(handle, &find_data));
+
+    FindClose(handle);
+  }
+#else
+  {
+    DIR *dir = opendir(cache_dir);
+    struct dirent *entry;
+
+    if (!dir)
+      return;
+
+    while ((entry = readdir(dir)) != NULL) {
+      char file_path[PATH_MAX];
+
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        continue;
+      if (!is_cached_crl_filename(entry->d_name))
+        continue;
+
+      strncpy(file_path, cache_dir, PATH_MAX - 1);
+      file_path[PATH_MAX - 1] = 0;
+      strncat(file_path, entry->d_name, PATH_MAX);
+      if (should_remove_cached_crl_file(file_path, threshold))
+        unlink(file_path);
+    }
+
+    closedir(dir);
+  }
+#endif
+}
+
+SF_PUBLIC(void) cleanupCertCRLCache(void)
+{
+  if (!crl_cache_initialized)
+    return;
+
+  _mutex_lock(&crl_response_cache_mutex);
+  cleanup_memory_cache_locked();
+  cleanup_disk_cache();
+  _mutex_unlock(&crl_response_cache_mutex);
+}
+
+static void *crl_cleanup_thread_proc(void *arg)
+{
+  const long interval = parse_env_seconds(SF_CRL_CACHE_CLEANUP_INTERVAL_ENV,
+                                          SF_CRL_CACHE_CLEANUP_INTERVAL_DEFAULT);
+  long slept;
+
+  (void)arg;
+  cleanupCertCRLCache();
+
+  while (!crl_cleanup_stop && interval > 0) {
+    slept = 0;
+    while (slept < interval && !crl_cleanup_stop) {
+      _sleep_sec();
+      slept++;
+    }
+    if (!crl_cleanup_stop)
+      cleanupCertCRLCache();
+  }
+
+  return NULL;
+}
+
+static void start_crl_cleanup_thread(void)
+{
+  long interval = parse_env_seconds(SF_CRL_CACHE_CLEANUP_INTERVAL_ENV,
+                                    SF_CRL_CACHE_CLEANUP_INTERVAL_DEFAULT);
+  if (interval <= 0 || crl_cleanup_thread_started)
+    return;
+
+  crl_cleanup_stop = 0;
+#ifdef _WIN32
+  crl_cleanup_thread_started =
+    _thread_init(&crl_cleanup_thread, crl_cleanup_thread_win, NULL) == 0;
+#else
+  crl_cleanup_thread_started =
+    _thread_init(&crl_cleanup_thread, crl_cleanup_thread_proc, NULL) == 0;
+#endif
+}
+
+#ifdef _WIN32
+static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg)
+{
+  crl_cleanup_thread_proc(arg);
+  return 0;
+}
+#endif
+
+static void stop_crl_cleanup_thread(void)
+{
+  if (!crl_cleanup_thread_started)
+    return;
+
+  crl_cleanup_stop = 1;
+  _thread_join(crl_cleanup_thread);
+  crl_cleanup_thread_started = 0;
+}
+
+static void term_crl(void)
+{
+  if (!crl_cache_initialized)
+    return;
+
+  /* Join the cleanup thread before OpenSSL/libcurl teardown. */
+  stop_crl_cleanup_thread();
+
+  _mutex_term(&crl_response_cache_mutex);
+  crl_cache_initialized = 0;
+
   sctx_clear();
   ucrl_clear();
+}
+
+SF_PUBLIC(void) termCertCRL(void)
+{
+  term_crl();
 }
 
 SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
@@ -839,5 +1128,7 @@ SF_PUBLIC(void) initCertCRL()
 {
   /* must call only once. not thread safe */
   _mutex_init(&crl_response_cache_mutex);
+  crl_cache_initialized = 1;
+  start_crl_cleanup_thread();
   atexit(term_crl);
 }

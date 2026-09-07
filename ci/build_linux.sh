@@ -27,6 +27,11 @@ fi
 BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$DOCKER_MARK]}"
 echo $BUILD_IMAGE_NAME
 docker pull "${BUILD_IMAGE_NAME}"
+BUILD_CMD=("/mnt/host/ci/build/build.sh")
+# _init.sh clears BUILD_SOURCE_ONLY unless -s is passed
+if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
+    BUILD_CMD+=(-s)
+fi
 docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
@@ -47,7 +52,7 @@ docker run \
         -e ENABLE_MOCK_OBJECTS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
-        "/mnt/host/ci/build/build.sh"
+        "${BUILD_CMD[@]}"
 
 #remove image to save disk space on github
 if [[ -n "$GITHUB_ACTIONS" ]]; then

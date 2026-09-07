@@ -1,0 +1,418 @@
+name: PDO vendor artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to build (empty = selected branch HEAD)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ inputs.sha || github.sha }}
+
+env:
+  BUILD_TYPE: Release
+  BUILD_SOURCE_ONLY: "true"
+  PDO_VENDOR_BUILD: "true"
+  BUILD_SHA: ${{ inputs.sha || github.sha }}
+
+jobs:
+  linux-x86:
+    name: PDO-vendor-Linux-x86
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-linux-x86-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-linux-x86-
+      - name: Build
+        shell: bash
+        env:
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+        run: ci/build_linux.sh
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-linux-x86-${{ env.BUILD_SHA }}
+      - name: Package for PDO
+        shell: bash
+        run: python3 scripts/package_for_pdo.py package --platform linux --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-linux-x86
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
+  linux-aarch64:
+    name: PDO-vendor-Linux-aarch64
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Install CMake
+        shell: bash
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-aarch64.tar.gz" -o cmake.tar.gz
+          tar -xzf cmake.tar.gz
+          echo "$PWD/cmake-3.31.6-linux-aarch64/bin" >> $GITHUB_PATH
+          cmake --version
+      - name: Install build packages
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config perl zip
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-linux-aarch64-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-linux-aarch64-
+      - name: Build
+        # Native host compile, same as macOS. Do not use ci/build_linux.sh (Docker).
+        shell: bash
+        env:
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          BUILD_CMD=(./ci/build/build.sh)
+          if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
+            BUILD_CMD+=(-s)
+          fi
+          "${BUILD_CMD[@]}"
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-linux-aarch64-${{ env.BUILD_SHA }}
+      - name: Package for PDO
+        shell: bash
+        run: python3 scripts/package_for_pdo.py package --platform linux-aarch64 --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-linux-aarch64
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
+  macos-arm64:
+    name: PDO-vendor-Mac-arm64
+    runs-on: macos-14
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Install Homebrew Bash
+        shell: bash
+        run: brew install bash
+      - name: Install CMake
+        shell: bash
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-macos-universal.tar.gz" -o cmake.tar.gz
+          tar -xzf cmake.tar.gz
+          echo "$PWD/cmake-3.31.6-macos-universal/CMake.app/Contents/bin" >> $GITHUB_PATH
+          cmake --version
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-macos-arm64-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-macos-arm64-
+      - name: Build
+        shell: bash
+        env:
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+        run: ./ci/build_mac.sh
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-macos-arm64-${{ env.BUILD_SHA }}
+      - name: Package for PDO
+        shell: bash
+        run: python3 scripts/package_for_pdo.py package --platform darwin --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-darwin-arm64
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-vs16-x64:
+    name: PDO-vendor-Win-vs16-x64
+    runs-on: windows-2022
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Install Visual Studio 2019 Build Tools
+        # windows-2019 (VS16) runners are retired; install VS2019 BT on windows-2022.
+        shell: pwsh
+        run: |
+          $installer = "$env:TEMP\vs_buildtools.exe"
+          Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vs_buildtools.exe" -OutFile $installer
+          $installPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools"
+          # Single ArgumentList string so the path with spaces is not split.
+          $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
+            "--quiet --wait --norestart --nocache " +
+            "--installPath `"$installPath`" " +
+            "--add Microsoft.VisualStudio.Workload.VCTools " +
+            "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
+            "--add Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre " +
+            "--includeRecommended"
+          )
+          if ($p.ExitCode -notin 0, 3010) {
+            throw "VS2019 Build Tools install failed with exit code $($p.ExitCode)"
+          }
+          $vcvars = Join-Path $installPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (-not (Test-Path $vcvars)) {
+            & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
+            throw "VS2019 vcvarsall.bat not found at $vcvars"
+          }
+          Write-Host "VS2019 Build Tools ready: $vcvars"
+      - name: Install CMake
+        shell: cmd
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
+          tar -xf cmake.zip
+          echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+          cmake --version
+      - name: Enable long paths
+        # Enable long-path support so the recursive aws-sdk-cpp clone, which
+        # has deeply nested submodule paths, can be checked out and built on
+        # Windows without hitting the 260-char path limit.
+        shell: cmd
+        run: |
+          git config --system core.longpaths true
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS16-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-x64-VS16-
+      - name: Build
+        shell: cmd
+        env:
+          PLATFORM: x64
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          VS_VERSION: VS16
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+          PDO_VENDOR_BUILD: ${{ env.PDO_VENDOR_BUILD }}
+        run: ci\build_win.bat
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS16-${{ env.BUILD_SHA }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ">=3.13.5"
+          architecture: "x64"
+      - name: Package for PDO
+        shell: cmd
+        run: python scripts\package_for_pdo.py package --platform win64-vs16 --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-win64-vs16
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-vs17-x64:
+    name: PDO-vendor-Win-vs17-x64
+    runs-on: windows-2022
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Install CMake
+        shell: cmd
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
+          tar -xf cmake.zip
+          echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+          cmake --version
+      - name: Enable long paths
+        # Enable long-path support so the recursive aws-sdk-cpp clone, which
+        # has deeply nested submodule paths, can be checked out and built on
+        # Windows without hitting the 260-char path limit.
+        shell: cmd
+        run: |
+          git config --system core.longpaths true
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS17-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-x64-VS17-
+      - name: Build
+        shell: cmd
+        env:
+          PLATFORM: x64
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          VS_VERSION: VS17
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+          PDO_VENDOR_BUILD: ${{ env.PDO_VENDOR_BUILD }}
+        run: ci\build_win.bat
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS17-${{ env.BUILD_SHA }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ">=3.13.5"
+          architecture: "x64"
+      - name: Package for PDO
+        shell: cmd
+        run: python scripts\package_for_pdo.py package --platform win64-vs17 --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-win64-vs17
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
+  merge:
+    name: PDO-vendor-all
+    needs: [linux-x86, linux-aarch64, macos-arm64, windows-vs16-x64, windows-vs17-x64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: pdo-vendor-*
+          path: merged
+          merge-multiple: false
+      - name: Merge vendor trees
+        # Windows last so include/ uses CRLF from the Windows artifact.
+        shell: bash
+        run: |
+          python3 scripts/package_for_pdo.py merge \
+            --inputs \
+              merged/pdo-vendor-linux-x86 \
+              merged/pdo-vendor-linux-aarch64 \
+              merged/pdo-vendor-darwin-arm64 \
+              merged/pdo-vendor-win64-vs16 \
+              merged/pdo-vendor-win64-vs17 \
+            --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-all
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
