@@ -101,6 +101,13 @@ namespace Client {
   };
 
   boost::optional<Attestation> createAttestation(AttestationConfig& config);
+
+  // Suffix-anchored allowlist that restricts Workload Identity attestation
+  // to recognized Snowflake hosts before any cloud credential is fetched.
+  // See WifAttestation.cpp for the exact suffix rule and the
+  // SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES environment override, which is read only
+  // from the process environment.
+  bool isSnowflakeHostForWorkloadIdentity(const std::string& host);
 }
 
 }

@@ -153,8 +153,7 @@ namespace
     if (config.is<picojson::object>()) {
       for (auto& kv : config.get<picojson::object>()) {
         if (!isKnownCommonEntry(kv.first)) {
-          CXX_LOG_WARN("Unknown configuration entry: %s with value: %s",
-            kv.first.c_str(), kv.second.to_str().c_str());
+          CXX_LOG_WARN("Unknown configuration entry: %s", kv.first.c_str());
         }
       }
     }
