@@ -7,7 +7,6 @@
 *.swp
 .deps
 .idea
-.idea2
 .idea/
 .libs
 artifacts/

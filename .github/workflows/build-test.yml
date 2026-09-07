@@ -239,7 +239,7 @@ jobs:
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
-                fail_ci_if_error: true
+                fail_ci_if_error: false
     build-test-codecov-azure:
         name: Build-Test-CodeCov-Linux-AZURE
         runs-on: ubuntu-latest
@@ -279,7 +279,7 @@ jobs:
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
-                fail_ci_if_error: true
+                fail_ci_if_error: false
     build-test-codecov-gcp:
         name: Build-Test-CodeCov-Linux-GCP
         runs-on: ubuntu-latest
@@ -319,4 +319,4 @@ jobs:
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
-                fail_ci_if_error: true
+                fail_ci_if_error: false
