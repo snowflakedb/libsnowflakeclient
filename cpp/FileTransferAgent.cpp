@@ -100,11 +100,11 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
                                                     (unsigned int) response.parallel,
                                                     response.threshold,
                                                     m_transferConfig,
-                                                    m_stmtPutGet,
-                                                    m_maxPutRetries);
+                                                    m_stmtPutGet);
 
   // init file metadata
   initFileMetadata(command);
+  m_storageClient->setMaxRetries(m_maxPutRetries);
 
   switch (response.command)
   {
@@ -421,8 +421,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
                                                       (unsigned int) response.parallel,
                                                       response.threshold,
                                                       m_transferConfig,
-                                                      m_stmtPutGet,
-                                                      m_maxPutRetries);
+                                                      m_stmtPutGet);
     m_lastRefreshTokenSec = now;
   }
 }

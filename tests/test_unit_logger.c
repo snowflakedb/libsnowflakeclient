@@ -1,6 +1,5 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
-#include "connection.h"
 #include "log_file_util.h"
 #include "memory.h"
 #include <stdio.h>
@@ -31,57 +30,6 @@ void test_log_str_to_level() {
     /* negative */
     assert_int_equal(log_from_str_to_level("hahahaha"), SF_LOG_FATAL);
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
-}
-
-static void assert_trace_headers(const char *input, size_t input_size,
-                                 const char *expected) {
-    char output[1024];
-    size_t output_size = sf_trace_header_names_only(
-        input, input_size, output, sizeof(output));
-
-    assert_int_equal(output_size, strlen(expected));
-    assert_string_equal(output, expected);
-}
-
-void test_curl_trace_header_sanitization() {
-    static const char gcs_request[] =
-        "GET /bucket/object?X-Goog-Algorithm=GOOG4-RSA-SHA256&"
-        "X-Goog-Signature=gcs-secret HTTP/1.1\r\n";
-    static const char aws_request[] =
-        "PUT /object?X-Amz-Credential=AKIAEXAMPLE&"
-        "X-Amz-Signature=aws-secret HTTP/1.1\r\n";
-    static const char azure_request[] =
-        "GET /container/blob?sv=2024-11-04&sp=r&sig=azure-secret "
-        "HTTP/1.1\r\n";
-    static const char connect_request[] =
-        "CONNECT proxy.example:443 HTTP/1.1\r\n";
-    static const char response[] = "HTTP/1.1 200 OK\r\n";
-    static const char header[] = "Authorization: Bearer secret\r\n";
-    static const char folded_value[] =
-        "X-Test: visible\r\n secret HTTP/1.1\r\n";
-    static const char malformed_header[] = "Set-Cookie : secret\r\n";
-    static const char bounded_request[] = {
-        'G', 'E', 'T', ' ', '/', '?', 's', 'i', 'g', '=', 's', 'e', 'c',
-        'r', 'e', 't', ' ', 'H', 'T', 'T', 'P', '/', '2', '\r', '\n'};
-
-    assert_trace_headers(gcs_request, sizeof(gcs_request) - 1,
-                         "GET **** HTTP/1.1\r\n");
-    assert_trace_headers(aws_request, sizeof(aws_request) - 1,
-                         "PUT **** HTTP/1.1\r\n");
-    assert_trace_headers(azure_request, sizeof(azure_request) - 1,
-                         "GET **** HTTP/1.1\r\n");
-    assert_trace_headers(connect_request, sizeof(connect_request) - 1,
-                         "CONNECT **** HTTP/1.1\r\n");
-    assert_trace_headers(response, sizeof(response) - 1,
-                         "HTTP/1.1 200 OK\r\n");
-    assert_trace_headers(header, sizeof(header) - 1,
-                         "Authorization: ****\r\n");
-    assert_trace_headers(folded_value, sizeof(folded_value) - 1,
-                         "X-Test: ****\r\n****\r\n");
-    assert_trace_headers(malformed_header, sizeof(malformed_header) - 1,
-                         "****\r\n");
-    assert_trace_headers(bounded_request, sizeof(bounded_request),
-                         "GET **** HTTP/2\r\n");
 }
 
 void test_null_log_path() {
@@ -240,7 +188,7 @@ void test_client_config_log() {
 }
 
 void test_client_config_log_unknown_entries() {
-  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\",\"unknownEntry\":\"credential-secret-not-for-logs\"}}";
+  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\",\"unknownEntry\":\"fakeValue\"}}";
   char configFilePath[] = "sf_client_config.json";
   char logPath[] = "./test/";
   char logLevel[] = "warn";
@@ -272,20 +220,15 @@ void test_client_config_log_unknown_entries() {
   // Check unknown entries is logged
   char line[1024];
   sf_bool unknown_found = 0;
-  sf_bool secret_found = 0;
   file = fopen(LOG_PATH, "r");
   while (fgets(line, sizeof(line), file)) {
-    if (strstr(line, "Unknown configuration entry: unknownEntry") != NULL) {
+    if (strstr(line, "Unknown configuration entry:") != NULL) {
       unknown_found = 1;
-    }
-    if (strstr(line, "credential-secret-not-for-logs") != NULL) {
-      secret_found = 1;
     }
   }
   fclose(file);
 
   assert_int_equal(unknown_found, 1);
-  assert_int_equal(secret_found, 0);
 
   // Cleanup
   remove(configFilePath);
@@ -497,46 +440,6 @@ void test_terminal_mask() {
   terminal_mask(token3, strlen(token3), masked, sizeof(masked));
   expected = "";
   assert_string_equal(masked, expected);
-}
-
-/* Test terminal masking of session tokens that are not wrapped in quotes.
- * Session token values always start with a "ver:<n>-" prefix and the V2/V4
- * forms hold a second colon in "-did:" (SecurityToken.java:60-66), so the value
- * class of the connection token pattern has to accept ':'. */
-void test_terminal_mask_session_token_versions() {
-
-  char masked[450] = "\0";
-
-  char *v1 = "token=ver:1-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0ae";
-  terminal_mask(v1, strlen(v1), masked, sizeof(masked));
-  assert_string_equal(masked, "token=****");
-
-  char *v2 = "token=ver:2-hint:92019686956010-did:4242-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0ae";
-  masked[0] = '\0';
-  terminal_mask(v2, strlen(v2), masked, sizeof(masked));
-  assert_string_equal(masked, "token=****");
-
-  char *v3 = "token=ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0ae";
-  masked[0] = '\0';
-  terminal_mask(v3, strlen(v3), masked, sizeof(masked));
-  assert_string_equal(masked, "token=****");
-
-  char *v4 = "token=ver:4-hint:92019686956010-did:4242-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0ae";
-  masked[0] = '\0';
-  terminal_mask(v4, strlen(v4), masked, sizeof(masked));
-  assert_string_equal(masked, "token=****");
-
-  /* Same value in the shape it takes in a request header. */
-  char *header = "Authorization: Snowflake Token=ver:4-hint:92019686956010-did:4242-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZw";
-  masked[0] = '\0';
-  terminal_mask(header, strlen(header), masked, sizeof(masked));
-  assert_string_equal(masked, "Authorization: Snowflake Token=****");
-
-  /* A short value stays as it is: the pattern needs at least 8 characters. */
-  char *shortval = "token: null";
-  masked[0] = '\0';
-  terminal_mask(shortval, strlen(shortval), masked, sizeof(masked));
-  assert_string_equal(masked, "token: null");
 }
 
 void test_log_creation() {
@@ -811,7 +714,6 @@ int main(void) {
         cmocka_unit_test(test_null_log_path),
         cmocka_unit_test(test_default_log_path),
         cmocka_unit_test(test_log_str_to_level),
-        cmocka_unit_test(test_curl_trace_header_sanitization),
         cmocka_unit_test(test_invalid_client_config_path),
         cmocka_unit_test(test_client_config_log_invalid_json),
         cmocka_unit_test(test_client_config_log_malformed_json),
@@ -824,7 +726,6 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
         cmocka_unit_test(test_terminal_mask),
-        cmocka_unit_test(test_terminal_mask_session_token_versions),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32

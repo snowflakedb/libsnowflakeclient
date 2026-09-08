@@ -67,8 +67,7 @@ void test_oauth_invalid_token(void **unused) {
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     SF_ERROR_STRUCT* error = snowflake_error(sf);
-    // The server appends a request id to the message, so match on the message only.
-    assert_non_null(strstr(error->msg, "Invalid OAuth access token."));
+    assert_string_equal(error->msg, "Invalid OAuth access token. ");
 
     snowflake_term(sf);
 }
@@ -88,8 +87,7 @@ void test_oauth_mismatched_username(void **unused) {
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     SF_ERROR_STRUCT* error = snowflake_error(sf);
-    // The server appends a request id to the message, so match on the message only.
-    assert_non_null(strstr(error->msg, "The user you were trying to authenticate as differs from the user tied to the access token."));
+    assert_string_equal(error->msg, "The user you were trying to authenticate as differs from the user tied to the access token.");
 
     snowflake_term(sf);
     free(token);

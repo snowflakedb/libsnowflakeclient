@@ -2,9 +2,11 @@
 #include "snowflake/PlatformDetection.hpp"
 #include "snowflake/platform.h"
 #include "snowflake/HttpClient.hpp"
+#include "snowflake/AWSUtils.hpp"
+#include <aws/core/auth/AWSCredentialsProviderChain.h>
+#include <aws/core/Aws.h>
 #include <boost/algorithm/string.hpp>
 #include <exception>
-#include <fstream>
 #include "../util/SnowflakeCommon.hpp"
 #include "../logger/SFLogger.hpp"
 
@@ -33,9 +35,6 @@ static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
 
-// helper functions
-namespace
-{
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
   char envbuf[MAX_ENV_VARIABLE_LENGTH];
@@ -44,180 +43,6 @@ std::string getEnvironmentVariableValue(const std::string& envVarName)
     return std::string(value);
   }
   return "";
-}
-
-std::string getAwsProfileName()
-{
-  std::string profile = getEnvironmentVariableValue("AWS_DEFAULT_PROFILE");
-  if (profile.empty())
-  {
-    profile = getEnvironmentVariableValue("AWS_PROFILE");
-  }
-  if (profile.empty())
-  {
-    profile = "default";
-  }
-  boost::trim(profile);
-  return profile;
-}
-
-std::string getHomeDirectoryPortable()
-{
-#ifdef _WIN32
-  std::string userProfile = getEnvironmentVariableValue("USERPROFILE");
-  if (!userProfile.empty())
-  {
-    return userProfile;
-  }
-
-  std::string homeDrive = getEnvironmentVariableValue("HOMEDRIVE");
-  std::string homePath = getEnvironmentVariableValue("HOMEPATH");
-  if (!homeDrive.empty() && !homePath.empty())
-  {
-    return homeDrive + homePath;
-  }
-  return "";
-#else
-  return getEnvironmentVariableValue("HOME");
-#endif
-}
-
-std::string getDefaultAwsCredentialsFile()
-{
-  std::string path = getEnvironmentVariableValue("AWS_SHARED_CREDENTIALS_FILE");
-  if (!path.empty())
-  {
-    boost::trim(path);
-    return path;
-  }
-
-  std::string home = getHomeDirectoryPortable();
-  if (home.empty())
-  {
-    return "";
-  }
-
-#ifdef _WIN32
-  return home + "\\.aws\\credentials";
-#else
-  return home + "/.aws/credentials";
-#endif
-}
-
-std::string getDefaultAwsConfigFile()
-{
-  std::string path = getEnvironmentVariableValue("AWS_CONFIG_FILE");
-  if (!path.empty())
-  {
-    boost::trim(path);
-    return path;
-  }
-
-  std::string home = getHomeDirectoryPortable();
-  if (home.empty())
-  {
-    return "";
-  }
-
-#ifdef _WIN32
-  return home + "\\.aws\\config";
-#else
-  return home + "/.aws/config";
-#endif
-}
-
-struct AwsProfileIdentity
-{
-  std::string accessKeyId;
-  std::string secretAccessKey;
-
-  bool hasIdentity() const
-  {
-    return !accessKeyId.empty() && !secretAccessKey.empty();
-  }
-};
-
-bool parseIniLikeFile(
-  const std::string& filePath,
-  const std::string& targetSection,
-  AwsProfileIdentity& identity)
-{
-  std::ifstream in(filePath);
-  if (!in)
-  {
-    return false;
-  }
-
-  std::string line;
-  std::string currentSection;
-  bool foundSection = false;
-
-  while (std::getline(in, line))
-  {
-    auto commentPos = line.find_first_of("#;");
-    if (commentPos != std::string::npos)
-    {
-      line = line.substr(0, commentPos);
-    }
-
-    boost::trim(line);
-    if (line.empty())
-    {
-      continue;
-    }
-
-    if (line.front() == '[' && line.back() == ']')
-    {
-      currentSection = line.substr(1, line.size() - 2);
-      boost::trim(currentSection);
-      foundSection = (currentSection == targetSection);
-      continue;
-    }
-
-    if (!foundSection)
-    {
-      continue;
-    }
-
-    auto pos = line.find('=');
-    if (pos == std::string::npos)
-    {
-      continue;
-    }
-
-    std::string key = line.substr(0, pos);
-    std::string value = line.substr(pos + 1);
-    boost::trim(key);
-    boost::trim(value);
-
-    if (key == "aws_access_key_id")
-    {
-      identity.accessKeyId = value;
-    }
-    else if (key == "aws_secret_access_key")
-    {
-      identity.secretAccessKey = value;
-    }
-  }
-
-  return true;
-}
-
-bool hasAwsSharedOrConfigIdentity()
-{
-  const std::string profile = getAwsProfileName();
-  AwsProfileIdentity identity;
-
-  // ~/.aws/credentials uses [profile]
-  parseIniLikeFile(getDefaultAwsCredentialsFile(), profile, identity);
-
-  // ~/.aws/config uses [default] or [profile name] for non-default profiles
-  std::string configSection = (profile == "default")
-    ? "default"
-    : ("profile " + profile);
-  parseIniLikeFile(getDefaultAwsConfigFile(), configSection, identity);
-
-  return identity.hasIdentity();
 }
 
 PlatformDetectionStatus detectWithEndpoint(
@@ -249,7 +74,6 @@ PlatformDetectionStatus detectWithEndpoint(
 
   return PLATFORM_DETECTED;
 }
-} // namespace for helper functions
 
 PlatformDetectionStatus detectAwsLambdaEnv()
 {
@@ -377,84 +201,19 @@ PlatformDetectionStatus detectGcpIdentity(long timeout)
 
 PlatformDetectionStatus detectAwsIdentity(long timeout)
 {
-  // Environment variables (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)
-  std::string accessKey = getEnvironmentVariableValue("AWS_ACCESS_KEY_ID");
-  std::string secretKey = getEnvironmentVariableValue("AWS_SECRET_ACCESS_KEY");
-  // Also check the legacy names used by older SDKs
-  if (accessKey.empty()) accessKey = getEnvironmentVariableValue("AWS_ACCESS_KEY");
-  if (secretKey.empty()) secretKey = getEnvironmentVariableValue("AWS_SECRET_KEY");
+  SF_UNUSED(timeout);
+  auto awsSdkInit = AwsUtils::initAwsSdk();
+  Aws::Auth::DefaultAWSCredentialsProviderChain credentialsProvider;
+  auto creds = credentialsProvider.GetAWSCredentials();
+  std::string accessKey = creds.GetAWSAccessKeyId();
+  std::string secretKey = creds.GetAWSSecretKey();
   boost::trim(accessKey);
   boost::trim(secretKey);
+
   if (!accessKey.empty() && !secretKey.empty())
   {
     return PLATFORM_DETECTED;
   }
-
-  // Identity from shared or config file
-  if (hasAwsSharedOrConfigIdentity())
-  {
-    return PLATFORM_DETECTED;
-  }
-
-  // EC2 instance metadata service
-  // setup timeout
-  auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
-
-  // Try IMDSv2 token first
-  std::string token;
-  bool hasImdsV2Token = false;
-  auto tokenUrl = boost::urls::url(awsMetadataBaseURL + "/latest/api/token");
-  HttpRequest tokenReq{
-    HttpRequest::Method::PUT,
-    tokenUrl,
-    {{"X-aws-ec2-metadata-token-ttl-seconds", "21600"}},
-  };
-  HttpClientConfig cfg = { 0, timeout, 0, timeout };
-  std::unique_ptr<IHttpClient> httpClient(IHttpClient::createSimple(cfg));
-
-  auto tokenRespOpt = httpClient->run(tokenReq);
-  if (tokenRespOpt && tokenRespOpt.get().code == 200)
-  {
-    token = tokenRespOpt.get().getBody();
-    boost::trim(token);
-    hasImdsV2Token = !token.empty();
-  }
-
-  // list IAM roles attached to this instance
-  // check remaining time
-  auto curTime = std::chrono::steady_clock::now();
-  long remainTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - curTime).count();
-  if (remainTime <= 0)
-  {
-    return PLATFORM_NOT_DETECTED;
-  }
-
-  auto rolesUrl = boost::urls::url(
-    awsMetadataBaseURL + "/latest/meta-data/iam/security-credentials/");
-  std::map<std::string, std::string> headers;
-  // If IMDSv2 failed fallback to use IMDSv1 without token
-  if (hasImdsV2Token)
-  {
-    headers["X-aws-ec2-metadata-token"] = token;
-  }
-  HttpRequest rolesReq{
-    HttpRequest::Method::GET,
-    rolesUrl,
-    headers,
-  };
-  cfg = { 0, remainTime, 0, remainTime };
-  std::unique_ptr<IHttpClient> httpClient2(IHttpClient::createSimple(cfg));
-  auto rolesRespOpt = httpClient2->run(rolesReq);
-  if (rolesRespOpt && rolesRespOpt.get().code == 200)
-  {
-    std::string roles = rolesRespOpt.get().getBody();
-    boost::trim(roles);
-    if (!roles.empty())
-    {
-      return PLATFORM_DETECTED;
-    }
-  }
-
   return PLATFORM_NOT_DETECTED;
 }
 
@@ -493,7 +252,16 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
     }
     else
     {
-      // Run env detectors synchronously
+      std::vector<std::future<std::string> > futures;
+      futures.reserve(endpointDetectors.size());
+
+      for (const auto& pair : endpointDetectors)
+      {
+        futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first, timeoutMs] {
+          return detector(timeoutMs) == PLATFORM_DETECTED ? platform : "";
+          }));
+      }
+
       for (const auto& pair : envDetectors)
       {
         if (pair.second() == PLATFORM_DETECTED)
@@ -502,88 +270,21 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
         }
       }
 
-      // asynchronously run detectors with network efforts
-      struct SharedState
-      {
-        std::mutex mtx;
-        std::condition_variable cv;
-        bool done{false};
-        bool detected{false};
-      };
-
-      struct DetectorTask
-      {
-        std::string platform;
-        std::thread worker;
-        std::shared_ptr<SharedState> state;
-      };
-
-      std::vector<DetectorTask> tasks;
-      tasks.reserve(endpointDetectors.size());
-
-      for (const auto& pair : endpointDetectors)
-      {
-        DetectorTask task;
-        task.platform = pair.first;
-        task.state = std::make_shared<SharedState>();
-        auto state = task.state;
-
-        auto detector = pair.second;
-
-        task.worker = std::thread([detector, timeoutMs, state]() {
-          bool isDetected = false;
-          try {
-            isDetected = (detector(timeoutMs) == PLATFORM_DETECTED);
-            {
-              std::lock_guard<std::mutex> lk(state->mtx);
-              state->detected = isDetected;
-              state->done = true;
-            }
-            state->cv.notify_one();
-          }
-          catch (const std::exception& e) {
-            CXX_LOG_ERROR("Exception from detector: %s", e.what());
-          }
-          catch (...) {
-            CXX_LOG_ERROR("Unknown exception from detector.");
-          }
-        });
-
-        tasks.push_back(std::move(task));
-      }
-
       auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
-
-      for (auto& task : tasks)
+      for (auto& fut : futures)
       {
-        std::unique_lock<std::mutex> lk(task.state->mtx);
-        auto now = std::chrono::steady_clock::now();
-
-        if (now < endTime)
+        std::chrono::nanoseconds remainTime(0);
+        auto curTime = std::chrono::steady_clock::now();
+        if (curTime < endTime)
         {
-          task.state->cv.wait_until(lk, endTime, [&task]() { return task.state->done; });
+          remainTime = endTime - curTime;
         }
-
-        bool finished = task.state->done;
-        bool detected = task.state->detected;
-        lk.unlock();
-
-        if (finished)
+        if (fut.wait_for(remainTime) == std::future_status::ready)
         {
-          if (task.worker.joinable())
+          std::string result = fut.get();
+          if (!result.empty())
           {
-            task.worker.join();
-          }
-          if (detected)
-          {
-            detectedPlatformsCache.push_back(task.platform);
-          }
-        }
-        else
-        {
-          if (task.worker.joinable())
-          {
-            task.worker.detach();
+            detectedPlatformsCache.push_back(result);
           }
         }
       }

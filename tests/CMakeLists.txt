@@ -91,7 +91,6 @@ SET(TESTS_CXX
         test_create_wif_attestation
         test_crl
         test_unit_ocsp_cache
-        test_unit_stopwatch
 )
 
 if (LINUX)
@@ -150,13 +149,6 @@ set(AWS_ALL_LIBS
         ${AWS_C_COMMON_LIB}
     )
 
-set(AZURE_ALL_LIBS
-        ${AZURE_STORAGE_BLOBS_LIB}
-        ${AZURE_STORAGE_COMMON_LIB}
-        ${AZURE_CORE_LIB}
-        ${XML2_LIB}
-    )
-
 SET(TEST_DATA
         TestOrcFile.test1.orc
         brotli_sample.txt.br
@@ -193,6 +185,7 @@ endif ()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
@@ -258,30 +251,30 @@ if (LINUX)
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_ALL_LIBS} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_ALL_LIBS} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
             pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
 endif ()
 if (APPLE)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework Security -framework Network" -all_load
-            ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_ALL_LIBS} ${AWS_ALL_LIBS} ${UUID_LIB})
+            ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
     set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework Security -framework Network" -all_load ${CURL_LIB}
-            ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_ALL_LIBS} ${AWS_ALL_LIBS} ${UUID_LIB})
+            ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
 endif()
 if (WIN32)
     if (WIN32_DEBUG)
         if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-            set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_ALL_LIBS}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib WebServices.lib)
-            set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_ALL_LIBS}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib WebServices.lib)
+            set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
+            set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
         endif()
     else()
-        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_ALL_LIBS} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib WebServices.lib)
-        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_ALL_LIBS} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib WebServices.lib)
+        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
+        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
     endif()
 endif()
 

@@ -201,62 +201,50 @@ void test_col_conv_multi_types_per_row_helper(sf_bool use_arrow) {
 }
 
 void test_col_conv_int64_type_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_int64_type_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_int64_type_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_int64_type_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_conv_float64_type_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_float64_type_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_float64_type_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_float64_type_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_conv_str_type_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_str_type_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_str_type_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_str_type_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_conv_timestamp_type_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_timestamp_type_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_timestamp_type_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_timestamp_type_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_conv_multi_type_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_multi_type_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_multi_type_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_multi_type_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_col_conv_multi_types_per_row_arrow(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_multi_types_per_row_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_col_conv_multi_types_per_row_json(void **unused) {
-    SF_UNUSED(unused);
     test_col_conv_multi_types_per_row_helper(SF_BOOLEAN_FALSE);
 }
 

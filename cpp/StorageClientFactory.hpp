@@ -11,6 +11,7 @@ namespace Snowflake
 namespace Client
 {
 class IStorageClient;
+
 /**
  * Factory class used to create client. Currently only s3 is supported.
  * Later, Azure support will be added.
@@ -19,7 +20,6 @@ class StorageClientFactory
 {
 public:
 
-  static const unsigned int SF_DEFAULT_PUT_MAX_RETRIES = 5;
   /**
    * Return a newly created storage client. Caller need to delete the instance
    * @param stageInfo
@@ -29,8 +29,7 @@ public:
                                    unsigned int parallel,
                                    size_t uploadThreshold,
                                    TransferConfig * transferConfig = nullptr,
-                                   IStatementPutGet* statement = nullptr,
-                                   unsigned int maxPutRetries = SF_DEFAULT_PUT_MAX_RETRIES);
+                                   IStatementPutGet* statement = nullptr);
 
   /**
    * Testing method. Used to inject a mocked remote storage client.

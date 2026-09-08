@@ -39,7 +39,6 @@ struct MultiUploadCtx
     m_partNumber = partNumber;
     m_key = key;
     m_bucket = bucket;
-    m_isRetry = false;
   }
 
   /// in memory buffer used to store current part data
@@ -62,8 +61,6 @@ struct MultiUploadCtx
 
   /// upload outcome
   RemoteStorageRequestOutcome m_outcome;
-
-  bool m_isRetry;
 };
 
 struct MultiDownloadCtx
