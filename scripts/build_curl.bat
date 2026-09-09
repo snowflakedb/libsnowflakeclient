@@ -143,6 +143,7 @@ cd "%currdir%\deps\%CURL_DIR%"
 cmake ^
 . -G %vc_version% ^
 -A %cmake_architecture% ^
+-T %ToolSetVersion% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^
 -DBUILD_STATIC_LIBS=%staticlibs% ^

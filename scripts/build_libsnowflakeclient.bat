@@ -73,7 +73,7 @@ md %cmake_dir%
 cd %cmake_dir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-cmake -G "%cmake_generator%" -A %cmake_architecture% ^
+cmake -G "%cmake_generator%" -A %cmake_architecture% -T "%ToolSetVersion%" ^
     -DCMAKE_MSVC_RUNTIME_LIBRARY=%msvc_runtime_library% ^
     -DBUILD_TESTS=%build_tests% ^
     -DCMAKE_BUILD_TYPE=%build_type% ^
