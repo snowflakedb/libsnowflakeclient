@@ -1317,7 +1317,8 @@ void test_unit_wif_attestation_config(void**)
     SF_CONNECT* conn = snowflake_init();
     snowflake_set_attribute(conn, SF_CON_WIF_AZURE_RESOURCE, "dummy_resource");
     
-    assert_int_equal(config.configureWIFAttestation(conn), SF_STATUS_ERROR_GENERAL);
+    assert_int_equal(config.configureWIFAttestation(conn),
+                     SF_STATUS_ERROR_BAD_CONNECTION_PARAMS);
     assert_false(config.snowflakeEntraResource.has_value());
 
     snowflake_set_attribute(conn, SF_CON_WIF_PROVIDER, "AWS");
@@ -1422,6 +1423,175 @@ void test_unit_wif_host_normalization(void**) {
   assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
 }
 
+// --- isSnowflakeHostForWorkloadIdentity: WORKLOAD_IDENTITY host allowlist --
+//
+// Shared 23-vector table (10 ACCEPT, 10 REJECT, 3 ENV-behavior) exercised
+// against the canonical rule, plus one behavioral test proving the ambient
+// credential is never fetched for a rejected host.
+
+void test_unit_wif_host_accept_apex_com(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("snowflakecomputing.com"));
+}
+
+void test_unit_wif_host_accept_subdomain_com(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.com"));
+}
+
+void test_unit_wif_host_accept_nested_subdomain_com(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.us-east-1.snowflakecomputing.com"));
+}
+
+void test_unit_wif_host_accept_apex_cn(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("snowflakecomputing.cn"));
+}
+
+void test_unit_wif_host_accept_subdomain_cn(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.cn"));
+}
+
+void test_unit_wif_host_accept_apex_mil(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("snowflakecomputing.mil"));
+}
+
+void test_unit_wif_host_accept_subdomain_mil(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.mil"));
+}
+
+void test_unit_wif_host_accept_mixed_case(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("MyAccount.SnowflakeComputing.COM"));
+}
+
+void test_unit_wif_host_accept_trailing_dot(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.com."));
+}
+
+void test_unit_wif_host_accept_with_port(void **) {
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.com:443"));
+}
+
+void test_unit_wif_host_accept_trailing_dot_with_port(void **) {
+  // The port must be stripped before the trailing dot: "acct.snowflake
+  // computing.com.:443" is the FQDN form with an explicit port, and must
+  // still be accepted.
+  assert_true(isSnowflakeHostForWorkloadIdentity("acct.snowflakecomputing.com.:443"));
+}
+
+void test_unit_wif_host_reject_empty(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity(""));
+}
+
+void test_unit_wif_host_reject_whitespace_only(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("   "));
+}
+
+void test_unit_wif_host_reject_prefix_lookalike(void **) {
+  // Must not match via "contains" - the label boundary is required.
+  assert_false(isSnowflakeHostForWorkloadIdentity("evilsnowflakecomputing.com"));
+}
+
+void test_unit_wif_host_reject_suffix_appended_domain(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("snowflakecomputing.com.untrusted.example"));
+}
+
+void test_unit_wif_host_reject_embedded_lookalike(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("evil.snowflakecomputing.com.untrusted.example"));
+}
+
+void test_unit_wif_host_reject_unrelated_domain(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("example.com"));
+}
+
+void test_unit_wif_host_reject_other_tld(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("snowflakecomputing.net"));
+}
+
+void test_unit_wif_host_reject_ipv4_literal(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("203.0.113.10"));
+}
+
+void test_unit_wif_host_reject_ipv6_literal(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("[2001:db8::1]"));
+}
+
+void test_unit_wif_host_reject_localhost(void **) {
+  assert_false(isSnowflakeHostForWorkloadIdentity("localhost"));
+}
+
+void test_unit_wif_host_reject_substring_without_dot_boundary(void **) {
+  // "xsnowflakecomputing.com" shares the suffix as a raw substring but not
+  // on a label boundary; must be rejected.
+  assert_false(isSnowflakeHostForWorkloadIdentity("xsnowflakecomputing.com"));
+}
+
+void test_unit_wif_host_env_hatch_accepts_extra_suffix(void **) {
+  EnvOverride envOverride("SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES", std::string("corp.example.com"));
+  assert_true(isSnowflakeHostForWorkloadIdentity("wif.corp.example.com"));
+}
+
+void test_unit_wif_host_env_hatch_is_additive_not_disabling(void **) {
+  EnvOverride envOverride("SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES", std::string("corp.example.com"));
+  // Default suffixes must still work when the env hatch is set.
+  assert_true(isSnowflakeHostForWorkloadIdentity("myaccount.snowflakecomputing.com"));
+  // And hosts outside both the defaults and the extra suffix must still be
+  // rejected - the env var only adds, it never disables the check.
+  assert_false(isSnowflakeHostForWorkloadIdentity("untrusted.example"));
+}
+
+void test_unit_wif_host_env_hatch_multiple_entries_normalized(void **) {
+  EnvOverride envOverride("SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES",
+                           std::string(" Corp.Example.COM. , , other.example.org "));
+  assert_true(isSnowflakeHostForWorkloadIdentity("wif.corp.example.com"));
+  assert_true(isSnowflakeHostForWorkloadIdentity("wif.other.example.org"));
+  assert_false(isSnowflakeHostForWorkloadIdentity("other.example.org.untrusted.example"));
+}
+
+void test_unit_wif_host_rejected_host_never_creates_attestation(void **) {
+  // Behavioral test: mirrors the production call site's guard-then-create
+  // pattern. When the host is rejected, createAttestation() (and therefore
+  // any provider that would fetch/mint an ambient cloud credential) must
+  // never be invoked.
+  FakeAwsSdkWrapper awsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  awsSdkWrapper.webIdentityTokenResult = FAKE_WEB_IDENTITY_TOKEN;
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+
+  const std::string rejectedHost = "untrusted.example";
+  assert_false(isSnowflakeHostForWorkloadIdentity(rejectedHost));
+
+  if (isSnowflakeHostForWorkloadIdentity(rejectedHost)) {
+    Snowflake::Client::createAttestation(config);
+  }
+
+  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 0);
+}
+
+void test_unit_wif_rejected_host_sets_connection_error(void **) {
+  SF_CONNECT conn = {};
+  conn.authenticator = const_cast<char *>(SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+  conn.host = const_cast<char *>("untrusted.example");
+  conn.wif_provider = const_cast<char *>("OIDC");
+  conn.wif_token = const_cast<char *>(FAKE_WEB_IDENTITY_TOKEN.c_str());
+
+  cJSON *body = snowflake_cJSON_CreateObject();
+  cJSON *data = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddItemToObject(body, "data", data);
+
+  // Exercise the production AUTH_WIF branch. The explicit OIDC token makes
+  // reaching createAttestation() observable without contacting a cloud
+  // provider: it would be copied into TOKEN if the host guard were absent.
+  auth_update_json_body(&conn, body);
+
+  assert_int_equal(conn.error.error_code, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS);
+  assert_non_null(strstr(conn.error.msg, "recognized Snowflake host"));
+  assert_null(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR"));
+  assert_null(snowflake_cJSON_GetObjectItem(data, "TOKEN"));
+
+  snowflake_cJSON_Delete(body);
+}
+
 int main() {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_unit_aws_attestation_success),
@@ -1472,6 +1642,33 @@ int main() {
       cmocka_unit_test(test_unit_wif_attestation_config),
       cmocka_unit_test(test_unit_wif_aws_use_outbound_token_connection_string),
       cmocka_unit_test(test_unit_wif_host_normalization),
+      cmocka_unit_test(test_unit_wif_host_accept_apex_com),
+      cmocka_unit_test(test_unit_wif_host_accept_subdomain_com),
+      cmocka_unit_test(test_unit_wif_host_accept_nested_subdomain_com),
+      cmocka_unit_test(test_unit_wif_host_accept_apex_cn),
+      cmocka_unit_test(test_unit_wif_host_accept_subdomain_cn),
+      cmocka_unit_test(test_unit_wif_host_accept_apex_mil),
+      cmocka_unit_test(test_unit_wif_host_accept_subdomain_mil),
+      cmocka_unit_test(test_unit_wif_host_accept_mixed_case),
+      cmocka_unit_test(test_unit_wif_host_accept_trailing_dot),
+      cmocka_unit_test(test_unit_wif_host_accept_with_port),
+      cmocka_unit_test(test_unit_wif_host_accept_trailing_dot_with_port),
+      cmocka_unit_test(test_unit_wif_host_reject_empty),
+      cmocka_unit_test(test_unit_wif_host_reject_whitespace_only),
+      cmocka_unit_test(test_unit_wif_host_reject_prefix_lookalike),
+      cmocka_unit_test(test_unit_wif_host_reject_suffix_appended_domain),
+      cmocka_unit_test(test_unit_wif_host_reject_embedded_lookalike),
+      cmocka_unit_test(test_unit_wif_host_reject_unrelated_domain),
+      cmocka_unit_test(test_unit_wif_host_reject_other_tld),
+      cmocka_unit_test(test_unit_wif_host_reject_ipv4_literal),
+      cmocka_unit_test(test_unit_wif_host_reject_ipv6_literal),
+      cmocka_unit_test(test_unit_wif_host_reject_localhost),
+      cmocka_unit_test(test_unit_wif_host_reject_substring_without_dot_boundary),
+      cmocka_unit_test(test_unit_wif_host_env_hatch_accepts_extra_suffix),
+      cmocka_unit_test(test_unit_wif_host_env_hatch_is_additive_not_disabling),
+      cmocka_unit_test(test_unit_wif_host_env_hatch_multiple_entries_normalized),
+      cmocka_unit_test(test_unit_wif_host_rejected_host_never_creates_attestation),
+      cmocka_unit_test(test_unit_wif_rejected_host_sets_connection_error)
   };
 
   return cmocka_run_group_tests(tests, nullptr, nullptr);
