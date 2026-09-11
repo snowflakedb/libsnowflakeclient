@@ -373,6 +373,19 @@ else()
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
+        if (T STREQUAL "test_fips")
+            if (WIN32)
+                set_tests_properties(${T} PROPERTIES
+                    ENVIRONMENT
+                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}/tests/openssl/openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}/tests/openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}/tests/openssl/lib/ossl-modules"
+                )
+            else()
+                set_tests_properties(${T} PROPERTIES
+                    ENVIRONMENT
+                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}\tests\openssl\openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}\tests\openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}\tests\openssl\lib"
+                )
+            endif()
+        endif()
         # Removed to suppress false alarm: "--run-libc-freeres=no"
         if (LINUX)
           if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")

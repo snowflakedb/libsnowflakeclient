@@ -55,13 +55,7 @@ function test_component()
             libsuffix="so"
         fi
         tests/openssl/bin/openssl fipsinstall -module tests/openssl/lib/ossl-modules/fips.$libsuffix -out tests/openssl/fipsmodule.cnf
-        export OPENSSL_CONF=$(pwd)/tests/openssl/openssl.cnf
-        export OPENSSL_CONF_INCLUDE=$(pwd)/tests/openssl
-        export OPENSSL_MODULES=$(pwd)/tests/openssl/lib/ossl-modules
         $CTEST -V -E "(valgrind.*|test_auth)"
-        unset OPENSSL_CONF
-        unset OPENSSL_CONF_INCLUDE
-        unset OPENSSL_MODULES
     popd
 }
 
