@@ -77,6 +77,7 @@ exit /b 0
         set APPVEYOR_BUILD_FOLDER=%scriptdir%..
         :: setup FIPS
         tests\openssl\bin\openssl fipsinstall -module tests\openssl\lib\fips.dll -out tests\openssl\fipsmodule.cnf
+        if !ERRORLEVEL! NEQ 0 goto :error
         ctest -V -E "(valgrind.*|test_auth)"
         if %ERRORLEVEL% NEQ 0 (
             call :drop_schema

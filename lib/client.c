@@ -718,7 +718,10 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     char envBuf[MAX_PATH + 1];
     char* fipsEnv = sf_getenv_s(SF_FIPS_ENABLED_ENV_VAR, envBuf, sizeof(envBuf));
 
-    if (fipsEnv && fipsEnv[0] != '0')
+    if ((fipsEnv && fipsEnv[0] != '\0') &&
+        (strcasecmp(fipsEnv, "0") != 0) &&
+        (strcasecmp(fipsEnv, "false") == 0) &&
+        (strcasecmp(fipsEnv, "off") == 0))
     {
       if (!_is_fips_enabled())
       {
