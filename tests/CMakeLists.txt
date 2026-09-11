@@ -377,12 +377,12 @@ else()
             if (WIN32)
                 set_tests_properties(${T} PROPERTIES
                     ENVIRONMENT
-                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}/tests/openssl/openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}/tests/openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}/tests/openssl/lib/ossl-modules"
+                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}\\tests\\openssl\\openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}\\tests\\openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}\\tests\\openssl\\lib"
                 )
             else()
                 set_tests_properties(${T} PROPERTIES
                     ENVIRONMENT
-                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}\\tests\\openssl\\openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}\\tests\\openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}\\tests\\openssl\\lib"
+                        "OPENSSL_CONF=${CMAKE_BINARY_DIR}/tests/openssl/openssl.cnf;OPENSSL_CONF_INCLUDE=${CMAKE_BINARY_DIR}/tests/openssl;OPENSSL_MODULES=${CMAKE_BINARY_DIR}/tests/openssl/lib/ossl-modules"
                 )
             endif()
         endif()
