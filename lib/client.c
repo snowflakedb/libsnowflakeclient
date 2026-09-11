@@ -720,8 +720,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if ((fipsEnv && fipsEnv[0] != '\0') &&
         (strcasecmp(fipsEnv, "0") != 0) &&
-        (strcasecmp(fipsEnv, "false") == 0) &&
-        (strcasecmp(fipsEnv, "off") == 0))
+        (strcasecmp(fipsEnv, "false") != 0) &&
+        (strcasecmp(fipsEnv, "off") != 0))
     {
       if (!_is_fips_enabled())
       {
