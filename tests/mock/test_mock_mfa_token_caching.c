@@ -20,6 +20,7 @@ char* load_data(const char* filename) {
   char *string = malloc(fsize + 1);
   fread(string, fsize, 1, fp);
   fclose(fp);
+  string[fsize] = '\0';
   return string;
 }
 

@@ -43,6 +43,7 @@ void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 #define ERR_MSG_HOST_PARAMETER_INVALID "host parameter contains invalid characters"
 #define ERR_MSG_PROTOCOL_PARAMETER_INVALID "protocol parameter must be http or https"
 #define ERR_MSG_PORT_PARAMETER_INVALID "port parameter must be a number between 1 and 65535"
+#define ERR_MSG_FIPS_NOT_ENABLED "FIPS enforcement is turned on while FIPS is not enabled"
 
 #ifdef __cplusplus
 }

@@ -49,6 +49,12 @@ function test_component()
     fi
     pushd $CI_TEST_DIR/../..
         cd $cmake_dir
+        if [[ "$PLATFORM" == "darwin" ]]; then
+            libsuffix="dylib"
+        else
+            libsuffix="so"
+        fi
+        tests/openssl/bin/openssl fipsinstall -module tests/openssl/lib/ossl-modules/fips.$libsuffix -out tests/openssl/fipsmodule.cnf
         $CTEST -V -E "(valgrind.*|test_auth)"
     popd
 }
