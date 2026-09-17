@@ -20,13 +20,13 @@
 #include "arrow/testing/extension_type.h"
 
 #ifdef _WIN32
-#include <crtdbg.h>
-#include <io.h>
+#  include <crtdbg.h>
+#  include <io.h>
 #else
-#include <fcntl.h>     // IWYU pragma: keep
-#include <sys/stat.h>  // IWYU pragma: keep
-#include <sys/wait.h>  // IWYU pragma: keep
-#include <unistd.h>    // IWYU pragma: keep
+#  include <fcntl.h>     // IWYU pragma: keep
+#  include <sys/stat.h>  // IWYU pragma: keep
+#  include <sys/wait.h>  // IWYU pragma: keep
+#  include <unistd.h>    // IWYU pragma: keep
 #endif
 
 #include <algorithm>
@@ -47,20 +47,30 @@
 
 #include "arrow/array.h"
 #include "arrow/buffer.h"
-#include "arrow/compute/api_vector.h"
 #include "arrow/datum.h"
-#include "arrow/ipc/json_simple.h"
+#include "arrow/extension/json.h"
+#include "arrow/io/memory.h"
+#include "arrow/ipc/reader.h"
+#include "arrow/ipc/writer.h"
+#include "arrow/json/from_string.h"
+#include "arrow/json/rapidjson_defs.h"  // IWYU pragma: keep
 #include "arrow/pretty_print.h"
+#include "arrow/record_batch.h"
 #include "arrow/status.h"
 #include "arrow/table.h"
+#include "arrow/tensor.h"
 #include "arrow/type.h"
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/config.h"
 #include "arrow/util/future.h"
 #include "arrow/util/io_util.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/thread_pool.h"
 #include "arrow/util/windows_compatibility.h"
+
+#include <rapidjson/document.h>
+
+namespace rj = arrow::rapidjson;
 
 namespace arrow {
 
@@ -233,20 +243,11 @@ void AssertBufferEqual(const Buffer& buffer, const Buffer& expected) {
 }
 
 template <typename T>
-std::string ToStringWithMetadata(const T& t, bool show_metadata) {
-  return t.ToString(show_metadata);
-}
-
-std::string ToStringWithMetadata(const DataType& t, bool show_metadata) {
-  return t.ToString();
-}
-
-template <typename T>
 void AssertFingerprintablesEqual(const T& left, const T& right, bool check_metadata,
                                  const char* types_plural) {
   ASSERT_TRUE(left.Equals(right, check_metadata))
-      << types_plural << " '" << ToStringWithMetadata(left, check_metadata) << "' and '"
-      << ToStringWithMetadata(right, check_metadata) << "' should have compared equal";
+      << types_plural << " '" << left.ToString(check_metadata) << "' and '"
+      << right.ToString(check_metadata) << "' should have compared equal";
   auto lfp = left.fingerprint();
   auto rfp = right.fingerprint();
   // Note: all types tested in this file should implement fingerprinting,
@@ -256,9 +257,8 @@ void AssertFingerprintablesEqual(const T& left, const T& right, bool check_metad
     rfp += right.metadata_fingerprint();
   }
   ASSERT_EQ(lfp, rfp) << "Fingerprints for " << types_plural << " '"
-                      << ToStringWithMetadata(left, check_metadata) << "' and '"
-                      << ToStringWithMetadata(right, check_metadata)
-                      << "' should have compared equal";
+                      << left.ToString(check_metadata) << "' and '"
+                      << right.ToString(check_metadata) << "' should have compared equal";
 }
 
 template <typename T>
@@ -274,8 +274,8 @@ template <typename T>
 void AssertFingerprintablesNotEqual(const T& left, const T& right, bool check_metadata,
                                     const char* types_plural) {
   ASSERT_FALSE(left.Equals(right, check_metadata))
-      << types_plural << " '" << ToStringWithMetadata(left, check_metadata) << "' and '"
-      << ToStringWithMetadata(right, check_metadata) << "' should have compared unequal";
+      << types_plural << " '" << left.ToString(check_metadata) << "' and '"
+      << right.ToString(check_metadata) << "' should have compared unequal";
   auto lfp = left.fingerprint();
   auto rfp = right.fingerprint();
   // Note: all types tested in this file should implement fingerprinting,
@@ -286,8 +286,8 @@ void AssertFingerprintablesNotEqual(const T& left, const T& right, bool check_me
       rfp += right.metadata_fingerprint();
     }
     ASSERT_NE(lfp, rfp) << "Fingerprints for " << types_plural << " '"
-                        << ToStringWithMetadata(left, check_metadata) << "' and '"
-                        << ToStringWithMetadata(right, check_metadata)
+                        << left.ToString(check_metadata) << "' and '"
+                        << right.ToString(check_metadata)
                         << "' should have compared unequal";
   }
 }
@@ -380,23 +380,21 @@ void AssertDatumsApproxEqual(const Datum& expected, const Datum& actual, bool ve
 
 std::shared_ptr<Array> ArrayFromJSON(const std::shared_ptr<DataType>& type,
                                      std::string_view json) {
-  EXPECT_OK_AND_ASSIGN(auto out, ipc::internal::json::ArrayFromJSON(type, json));
+  EXPECT_OK_AND_ASSIGN(auto out, json::ArrayFromJSONString(type, json));
   return out;
 }
 
 std::shared_ptr<Array> DictArrayFromJSON(const std::shared_ptr<DataType>& type,
                                          std::string_view indices_json,
                                          std::string_view dictionary_json) {
-  std::shared_ptr<Array> out;
-  ABORT_NOT_OK(
-      ipc::internal::json::DictArrayFromJSON(type, indices_json, dictionary_json, &out));
+  EXPECT_OK_AND_ASSIGN(
+      auto out, json::DictArrayFromJSONString(type, indices_json, dictionary_json));
   return out;
 }
 
 std::shared_ptr<ChunkedArray> ChunkedArrayFromJSON(const std::shared_ptr<DataType>& type,
                                                    const std::vector<std::string>& json) {
-  std::shared_ptr<ChunkedArray> out;
-  ABORT_NOT_OK(ipc::internal::json::ChunkedArrayFromJSON(type, json, &out));
+  EXPECT_OK_AND_ASSIGN(auto out, json::ChunkedArrayFromJSONString(type, json));
   return out;
 }
 
@@ -404,7 +402,7 @@ std::shared_ptr<RecordBatch> RecordBatchFromJSON(const std::shared_ptr<Schema>& 
                                                  std::string_view json) {
   // Parse as a StructArray
   auto struct_type = struct_(schema->fields());
-  std::shared_ptr<Array> struct_array = ArrayFromJSON(struct_type, json);
+  std::shared_ptr<Array> struct_array = arrow::ArrayFromJSON(struct_type, json);
 
   // Convert StructArray to RecordBatch
   return *RecordBatch::FromStructArray(struct_array);
@@ -412,17 +410,15 @@ std::shared_ptr<RecordBatch> RecordBatchFromJSON(const std::shared_ptr<Schema>& 
 
 std::shared_ptr<Scalar> ScalarFromJSON(const std::shared_ptr<DataType>& type,
                                        std::string_view json) {
-  std::shared_ptr<Scalar> out;
-  ABORT_NOT_OK(ipc::internal::json::ScalarFromJSON(type, json, &out));
+  EXPECT_OK_AND_ASSIGN(auto out, json::ScalarFromJSONString(type, json));
   return out;
 }
 
 std::shared_ptr<Scalar> DictScalarFromJSON(const std::shared_ptr<DataType>& type,
                                            std::string_view index_json,
                                            std::string_view dictionary_json) {
-  std::shared_ptr<Scalar> out;
-  ABORT_NOT_OK(
-      ipc::internal::json::DictScalarFromJSON(type, index_json, dictionary_json, &out));
+  EXPECT_OK_AND_ASSIGN(auto out,
+                       json::DictScalarFromJSONString(type, index_json, dictionary_json));
   return out;
 }
 
@@ -435,22 +431,41 @@ std::shared_ptr<Table> TableFromJSON(const std::shared_ptr<Schema>& schema,
   return *Table::FromRecordBatches(schema, std::move(batches));
 }
 
-Result<std::shared_ptr<Table>> RunEndEncodeTableColumns(
-    const Table& table, const std::vector<int>& column_indices) {
-  const int num_columns = table.num_columns();
-  std::vector<std::shared_ptr<ChunkedArray>> encoded_columns;
-  encoded_columns.reserve(num_columns);
-  for (int i = 0; i < num_columns; i++) {
-    if (std::find(column_indices.begin(), column_indices.end(), i) !=
-        column_indices.end()) {
-      ARROW_ASSIGN_OR_RAISE(auto run_end_encoded, compute::RunEndEncode(table.column(i)));
-      DCHECK_EQ(run_end_encoded.kind(), Datum::CHUNKED_ARRAY);
-      encoded_columns.push_back(run_end_encoded.chunked_array());
-    } else {
-      encoded_columns.push_back(table.column(i));
-    }
+std::shared_ptr<Tensor> TensorFromJSON(const std::shared_ptr<DataType>& type,
+                                       std::string_view data, std::string_view shape,
+                                       std::string_view strides,
+                                       std::string_view dim_names) {
+  std::shared_ptr<Array> array = arrow::ArrayFromJSON(type, data);
+
+  rj::Document json_shape;
+  json_shape.Parse(shape.data(), shape.length());
+  std::vector<int64_t> shape_vector;
+  for (auto& x : json_shape.GetArray()) {
+    shape_vector.emplace_back(x.GetInt64());
   }
-  return Table::Make(table.schema(), std::move(encoded_columns));
+  rj::Document json_strides;
+  json_strides.Parse(strides.data(), strides.length());
+  std::vector<int64_t> strides_vector;
+  for (auto& x : json_strides.GetArray()) {
+    strides_vector.emplace_back(x.GetInt64());
+  }
+  rj::Document json_dim_names;
+  json_dim_names.Parse(dim_names.data(), dim_names.length());
+  std::vector<std::string> dim_names_vector;
+  for (auto& x : json_dim_names.GetArray()) {
+    dim_names_vector.emplace_back(x.GetString());
+  }
+  return *Tensor::Make(type, array->data()->buffers[1], shape_vector, strides_vector,
+                       dim_names_vector);
+}
+
+std::shared_ptr<Tensor> TensorFromJSON(const std::shared_ptr<DataType>& type,
+                                       std::string_view data,
+                                       const std::vector<int64_t>& shape,
+                                       const std::vector<int64_t>& strides,
+                                       const std::vector<std::string>& dim_names) {
+  std::shared_ptr<Array> array = arrow::ArrayFromJSON(type, data);
+  return *Tensor::Make(type, array->data()->buffers[1], shape, strides, dim_names);
 }
 
 Result<std::optional<std::string>> PrintArrayDiff(const ChunkedArray& expected,
@@ -814,17 +829,17 @@ Future<> SleepABitAsync() {
 ///////////////////////////////////////////////////////////////////////////
 // Extension types
 
-bool UuidType::ExtensionEquals(const ExtensionType& other) const {
+bool ExampleUuidType::ExtensionEquals(const ExtensionType& other) const {
   return (other.extension_name() == this->extension_name());
 }
 
-std::shared_ptr<Array> UuidType::MakeArray(std::shared_ptr<ArrayData> data) const {
+std::shared_ptr<Array> ExampleUuidType::MakeArray(std::shared_ptr<ArrayData> data) const {
   DCHECK_EQ(data->type->id(), Type::EXTENSION);
   DCHECK_EQ("uuid", static_cast<const ExtensionType&>(*data->type).extension_name());
-  return std::make_shared<UuidArray>(data);
+  return std::make_shared<ExampleUuidArray>(data);
 }
 
-Result<std::shared_ptr<DataType>> UuidType::Deserialize(
+Result<std::shared_ptr<DataType>> ExampleUuidType::Deserialize(
     std::shared_ptr<DataType> storage_type, const std::string& serialized) const {
   if (serialized != "uuid-serialized") {
     return Status::Invalid("Type identifier did not match: '", serialized, "'");
@@ -833,7 +848,7 @@ Result<std::shared_ptr<DataType>> UuidType::Deserialize(
     return Status::Invalid("Invalid storage type for UuidType: ",
                            storage_type->ToString());
   }
-  return std::make_shared<UuidType>();
+  return std::make_shared<ExampleUuidType>();
 }
 
 bool SmallintType::ExtensionEquals(const ExtensionType& other) const {
@@ -927,6 +942,30 @@ Result<std::shared_ptr<DataType>> DictExtensionType::Deserialize(
   return std::make_shared<DictExtensionType>();
 }
 
+bool BinaryViewExtensionType::ExtensionEquals(const ExtensionType& other) const {
+  return (other.extension_name() == this->extension_name());
+}
+
+std::shared_ptr<Array> BinaryViewExtensionType::MakeArray(
+    std::shared_ptr<ArrayData> data) const {
+  DCHECK_EQ(data->type->id(), Type::EXTENSION);
+  DCHECK_EQ("binary_view",
+            static_cast<const ExtensionType&>(*data->type).extension_name());
+  return std::make_shared<TinyintArray>(data);
+}
+
+Result<std::shared_ptr<DataType>> BinaryViewExtensionType::Deserialize(
+    std::shared_ptr<DataType> storage_type, const std::string& serialized) const {
+  if (serialized != "binary_view_serialized") {
+    return Status::Invalid("Type identifier did not match: '", serialized, "'");
+  }
+  if (!storage_type->Equals(*int16())) {
+    return Status::Invalid("Invalid storage type for BinaryViewExtensionType: ",
+                           storage_type->ToString());
+  }
+  return std::make_shared<BinaryViewExtensionType>();
+}
+
 bool Complex128Type::ExtensionEquals(const ExtensionType& other) const {
   return (other.extension_name() == this->extension_name());
 }
@@ -949,7 +988,7 @@ Result<std::shared_ptr<DataType>> Complex128Type::Deserialize(
   return std::make_shared<Complex128Type>();
 }
 
-std::shared_ptr<DataType> uuid() { return std::make_shared<UuidType>(); }
+std::shared_ptr<DataType> uuid() { return std::make_shared<ExampleUuidType>(); }
 
 std::shared_ptr<DataType> smallint() { return std::make_shared<SmallintType>(); }
 
@@ -957,6 +996,10 @@ std::shared_ptr<DataType> tinyint() { return std::make_shared<TinyintType>(); }
 
 std::shared_ptr<DataType> list_extension_type() {
   return std::make_shared<ListExtensionType>();
+}
+
+std::shared_ptr<DataType> binary_view_extension_type() {
+  return std::make_shared<BinaryViewExtensionType>();
 }
 
 std::shared_ptr<DataType> dict_extension_type() {
@@ -975,19 +1018,19 @@ std::shared_ptr<Array> MakeComplex128(const std::shared_ptr<Array>& real,
 }
 
 std::shared_ptr<Array> ExampleUuid() {
-  auto arr = ArrayFromJSON(
+  auto arr = arrow::ArrayFromJSON(
       fixed_size_binary(16),
       "[null, \"abcdefghijklmno0\", \"abcdefghijklmno1\", \"abcdefghijklmno2\"]");
   return ExtensionType::WrapArray(uuid(), arr);
 }
 
 std::shared_ptr<Array> ExampleSmallint() {
-  auto arr = ArrayFromJSON(int16(), "[-32768, null, 1, 2, 3, 4, 32767]");
+  auto arr = arrow::ArrayFromJSON(int16(), "[-32768, null, 1, 2, 3, 4, 32767]");
   return ExtensionType::WrapArray(smallint(), arr);
 }
 
 std::shared_ptr<Array> ExampleTinyint() {
-  auto arr = ArrayFromJSON(int8(), "[-128, null, 1, 2, 3, 4, 127]");
+  auto arr = arrow::ArrayFromJSON(int8(), "[-128, null, 1, 2, 3, 4, 127]");
   return ExtensionType::WrapArray(tinyint(), arr);
 }
 
@@ -998,8 +1041,8 @@ std::shared_ptr<Array> ExampleDictExtension() {
 }
 
 std::shared_ptr<Array> ExampleComplex128() {
-  auto arr = ArrayFromJSON(struct_({field("", float64()), field("", float64())}),
-                           "[[1.0, -2.5], null, [3.0, -4.5]]");
+  auto arr = arrow::ArrayFromJSON(struct_({field("", float64()), field("", float64())}),
+                                  "[[1.0, -2.5], null, [3.0, -4.5]]");
   return ExtensionType::WrapArray(complex128(), arr);
 }
 

@@ -48,6 +48,8 @@
 namespace arrow {
 namespace engine {
 
+namespace {
+
 Status ParseFromBufferImpl(const Buffer& buf, const std::string& full_name,
                            google::protobuf::Message* message) {
   google::protobuf::io::ArrayInputStream buf_stream{buf.data(),
@@ -56,14 +58,16 @@ Status ParseFromBufferImpl(const Buffer& buf, const std::string& full_name,
   if (message->ParseFromZeroCopyStream(&buf_stream)) {
     return Status::OK();
   }
-  return Status::IOError("ParseFromZeroCopyStream failed for ", full_name);
+  return Status::Invalid("ParseFromZeroCopyStream failed for ", full_name);
 }
+
+}  // namespace
 
 template <typename Message>
 Result<Message> ParseFromBuffer(const Buffer& buf) {
   Message message;
-  ARROW_RETURN_NOT_OK(
-      ParseFromBufferImpl(buf, Message::descriptor()->full_name(), &message));
+  ARROW_RETURN_NOT_OK(ParseFromBufferImpl(
+      buf, std::string(Message::descriptor()->full_name()), &message));
   return message;
 }
 
@@ -256,7 +260,7 @@ Result<std::shared_ptr<acero::ExecPlan>> MakeSingleDeclarationPlan(
   } else {
     ARROW_ASSIGN_OR_RAISE(auto plan, acero::ExecPlan::Make());
     ARROW_RETURN_NOT_OK(declarations[0].AddToPlan(plan.get()));
-    return std::move(plan);
+    return plan;
   }
 }
 

@@ -26,7 +26,7 @@
 #include <vector>
 
 #if __has_include(<charconv>)
-#include <charconv>
+#  include <charconv>
 #endif
 
 #include "arrow/result.h"
@@ -51,18 +51,6 @@ ARROW_EXPORT Status ParseHexValue(const char* hex_pair, uint8_t* out);
 ARROW_EXPORT Status ParseHexValues(std::string_view hex_string, uint8_t* out);
 
 namespace internal {
-
-/// Like std::string_view::starts_with in C++20
-inline bool StartsWith(std::string_view s, std::string_view prefix) {
-  return s.length() >= prefix.length() &&
-         (s.empty() || s.substr(0, prefix.length()) == prefix);
-}
-
-/// Like std::string_view::ends_with in C++20
-inline bool EndsWith(std::string_view s, std::string_view suffix) {
-  return s.length() >= suffix.length() &&
-         (s.empty() || s.substr(s.length() - suffix.length()) == suffix);
-}
 
 /// \brief Split a string with a delimiter
 ARROW_EXPORT

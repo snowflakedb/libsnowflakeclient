@@ -119,7 +119,8 @@ TEST_P(TestMessage, SerializeTo) {
   const int64_t body_length = 64;
 
   flatbuffers::FlatBufferBuilder fbb;
-  fbb.Finish(flatbuf::CreateMessage(fbb, fb_version_, flatbuf::MessageHeader::RecordBatch,
+  fbb.Finish(flatbuf::CreateMessage(fbb, fb_version_,
+                                    flatbuf::MessageHeader::MessageHeader_RecordBatch,
                                     0 /* header */, body_length));
 
   std::shared_ptr<Buffer> metadata;
@@ -336,7 +337,7 @@ TEST_F(TestSchemaMetadata, NestedDictionaryFields) {
     auto dict_type1 = dictionary(int8(), utf8(), /*ordered=*/true);
     auto dict_type2 = dictionary(int32(), fixed_size_binary(24));
     auto dict_type3 = dictionary(int32(), binary());
-    auto dict_type4 = dictionary(int8(), decimal(19, 7));
+    auto dict_type4 = dictionary(int8(), decimal128(19, 7));
 
     auto struct_type1 = struct_({field("s1", dict_type1), field("s2", dict_type2)});
     auto struct_type2 = struct_({field("s3", dict_type3), field("s4", dict_type4)});
@@ -521,7 +522,8 @@ class IpcTestFixture : public io::MemoryMapFixture, public ExtensionTypesMixin {
 
 TEST(MetadataVersion, ForwardsCompatCheck) {
   // Verify UBSAN is ok with casting out of range metadata version.
-  EXPECT_LT(flatbuf::MetadataVersion::MAX, static_cast<flatbuf::MetadataVersion>(72));
+  EXPECT_LT(flatbuf::MetadataVersion::MetadataVersion_MAX,
+            static_cast<flatbuf::MetadataVersion>(72));
 }
 
 class TestWriteRecordBatch : public ::testing::Test, public IpcTestFixture {
@@ -577,6 +579,29 @@ TEST_F(TestIpcRoundTrip, SpecificMetadataVersion) {
   TestMetadataVersion(MetadataVersion::V5);
 }
 
+TEST_F(TestIpcRoundTrip, ListWithSlicedValues) {
+  // This tests serialization of a sliced ListArray that got sliced "the Rust
+  // way": by slicing the value_offsets buffer, but keeping top-level offset at
+  // 0.
+  auto child_data = ArrayFromJSON(int32(), "[1, 2, 3, 4, 5]")->data();
+
+  // Offsets buffer [2, 5]
+  TypedBufferBuilder<int32_t> offsets_builder;
+  ASSERT_OK(offsets_builder.Reserve(2));
+  ASSERT_OK(offsets_builder.Append(2));
+  ASSERT_OK(offsets_builder.Append(5));
+  ASSERT_OK_AND_ASSIGN(auto offsets_buffer, offsets_builder.Finish());
+
+  auto list_data = ArrayData::Make(list(int32()),
+                                   /*num_rows=*/1,
+                                   /*buffers=*/{nullptr, offsets_buffer});
+  list_data->child_data = {child_data};
+  std::shared_ptr<Array> list_array = MakeArray(list_data);
+  ASSERT_OK(list_array->ValidateFull());
+
+  CheckRoundtrip(list_array);
+}
+
 TEST(TestReadMessage, CorruptedSmallInput) {
   std::string data = "abc";
   auto reader = io::BufferReader::FromString(data);
@@ -589,20 +614,20 @@ TEST(TestReadMessage, CorruptedSmallInput) {
 }
 
 TEST(TestMetadata, GetMetadataVersion) {
-  ASSERT_EQ(MetadataVersion::V1,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::V1));
-  ASSERT_EQ(MetadataVersion::V2,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::V2));
-  ASSERT_EQ(MetadataVersion::V3,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::V3));
-  ASSERT_EQ(MetadataVersion::V4,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::V4));
-  ASSERT_EQ(MetadataVersion::V5,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::V5));
-  ASSERT_EQ(MetadataVersion::V1,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::MIN));
-  ASSERT_EQ(MetadataVersion::V5,
-            ipc::internal::GetMetadataVersion(flatbuf::MetadataVersion::MAX));
+  ASSERT_EQ(MetadataVersion::V1, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_V1));
+  ASSERT_EQ(MetadataVersion::V2, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_V2));
+  ASSERT_EQ(MetadataVersion::V3, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_V3));
+  ASSERT_EQ(MetadataVersion::V4, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_V4));
+  ASSERT_EQ(MetadataVersion::V5, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_V5));
+  ASSERT_EQ(MetadataVersion::V1, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_MIN));
+  ASSERT_EQ(MetadataVersion::V5, ipc::internal::GetMetadataVersion(
+                                     flatbuf::MetadataVersion::MetadataVersion_MAX));
 }
 
 TEST_P(TestIpcRoundTrip, SliceRoundTrip) {
@@ -927,23 +952,23 @@ TEST_F(TestWriteRecordBatch, SliceTruncatesBuffers) {
 }
 
 TEST_F(TestWriteRecordBatch, RoundtripPreservesBufferSizes) {
-  // ARROW-7975
+  // ARROW-7975: deserialized buffers should have logically exact size (no padding)
   random::RandomArrayGenerator rg(/*seed=*/0);
+  constexpr int64_t kLength = 30;
 
-  int64_t length = 15;
-  auto arr = rg.String(length, 0, 10, 0.1);
-  auto batch = RecordBatch::Make(::arrow::schema({field("f0", utf8())}), length, {arr});
+  auto arr =
+      rg.String(kLength, /*min_length=*/0, /*max_length=*/10, /*null_probability=*/0.3);
+  ASSERT_NE(arr->null_count(), 0);  // required for validity bitmap size assertion below
 
-  ASSERT_OK_AND_ASSIGN(
-      mmap_, io::MemoryMapFixture::InitMemoryMap(
-                 /*buffer_size=*/1 << 20, TempFile("test-roundtrip-buffer-sizes")));
+  auto batch = RecordBatch::Make(::arrow::schema({field("f0", utf8())}), kLength, {arr});
+
   DictionaryMemo dictionary_memo;
   ASSERT_OK_AND_ASSIGN(
       auto result,
       DoStandardRoundTrip(*batch, IpcWriteOptions::Defaults(), &dictionary_memo));
 
-  // Make sure that the validity bitmap is size 2 as expected
-  ASSERT_EQ(2, arr->data()->buffers[0]->size());
+  // Make sure that the validity bitmap has expected size
+  ASSERT_EQ(bit_util::BytesForBits(kLength), arr->data()->buffers[0]->size());
 
   for (size_t i = 0; i < arr->data()->buffers.size(); ++i) {
     ASSERT_EQ(arr->data()->buffers[i]->size(),
@@ -1046,6 +1071,9 @@ class RecursionLimits : public ::testing::Test, public io::MemoryMapFixture {
 };
 
 TEST_F(RecursionLimits, WriteLimit) {
+#ifdef __EMSCRIPTEN__
+  GTEST_SKIP() << "This crashes the Emscripten runtime.";
+#endif
   int32_t metadata_length = -1;
   int64_t body_length = -1;
   std::shared_ptr<Schema> schema;
@@ -1078,6 +1106,10 @@ TEST_F(RecursionLimits, ReadLimit) {
 // Test fails with a structured exception on Windows + Debug
 #if !defined(_WIN32) || defined(NDEBUG)
 TEST_F(RecursionLimits, StressLimit) {
+#  ifdef __EMSCRIPTEN__
+  GTEST_SKIP() << "This crashes the Emscripten runtime.";
+#  endif
+
   auto CheckDepth = [this](int recursion_depth, bool* it_works) {
     int32_t metadata_length = -1;
     int64_t body_length = -1;
@@ -1105,10 +1137,10 @@ TEST_F(RecursionLimits, StressLimit) {
   ASSERT_TRUE(it_works);
 
 // Mitigate Valgrind's slowness
-#if !defined(ARROW_VALGRIND)
+#  if !defined(ARROW_VALGRIND)
   CheckDepth(500, &it_works);
   ASSERT_TRUE(it_works);
-#endif
+#  endif
 }
 #endif  // !defined(_WIN32) || defined(NDEBUG)
 
@@ -1220,40 +1252,55 @@ struct FileGeneratorWriterHelper : public FileWriterHelper {
   Status ReadBatches(const IpcReadOptions& options, RecordBatchVector* out_batches,
                      ReadStats* out_stats = nullptr,
                      MetadataVector* out_metadata_list = nullptr) override {
-    std::shared_ptr<io::RandomAccessFile> buf_reader;
-    if (kCoalesce) {
-      // Use a non-zero-copy enabled BufferReader so we can test paths properly
-      buf_reader = std::make_shared<NoZeroCopyBufferReader>(buffer_);
-    } else {
-      buf_reader = std::make_shared<io::BufferReader>(buffer_);
-    }
-    AsyncGenerator<std::shared_ptr<RecordBatch>> generator;
-
-    {
-      auto fut = RecordBatchFileReader::OpenAsync(buf_reader, footer_offset_, options);
-      // Do NOT assert OK since some tests check whether this fails properly
-      EXPECT_FINISHES(fut);
-      ARROW_ASSIGN_OR_RAISE(auto reader, fut.result());
-      EXPECT_EQ(num_batches_written_, reader->num_record_batches());
-      // Generator will keep reader alive internally
-      ARROW_ASSIGN_OR_RAISE(generator, reader->GetRecordBatchGenerator(kCoalesce));
-    }
-
-    // Generator is async-reentrant
-    std::vector<Future<std::shared_ptr<RecordBatch>>> futures;
-    for (int i = 0; i < num_batches_written_; ++i) {
-      futures.push_back(generator());
-    }
-    auto fut = generator();
-    EXPECT_FINISHES_OK_AND_EQ(nullptr, fut);
-    for (auto& future : futures) {
-      EXPECT_FINISHES_OK_AND_ASSIGN(auto batch, future);
-      out_batches->push_back(batch);
-    }
-
     // The generator doesn't track stats.
     EXPECT_EQ(nullptr, out_stats);
 
+    auto read_batches = [&](bool pre_buffer) -> Result<RecordBatchVector> {
+      std::shared_ptr<io::RandomAccessFile> buf_reader;
+      if (kCoalesce) {
+        // Use a non-zero-copy enabled BufferReader so we can test paths properly
+        buf_reader = std::make_shared<NoZeroCopyBufferReader>(buffer_);
+      } else {
+        buf_reader = std::make_shared<io::BufferReader>(buffer_);
+      }
+      AsyncGenerator<std::shared_ptr<RecordBatch>> generator;
+
+      {
+        auto fut = RecordBatchFileReader::OpenAsync(buf_reader, footer_offset_, options);
+        ARROW_ASSIGN_OR_RAISE(auto reader, fut.result());
+        EXPECT_EQ(num_batches_written_, reader->num_record_batches());
+        if (pre_buffer) {
+          RETURN_NOT_OK(reader->PreBufferMetadata(/*indices=*/{}));
+        }
+        // Generator will keep reader alive internally
+        ARROW_ASSIGN_OR_RAISE(generator, reader->GetRecordBatchGenerator(kCoalesce));
+      }
+
+      // Generator is async-reentrant
+      std::vector<Future<std::shared_ptr<RecordBatch>>> futures;
+      for (int i = 0; i < num_batches_written_; ++i) {
+        futures.push_back(generator());
+      }
+      auto fut = generator();
+      ARROW_ASSIGN_OR_RAISE(auto final_batch, fut.result());
+      EXPECT_EQ(nullptr, final_batch);
+
+      RecordBatchVector batches;
+      for (auto& future : futures) {
+        ARROW_ASSIGN_OR_RAISE(auto batch, future.result());
+        EXPECT_NE(nullptr, batch);
+        batches.push_back(batch);
+      }
+      return batches;
+    };
+
+    ARROW_ASSIGN_OR_RAISE(*out_batches, read_batches(/*pre_buffer=*/false));
+    // Also read with pre-buffered metadata, and check the results are equal
+    ARROW_ASSIGN_OR_RAISE(auto batches_pre_buffered, read_batches(/*pre_buffer=*/true));
+    for (int i = 0; i < num_batches_written_; ++i) {
+      AssertBatchesEqual(*batches_pre_buffered[i], *(*out_batches)[i],
+                         /*check_metadata=*/true);
+    }
     return Status::OK();
   }
 };
@@ -1336,30 +1383,11 @@ class CopyCollectListener : public CollectListener {
 
   Status OnRecordBatchWithMetadataDecoded(
       RecordBatchWithMetadata record_batch_with_metadata) override {
-    auto& record_batch = record_batch_with_metadata.batch;
-    for (auto column_data : record_batch->column_data()) {
-      ARROW_RETURN_NOT_OK(CopyArrayData(column_data));
-    }
-    return CollectListener::OnRecordBatchWithMetadataDecoded(record_batch_with_metadata);
-  }
+    ARROW_ASSIGN_OR_RAISE(
+        record_batch_with_metadata.batch,
+        record_batch_with_metadata.batch->CopyTo(default_cpu_memory_manager()));
 
- private:
-  Status CopyArrayData(std::shared_ptr<ArrayData> data) {
-    auto& buffers = data->buffers;
-    for (size_t i = 0; i < buffers.size(); ++i) {
-      auto& buffer = buffers[i];
-      if (!buffer) {
-        continue;
-      }
-      ARROW_ASSIGN_OR_RAISE(buffers[i], Buffer::Copy(buffer, buffer->memory_manager()));
-    }
-    for (auto child_data : data->child_data) {
-      ARROW_RETURN_NOT_OK(CopyArrayData(child_data));
-    }
-    if (data->dictionary) {
-      ARROW_RETURN_NOT_OK(CopyArrayData(data->dictionary));
-    }
-    return Status::OK();
+    return CollectListener::OnRecordBatchWithMetadataDecoded(record_batch_with_metadata);
   }
 };
 

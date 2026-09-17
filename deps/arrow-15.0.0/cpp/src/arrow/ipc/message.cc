@@ -36,7 +36,7 @@
 #include "arrow/status.h"
 #include "arrow/util/endian.h"
 #include "arrow/util/future.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/ubsan.h"
 
 #include "generated/Message_generated.h"
@@ -47,6 +47,38 @@ class KeyValueMetadata;
 class MemoryPool;
 
 namespace ipc {
+
+namespace {
+
+Status MaybeAlignMetadata(std::shared_ptr<Buffer>* metadata) {
+  if (reinterpret_cast<uintptr_t>((*metadata)->data()) % 8 != 0) {
+    // If the metadata memory is not aligned, we copy it here to avoid
+    // potential UBSAN issues from Flatbuffers
+    ARROW_ASSIGN_OR_RAISE(*metadata, (*metadata)->CopySlice(0, (*metadata)->size()));
+  }
+  return Status::OK();
+}
+
+Status CheckMetadataAndGetBodyLength(const Buffer& metadata, int64_t* body_length) {
+  const flatbuf::Message* fb_message = nullptr;
+  RETURN_NOT_OK(internal::VerifyMessage(metadata.data(), metadata.size(), &fb_message));
+  *body_length = fb_message->bodyLength();
+  if (*body_length < 0) {
+    return Status::IOError("Invalid IPC message: negative bodyLength");
+  }
+  return Status::OK();
+}
+
+Status WritePadding(io::OutputStream* stream, int64_t nbytes) {
+  while (nbytes > 0) {
+    const int64_t bytes_to_write = std::min<int64_t>(nbytes, kArrowAlignment);
+    RETURN_NOT_OK(stream->Write(kPaddingBytes, bytes_to_write));
+    nbytes -= bytes_to_write;
+  }
+  return Status::OK();
+}
+
+}  // namespace
 
 class Message::MessageImpl {
  public:
@@ -62,7 +94,7 @@ class Message::MessageImpl {
       return Status::Invalid("Old metadata version not supported");
     }
 
-    if (message_->version() > flatbuf::MetadataVersion::MAX) {
+    if (message_->version() > flatbuf::MetadataVersion::MetadataVersion_MAX) {
       return Status::Invalid("Unsupported future MetadataVersion: ",
                              static_cast<int16_t>(message_->version()));
     }
@@ -79,15 +111,15 @@ class Message::MessageImpl {
 
   MessageType type() const {
     switch (message_->header_type()) {
-      case flatbuf::MessageHeader::Schema:
+      case flatbuf::MessageHeader::MessageHeader_Schema:
         return MessageType::SCHEMA;
-      case flatbuf::MessageHeader::DictionaryBatch:
+      case flatbuf::MessageHeader::MessageHeader_DictionaryBatch:
         return MessageType::DICTIONARY_BATCH;
-      case flatbuf::MessageHeader::RecordBatch:
+      case flatbuf::MessageHeader::MessageHeader_RecordBatch:
         return MessageType::RECORD_BATCH;
-      case flatbuf::MessageHeader::Tensor:
+      case flatbuf::MessageHeader::MessageHeader_Tensor:
         return MessageType::TENSOR;
-      case flatbuf::MessageHeader::SparseTensor:
+      case flatbuf::MessageHeader::MessageHeader_SparseTensor:
         return MessageType::SPARSE_TENSOR;
       default:
         return MessageType::NONE;
@@ -130,7 +162,7 @@ Result<std::unique_ptr<Message>> Message::Open(std::shared_ptr<Buffer> metadata,
                                                std::shared_ptr<Buffer> body) {
   std::unique_ptr<Message> result(new Message(std::move(metadata), std::move(body)));
   RETURN_NOT_OK(result->impl_->Open());
-  return std::move(result);
+  return result;
 }
 
 Message::~Message() {}
@@ -176,25 +208,6 @@ bool Message::Equals(const Message& other) const {
   }
 }
 
-Status MaybeAlignMetadata(std::shared_ptr<Buffer>* metadata) {
-  if (reinterpret_cast<uintptr_t>((*metadata)->data()) % 8 != 0) {
-    // If the metadata memory is not aligned, we copy it here to avoid
-    // potential UBSAN issues from Flatbuffers
-    ARROW_ASSIGN_OR_RAISE(*metadata, (*metadata)->CopySlice(0, (*metadata)->size()));
-  }
-  return Status::OK();
-}
-
-Status CheckMetadataAndGetBodyLength(const Buffer& metadata, int64_t* body_length) {
-  const flatbuf::Message* fb_message = nullptr;
-  RETURN_NOT_OK(internal::VerifyMessage(metadata.data(), metadata.size(), &fb_message));
-  *body_length = fb_message->bodyLength();
-  if (*body_length < 0) {
-    return Status::IOError("Invalid IPC message: negative bodyLength");
-  }
-  return Status::OK();
-}
-
 Result<std::unique_ptr<Message>> Message::ReadFrom(std::shared_ptr<Buffer> metadata,
                                                    io::InputStream* stream) {
   std::unique_ptr<Message> result;
@@ -208,7 +221,7 @@ Result<std::unique_ptr<Message>> Message::ReadFrom(std::shared_ptr<Buffer> metad
                            " bytes for message body, got ", body->size());
   }
   RETURN_NOT_OK(decoder.Consume(body));
-  return std::move(result);
+  return result;
 }
 
 Result<std::unique_ptr<Message>> Message::ReadFrom(const int64_t offset,
@@ -225,16 +238,7 @@ Result<std::unique_ptr<Message>> Message::ReadFrom(const int64_t offset,
                            " bytes for message body, got ", body->size());
   }
   RETURN_NOT_OK(decoder.Consume(body));
-  return std::move(result);
-}
-
-Status WritePadding(io::OutputStream* stream, int64_t nbytes) {
-  while (nbytes > 0) {
-    const int64_t bytes_to_write = std::min<int64_t>(nbytes, kArrowAlignment);
-    RETURN_NOT_OK(stream->Write(kPaddingBytes, bytes_to_write));
-    nbytes -= bytes_to_write;
-  }
-  return Status::OK();
+  return result;
 }
 
 Status Message::SerializeTo(io::OutputStream* stream, const IpcWriteOptions& options,
@@ -281,6 +285,8 @@ std::string FormatMessageType(MessageType type) {
   return "unknown";
 }
 
+namespace {
+
 Status ReadFieldsSubset(int64_t offset, int32_t metadata_length,
                         io::RandomAccessFile* file,
                         const FieldsLoaderFunction& fields_loader,
@@ -299,8 +305,8 @@ Status ReadFieldsSubset(int64_t offset, int32_t metadata_length,
   }
   internal::IoRecordedRandomAccessFile io_recorded_random_access_file(required_size);
   RETURN_NOT_OK(fields_loader(batch, &io_recorded_random_access_file));
-  auto const& read_ranges = io_recorded_random_access_file.GetReadRanges();
-  for (auto const& range : read_ranges) {
+  const auto& read_ranges = io_recorded_random_access_file.GetReadRanges();
+  for (const auto& range : read_ranges) {
     auto read_result = file->ReadAt(offset + metadata_length + range.offset, range.length,
                                     body->mutable_data() + range.offset);
     if (!read_result.ok()) {
@@ -310,6 +316,8 @@ Status ReadFieldsSubset(int64_t offset, int32_t metadata_length,
   }
   return Status::OK();
 }
+
+}  // namespace
 
 Result<std::unique_ptr<Message>> ReadMessage(std::shared_ptr<Buffer> metadata,
                                              std::shared_ptr<Buffer> body) {
@@ -329,7 +337,7 @@ Result<std::unique_ptr<Message>> ReadMessage(std::shared_ptr<Buffer> metadata,
     case MessageDecoder::State::INITIAL:
       // Metadata did not request a body so we better not have provided one
       DCHECK_EQ(body, nullptr);
-      return std::move(result);
+      return result;
     case MessageDecoder::State::METADATA_LENGTH:
       return Status::Invalid("metadata length is missing from the metadata buffer");
     case MessageDecoder::State::METADATA:
@@ -338,7 +346,7 @@ Result<std::unique_ptr<Message>> ReadMessage(std::shared_ptr<Buffer> metadata,
     case MessageDecoder::State::BODY: {
       if (body == nullptr) {
         // Caller didn't give a body so just give them a message without body
-        return std::move(result);
+        return result;
       }
       if (body->size() != decoder.next_required_size()) {
         return Status::IOError("Expected body buffer to be ",
@@ -346,7 +354,7 @@ Result<std::unique_ptr<Message>> ReadMessage(std::shared_ptr<Buffer> metadata,
                                " bytes for message body, got ", body->size());
       }
       RETURN_NOT_OK(decoder.Consume(body));
-      return std::move(result);
+      return result;
     }
     case MessageDecoder::State::EOS:
       return Status::Invalid("Unexpected empty message in IPC file format");
@@ -367,16 +375,19 @@ Result<std::unique_ptr<Message>> ReadMessage(int64_t offset, int32_t metadata_le
                            decoder.next_required_size());
   }
 
+  // TODO(GH-48846): we should take a body_length just like ReadMessageAsync
+  // and read metadata + body in one go.
   ARROW_ASSIGN_OR_RAISE(auto metadata, file->ReadAt(offset, metadata_length));
   if (metadata->size() < metadata_length) {
     return Status::Invalid("Expected to read ", metadata_length,
-                           " metadata bytes but got ", metadata->size());
+                           " metadata bytes at offset ", offset, " but got ",
+                           metadata->size());
   }
   ARROW_RETURN_NOT_OK(decoder.Consume(metadata));
 
   switch (decoder.state()) {
     case MessageDecoder::State::INITIAL:
-      return std::move(result);
+      return result;
     case MessageDecoder::State::METADATA_LENGTH:
       return Status::Invalid("metadata length is missing. File offset: ", offset,
                              ", metadata length: ", metadata_length);
@@ -401,7 +412,7 @@ Result<std::unique_ptr<Message>> ReadMessage(int64_t offset, int32_t metadata_le
                                " bytes for message body, got ", body->size());
       }
       RETURN_NOT_OK(decoder.Consume(body));
-      return std::move(result);
+      return result;
     }
     case MessageDecoder::State::EOS:
       return Status::Invalid("Unexpected empty message in IPC file format");
@@ -551,7 +562,7 @@ Result<std::unique_ptr<Message>> ReadMessage(io::InputStream* file, MemoryPool* 
   if (!message) {
     return nullptr;
   } else {
-    return std::move(message);
+    return message;
   }
 }
 
@@ -607,6 +618,7 @@ class MessageDecoder::MessageDecoderImpl {
                               MemoryPool* pool, bool skip_body)
       : listener_(std::move(listener)),
         pool_(pool),
+        memory_manager_(CPUDevice::memory_manager(pool_)),
         state_(initial_state),
         next_required_size_(initial_next_required_size),
         chunks_(),
@@ -822,8 +834,7 @@ class MessageDecoder::MessageDecoderImpl {
     if (buffer->is_cpu()) {
       metadata_ = buffer;
     } else {
-      ARROW_ASSIGN_OR_RAISE(metadata_,
-                            Buffer::ViewOrCopy(buffer, CPUDevice::memory_manager(pool_)));
+      ARROW_ASSIGN_OR_RAISE(metadata_, Buffer::ViewOrCopy(buffer, memory_manager_));
     }
     return ConsumeMetadata();
   }
@@ -834,16 +845,15 @@ class MessageDecoder::MessageDecoderImpl {
         if (chunks_[0]->is_cpu()) {
           metadata_ = std::move(chunks_[0]);
         } else {
-          ARROW_ASSIGN_OR_RAISE(
-              metadata_,
-              Buffer::ViewOrCopy(chunks_[0], CPUDevice::memory_manager(pool_)));
+          ARROW_ASSIGN_OR_RAISE(metadata_,
+                                Buffer::ViewOrCopy(chunks_[0], memory_manager_));
         }
         chunks_.erase(chunks_.begin());
       } else {
         metadata_ = SliceBuffer(chunks_[0], 0, next_required_size_);
         if (!chunks_[0]->is_cpu()) {
-          ARROW_ASSIGN_OR_RAISE(
-              metadata_, Buffer::ViewOrCopy(metadata_, CPUDevice::memory_manager(pool_)));
+          ARROW_ASSIGN_OR_RAISE(metadata_,
+                                Buffer::ViewOrCopy(metadata_, memory_manager_));
         }
         chunks_[0] = SliceBuffer(chunks_[0], next_required_size_);
       }
@@ -911,8 +921,7 @@ class MessageDecoder::MessageDecoderImpl {
     if (buffer->is_cpu()) {
       return util::SafeLoadAs<int32_t>(buffer->data());
     } else {
-      ARROW_ASSIGN_OR_RAISE(auto cpu_buffer,
-                            Buffer::ViewOrCopy(buffer, CPUDevice::memory_manager(pool_)));
+      ARROW_ASSIGN_OR_RAISE(auto cpu_buffer, Buffer::ViewOrCopy(buffer, memory_manager_));
       return util::SafeLoadAs<int32_t>(cpu_buffer->data());
     }
   }
@@ -924,8 +933,7 @@ class MessageDecoder::MessageDecoderImpl {
     std::shared_ptr<Buffer> last_chunk;
     for (auto& chunk : chunks_) {
       if (!chunk->is_cpu()) {
-        ARROW_ASSIGN_OR_RAISE(
-            chunk, Buffer::ViewOrCopy(chunk, CPUDevice::memory_manager(pool_)));
+        ARROW_ASSIGN_OR_RAISE(chunk, Buffer::ViewOrCopy(chunk, memory_manager_));
       }
       auto data = chunk->data();
       auto data_size = chunk->size();
@@ -951,6 +959,7 @@ class MessageDecoder::MessageDecoderImpl {
 
   std::shared_ptr<MessageDecoderListener> listener_;
   MemoryPool* pool_;
+  std::shared_ptr<MemoryManager> memory_manager_;
   State state_;
   int64_t next_required_size_;
   std::vector<std::shared_ptr<Buffer>> chunks_;

@@ -70,8 +70,9 @@ class SimpleExtensionType : public ExtensionType {
 
   std::string extension_name() const override { return std::string(kExtensionName); }
 
-  std::string ToString() const override { return "extension<" + this->Serialize() + ">"; }
-
+  std::string ToString(bool show_metadata = false) const override {
+    return "extension<" + this->Serialize() + ">";
+  }
   /// \brief A comparator which returns true iff all parameter properties are equal
   struct ExtensionEqualsImpl {
     ExtensionEqualsImpl(const Params& l, const Params& r) : left_(l), right_(r) {
@@ -95,9 +96,9 @@ class SimpleExtensionType : public ExtensionType {
   }
 
   std::shared_ptr<Array> MakeArray(std::shared_ptr<ArrayData> data) const override {
-    DCHECK_EQ(data->type->id(), Type::EXTENSION);
-    DCHECK_EQ(static_cast<const ExtensionType&>(*data->type).extension_name(),
-              kExtensionName);
+    ARROW_DCHECK_EQ(data->type->id(), Type::EXTENSION);
+    ARROW_DCHECK_EQ(static_cast<const ExtensionType&>(*data->type).extension_name(),
+                    kExtensionName);
     return std::make_shared<ExtensionArray>(data);
   }
 
@@ -110,7 +111,7 @@ class SimpleExtensionType : public ExtensionType {
     void Fail() { params_ = std::nullopt; }
 
     void Init(std::string_view class_name, std::string_view repr, size_t num_properties) {
-      if (!::arrow::internal::StartsWith(repr, class_name)) return Fail();
+      if (!repr.starts_with(class_name)) return Fail();
 
       repr = repr.substr(class_name.size());
       if (repr.empty()) return Fail();

@@ -43,7 +43,7 @@ namespace arrow {
 // VarLengthListLikeBuilder
 
 template <typename TYPE>
-class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
+class VarLengthListLikeBuilder : public ArrayBuilder {
  public:
   using TypeClass = TYPE;
   using offset_type = typename TypeClass::offset_type;
@@ -51,7 +51,7 @@ class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
   /// Use this constructor to incrementally build the value array along with offsets and
   /// null bitmap.
   VarLengthListLikeBuilder(MemoryPool* pool,
-                           std::shared_ptr<ArrayBuilder> const& value_builder,
+                           const std::shared_ptr<ArrayBuilder>& value_builder,
                            const std::shared_ptr<DataType>& type,
                            int64_t alignment = kDefaultBufferAlignment)
       : ArrayBuilder(pool, alignment),
@@ -60,7 +60,7 @@ class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
         value_field_(type->field(0)->WithType(NULLPTR)) {}
 
   VarLengthListLikeBuilder(MemoryPool* pool,
-                           std::shared_ptr<ArrayBuilder> const& value_builder,
+                           const std::shared_ptr<ArrayBuilder>& value_builder,
                            int64_t alignment = kDefaultBufferAlignment)
       : VarLengthListLikeBuilder(pool, value_builder,
                                  std::make_shared<TYPE>(value_builder->type()),
@@ -181,13 +181,11 @@ class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
     if constexpr (is_list_view(TYPE::type_id)) {
       sizes = array.GetValues<offset_type>(2);
     }
-    const bool all_valid = !array.MayHaveLogicalNulls();
-    const uint8_t* validity = array.HasValidityBitmap() ? array.buffers[0].data : NULLPTR;
+    static_assert(internal::may_have_validity_bitmap(TYPE::type_id));
+    const uint8_t* validity = array.MayHaveNulls() ? array.buffers[0].data : NULLPTR;
     ARROW_RETURN_NOT_OK(Reserve(length));
     for (int64_t row = offset; row < offset + length; row++) {
-      const bool is_valid =
-          all_valid || (validity && bit_util::GetBit(validity, array.offset + row)) ||
-          array.IsValid(row);
+      const bool is_valid = !validity || bit_util::GetBit(validity, array.offset + row);
       int64_t size = 0;
       if (is_valid) {
         if constexpr (is_list_view(TYPE::type_id)) {
@@ -250,7 +248,7 @@ class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
   /// \brief Append dimensions for a single list slot.
   ///
   /// ListViewBuilder overrides this to also append the size.
-  virtual void UnsafeAppendDimensions(int64_t offset, int64_t size) {
+  virtual void UnsafeAppendDimensions(int64_t offset, int64_t ARROW_ARG_UNUSED(size)) {
     offsets_builder_.UnsafeAppend(static_cast<offset_type>(offset));
   }
 
@@ -263,7 +261,7 @@ class ARROW_EXPORT VarLengthListLikeBuilder : public ArrayBuilder {
 // ListBuilder / LargeListBuilder
 
 template <typename TYPE>
-class ARROW_EXPORT BaseListBuilder : public VarLengthListLikeBuilder<TYPE> {
+class BaseListBuilder : public VarLengthListLikeBuilder<TYPE> {
  private:
   using BASE = VarLengthListLikeBuilder<TYPE>;
 
@@ -403,7 +401,7 @@ class ARROW_EXPORT LargeListBuilder : public BaseListBuilder<LargeListType> {
 // ListViewBuilder / LargeListViewBuilder
 
 template <typename TYPE>
-class ARROW_EXPORT BaseListViewBuilder : public VarLengthListLikeBuilder<TYPE> {
+class BaseListViewBuilder : public VarLengthListLikeBuilder<TYPE> {
  private:
   using BASE = VarLengthListLikeBuilder<TYPE>;
 
@@ -515,10 +513,9 @@ class ARROW_EXPORT LargeListViewBuilder final
 /// \class MapBuilder
 /// \brief Builder class for arrays of variable-size maps
 ///
-/// To use this class, you must append values to the key and item array builders
-/// and use the Append function to delimit each distinct map (once the keys and items
-/// have been appended) or use the bulk API to append a sequence of offsets and null
-/// maps.
+/// To use this class, you must use the Append function to delimit each distinct
+/// map before appending values to the key and item array builders, or use the
+/// bulk API to append a sequence of offsets and null maps.
 ///
 /// Key uniqueness and ordering are not validated.
 class ARROW_EXPORT MapBuilder : public ArrayBuilder {
@@ -570,13 +567,11 @@ class ARROW_EXPORT MapBuilder : public ArrayBuilder {
 
   Status AppendArraySlice(const ArraySpan& array, int64_t offset,
                           int64_t length) override {
-    const int32_t* offsets = array.GetValues<int32_t>(1);
-    const bool all_valid = !array.MayHaveLogicalNulls();
-    const uint8_t* validity = array.HasValidityBitmap() ? array.buffers[0].data : NULLPTR;
+    const auto* offsets = array.GetValues<int32_t>(1);
+    static_assert(internal::may_have_validity_bitmap(MapType::type_id));
+    const uint8_t* validity = array.MayHaveNulls() ? array.buffers[0].data : NULLPTR;
     for (int64_t row = offset; row < offset + length; row++) {
-      const bool is_valid =
-          all_valid || (validity && bit_util::GetBit(validity, array.offset + row)) ||
-          array.IsValid(row);
+      const bool is_valid = !validity || bit_util::GetBit(validity, array.offset + row);
       if (is_valid) {
         ARROW_RETURN_NOT_OK(Append());
         const int64_t slot_length = offsets[row + 1] - offsets[row];
@@ -647,16 +642,18 @@ class ARROW_EXPORT MapBuilder : public ArrayBuilder {
 /// \brief Builder class for fixed-length list array value types
 class ARROW_EXPORT FixedSizeListBuilder : public ArrayBuilder {
  public:
+  using TypeClass = FixedSizeListType;
+
   /// Use this constructor to define the built array's type explicitly. If value_builder
   /// has indeterminate type, this builder will also.
   FixedSizeListBuilder(MemoryPool* pool,
-                       std::shared_ptr<ArrayBuilder> const& value_builder,
+                       const std::shared_ptr<ArrayBuilder>& value_builder,
                        int32_t list_size);
 
   /// Use this constructor to infer the built array's type. If value_builder has
   /// indeterminate type, this builder will also.
   FixedSizeListBuilder(MemoryPool* pool,
-                       std::shared_ptr<ArrayBuilder> const& value_builder,
+                       const std::shared_ptr<ArrayBuilder>& value_builder,
                        const std::shared_ptr<DataType>& type);
 
   Status Resize(int64_t capacity) override;
@@ -677,7 +674,7 @@ class ARROW_EXPORT FixedSizeListBuilder : public ArrayBuilder {
 
   /// \brief Vector append
   ///
-  /// If passed, valid_bytes wil be read and any zero byte
+  /// If passed, valid_bytes will be read and any zero byte
   /// will cause the corresponding slot to be null
   ///
   /// This function affects only the validity bitmap; the child values must be appended

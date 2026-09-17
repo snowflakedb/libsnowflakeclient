@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 
 #include <gtest/gtest.h>
 
@@ -106,11 +107,6 @@ TEST(DefaultMemoryPool, Identity) {
             specific_pools.end());
 }
 
-// Death tests and valgrind are known to not play well 100% of the time. See
-// googletest documentation
-#if !(defined(ARROW_VALGRIND) || defined(ADDRESS_SANITIZER))
-
-// TODO: is this still a death test?
 TEST(DefaultMemoryPoolDeathTest, Statistics) {
   MemoryPool* pool = default_memory_pool();
   uint8_t* data1;
@@ -137,17 +133,15 @@ TEST(DefaultMemoryPoolDeathTest, Statistics) {
   ASSERT_EQ(150, pool->max_memory());
   ASSERT_EQ(200, pool->total_bytes_allocated());
   ASSERT_EQ(50, pool->bytes_allocated());
-  ASSERT_EQ(4, pool->num_allocations());
+  ASSERT_EQ(3, pool->num_allocations());
 
   pool->Free(data1, 50);
 
   ASSERT_EQ(150, pool->max_memory());
   ASSERT_EQ(200, pool->total_bytes_allocated());
   ASSERT_EQ(0, pool->bytes_allocated());
-  ASSERT_EQ(4, pool->num_allocations());
+  ASSERT_EQ(3, pool->num_allocations());
 }
-
-#endif  // ARROW_VALGRIND
 
 TEST(LoggingMemoryPool, Logging) {
   auto pool = MemoryPool::CreateDefault();
@@ -248,10 +242,10 @@ TEST(Jemalloc, GetAllocationStats) {
 
   // Check allocated stats change due to allocation
   ASSERT_NEAR(allocated - allocated0, 70000, 50000);
-  ASSERT_NEAR(active - active0, 100000, 90000);
-  ASSERT_NEAR(metadata - metadata0, 500, 460);
-  ASSERT_NEAR(resident - resident0, 120000, 110000);
-  ASSERT_NEAR(mapped - mapped0, 100000, 90000);
+  ASSERT_GE(active - active0, allocated - allocated0);
+  ASSERT_GT(metadata, metadata0);
+  ASSERT_GE(resident - resident0, allocated - allocated0);
+  ASSERT_GE(mapped - mapped0, allocated - allocated0);
   ASSERT_NEAR(retained - retained0, 0, 40000);
 
   ASSERT_NEAR(thread_peak_read - thread_peak_read0, 1024, 700);
@@ -295,6 +289,95 @@ TEST(Jemalloc, GetAllocationStats) {
   ASSERT_RAISES(NotImplemented, jemalloc_stats_print(write_cb, "Jax"));
   ASSERT_RAISES(NotImplemented, jemalloc_stats_print("ax"));
 #endif
+}
+
+class TestCappedMemoryPool : public ::arrow::TestMemoryPoolBase {
+ public:
+  MemoryPool* memory_pool() override { return InitPool(/*limit=*/1'000'000'000LL); }
+
+  MemoryPool* InitPool(int64_t limit) {
+    proxy_memory_pool_ = std::make_shared<ProxyMemoryPool>(default_memory_pool());
+    capped_memory_pool_ =
+        std::make_shared<CappedMemoryPool>(proxy_memory_pool_.get(), limit);
+    return capped_memory_pool_.get();
+  }
+
+ protected:
+  std::shared_ptr<MemoryPool> proxy_memory_pool_;
+  std::shared_ptr<CappedMemoryPool> capped_memory_pool_;
+};
+
+TEST_F(TestCappedMemoryPool, MemoryTracking) { this->TestMemoryTracking(); }
+
+TEST_F(TestCappedMemoryPool, OOM) {
+  // CappedMemoryPool rejects the huge allocation without hitting the underlying
+  // allocator, so this should work even under Address Sanitizer.
+  this->TestOOM();
+}
+
+TEST_F(TestCappedMemoryPool, Reallocate) { this->TestReallocate(); }
+
+TEST_F(TestCappedMemoryPool, Alignment) { this->TestAlignment(); }
+
+TEST_F(TestCappedMemoryPool, AllocateLimit) {
+  auto pool = InitPool(/*limit=*/1000);
+
+  uint8_t* data1;
+  uint8_t* data2;
+  ASSERT_OK(pool->Allocate(600, &data1));
+  ASSERT_EQ(600, pool->bytes_allocated());
+  ASSERT_EQ(600, pool->total_bytes_allocated());
+  ASSERT_EQ(600, pool->max_memory());
+
+  ASSERT_OK(pool->Allocate(400, &data2));
+  ASSERT_EQ(1000, pool->bytes_allocated());
+  ASSERT_EQ(1000, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+  pool->Free(data2, 400);
+  ASSERT_EQ(600, pool->bytes_allocated());
+  ASSERT_EQ(1000, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  ASSERT_OK(pool->Allocate(300, &data2));
+  ASSERT_EQ(900, pool->bytes_allocated());
+  ASSERT_EQ(1300, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+  pool->Free(data2, 300);
+  ASSERT_EQ(600, pool->bytes_allocated());
+  ASSERT_EQ(1300, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  ASSERT_RAISES(OutOfMemory, pool->Allocate(401, &data2));
+  ASSERT_EQ(600, pool->bytes_allocated());
+  ASSERT_EQ(1300, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  pool->Free(data1, 600);
+}
+
+TEST_F(TestCappedMemoryPool, ReallocateLimit) {
+  auto pool = InitPool(/*limit=*/1000);
+
+  uint8_t* data1;
+  uint8_t* data2;
+  ASSERT_OK(pool->Allocate(600, &data1));
+  ASSERT_OK(pool->Allocate(400, &data2));
+  ASSERT_EQ(1000, pool->bytes_allocated());
+  ASSERT_EQ(1000, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  ASSERT_OK(pool->Reallocate(400, 300, &data2));
+  ASSERT_EQ(900, pool->bytes_allocated());
+  ASSERT_EQ(1000, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  ASSERT_RAISES(OutOfMemory, pool->Reallocate(300, 401, &data2));
+  ASSERT_EQ(900, pool->bytes_allocated());
+  ASSERT_EQ(1000, pool->total_bytes_allocated());
+  ASSERT_EQ(1000, pool->max_memory());
+
+  pool->Free(data1, 600);
+  pool->Free(data2, 300);
 }
 
 }  // namespace arrow

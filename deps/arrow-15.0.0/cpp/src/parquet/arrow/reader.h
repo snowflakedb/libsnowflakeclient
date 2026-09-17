@@ -116,15 +116,28 @@ class RowGroupReader;
 class PARQUET_EXPORT FileReader {
  public:
   /// Factory function to create a FileReader from a ParquetFileReader and properties
+  /// \deprecated Deprecated in 23.0.0. Use arrow::Result version instead.
+  ARROW_DEPRECATED("Deprecated in 23.0.0. Use arrow::Result version instead.")
   static ::arrow::Status Make(::arrow::MemoryPool* pool,
                               std::unique_ptr<ParquetFileReader> reader,
                               const ArrowReaderProperties& properties,
                               std::unique_ptr<FileReader>* out);
 
   /// Factory function to create a FileReader from a ParquetFileReader
+  /// \deprecated Deprecated in 23.0.0. Use arrow::Result version instead.
+  ARROW_DEPRECATED("Deprecated in 23.0.0. Use arrow::Result version instead.")
   static ::arrow::Status Make(::arrow::MemoryPool* pool,
                               std::unique_ptr<ParquetFileReader> reader,
                               std::unique_ptr<FileReader>* out);
+
+  /// Factory function to create a FileReader from a ParquetFileReader and properties
+  static ::arrow::Result<std::unique_ptr<FileReader>> Make(
+      ::arrow::MemoryPool* pool, std::unique_ptr<ParquetFileReader> reader,
+      const ArrowReaderProperties& properties);
+
+  /// Factory function to create a FileReader from a ParquetFileReader
+  static ::arrow::Result<std::unique_ptr<FileReader>> Make(
+      ::arrow::MemoryPool* pool, std::unique_ptr<ParquetFileReader> reader);
 
   // Since the distribution of columns amongst a Parquet file's row groups may
   // be uneven (the number of values in each column chunk can be different), we
@@ -155,18 +168,17 @@ class PARQUET_EXPORT FileReader {
                                      std::shared_ptr<::arrow::ChunkedArray>* out) = 0;
 
   /// \brief Return a RecordBatchReader of all row groups and columns.
-  virtual ::arrow::Status GetRecordBatchReader(
-      std::unique_ptr<::arrow::RecordBatchReader>* out) = 0;
+  virtual ::arrow::Result<std::unique_ptr<::arrow::RecordBatchReader>>
+  GetRecordBatchReader() = 0;
 
   /// \brief Return a RecordBatchReader of row groups selected from row_group_indices.
   ///
   /// Note that the ordering in row_group_indices matters. FileReaders must outlive
   /// their RecordBatchReaders.
   ///
-  /// \returns error Status if row_group_indices contains an invalid index
-  virtual ::arrow::Status GetRecordBatchReader(
-      const std::vector<int>& row_group_indices,
-      std::unique_ptr<::arrow::RecordBatchReader>* out) = 0;
+  /// \returns error Result if row_group_indices contains an invalid index
+  virtual ::arrow::Result<std::unique_ptr<::arrow::RecordBatchReader>>
+  GetRecordBatchReader(const std::vector<int>& row_group_indices) = 0;
 
   /// \brief Return a RecordBatchReader of row groups selected from
   /// row_group_indices, whose columns are selected by column_indices.
@@ -174,11 +186,11 @@ class PARQUET_EXPORT FileReader {
   /// Note that the ordering in row_group_indices and column_indices
   /// matter. FileReaders must outlive their RecordBatchReaders.
   ///
-  /// \returns error Status if either row_group_indices or column_indices
+  /// \returns error Result if either row_group_indices or column_indices
   ///     contains an invalid index
-  virtual ::arrow::Status GetRecordBatchReader(
-      const std::vector<int>& row_group_indices, const std::vector<int>& column_indices,
-      std::unique_ptr<::arrow::RecordBatchReader>* out) = 0;
+  virtual ::arrow::Result<std::unique_ptr<::arrow::RecordBatchReader>>
+  GetRecordBatchReader(const std::vector<int>& row_group_indices,
+                       const std::vector<int>& column_indices) = 0;
 
   /// \brief Return a RecordBatchReader of row groups selected from
   /// row_group_indices, whose columns are selected by column_indices.
@@ -192,11 +204,19 @@ class PARQUET_EXPORT FileReader {
   ///
   /// \returns error Status if either row_group_indices or column_indices
   ///     contains an invalid index
+  /// \deprecated Deprecated in 21.0.0. Use arrow::Result version instead.
+  ARROW_DEPRECATED("Deprecated in 21.0.0. Use arrow::Result version instead.")
   ::arrow::Status GetRecordBatchReader(const std::vector<int>& row_group_indices,
                                        const std::vector<int>& column_indices,
                                        std::shared_ptr<::arrow::RecordBatchReader>* out);
+
+  /// \deprecated Deprecated in 21.0.0. Use arrow::Result version instead.
+  ARROW_DEPRECATED("Deprecated in 21.0.0. Use arrow::Result version instead.")
   ::arrow::Status GetRecordBatchReader(const std::vector<int>& row_group_indices,
                                        std::shared_ptr<::arrow::RecordBatchReader>* out);
+
+  /// \deprecated Deprecated in 21.0.0. Use arrow::Result version instead.
+  ARROW_DEPRECATED("Deprecated in 21.0.0. Use arrow::Result version instead.")
   ::arrow::Status GetRecordBatchReader(std::shared_ptr<::arrow::RecordBatchReader>* out);
 
   /// \brief Return a generator of record batches.
@@ -358,9 +378,8 @@ class PARQUET_EXPORT FileReaderBuilder {
 ///
 /// Advanced settings are supported through the FileReaderBuilder class.
 PARQUET_EXPORT
-::arrow::Status OpenFile(std::shared_ptr<::arrow::io::RandomAccessFile>,
-                         ::arrow::MemoryPool* allocator,
-                         std::unique_ptr<FileReader>* reader);
+::arrow::Result<std::unique_ptr<FileReader>> OpenFile(
+    std::shared_ptr<::arrow::io::RandomAccessFile>, ::arrow::MemoryPool* allocator);
 
 /// @}
 
@@ -369,11 +388,5 @@ PARQUET_EXPORT
                                     std::shared_ptr<::arrow::Scalar>* min,
                                     std::shared_ptr<::arrow::Scalar>* max);
 
-namespace internal {
-
-PARQUET_EXPORT
-::arrow::Status FuzzReader(const uint8_t* data, int64_t size);
-
-}  // namespace internal
 }  // namespace arrow
 }  // namespace parquet

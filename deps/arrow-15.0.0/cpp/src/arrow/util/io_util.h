@@ -18,26 +18,28 @@
 #pragma once
 
 #ifndef _WIN32
-#define ARROW_HAVE_SIGACTION 1
+#  define ARROW_HAVE_SIGACTION 1
 #endif
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #if ARROW_HAVE_SIGACTION
-#include <signal.h>  // Needed for struct sigaction
+#  include <csignal>  // Needed for struct sigaction
 #endif
 
+#include "arrow/result.h"
 #include "arrow/status.h"
 #include "arrow/type_fwd.h"
 #include "arrow/util/macros.h"
 #include "arrow/util/windows_fixup.h"
 
-namespace arrow {
-namespace internal {
+namespace arrow::internal {
 
 // NOTE: 8-bit path strings on Windows are encoded using UTF-8.
 // Using MBCS would fail encoding some paths.
@@ -237,23 +239,16 @@ Status MemoryMapRemap(void* addr, size_t old_size, size_t new_size, int fildes,
 ARROW_EXPORT
 Status MemoryAdviseWillNeed(const std::vector<MemoryRegion>& regions);
 
+// Returns KeyError if the environment variable doesn't exist
 ARROW_EXPORT
-Result<std::string> GetEnvVar(const char* name);
+Result<std::string> GetEnvVar(std::string_view name);
 ARROW_EXPORT
-Result<std::string> GetEnvVar(const std::string& name);
-ARROW_EXPORT
-Result<NativePathString> GetEnvVarNative(const char* name);
-ARROW_EXPORT
-Result<NativePathString> GetEnvVarNative(const std::string& name);
+Result<NativePathString> GetEnvVarNative(std::string_view name);
 
 ARROW_EXPORT
-Status SetEnvVar(const char* name, const char* value);
+Status SetEnvVar(std::string_view name, std::string_view value);
 ARROW_EXPORT
-Status SetEnvVar(const std::string& name, const std::string& value);
-ARROW_EXPORT
-Status DelEnvVar(const char* name);
-ARROW_EXPORT
-Status DelEnvVar(const std::string& name);
+Status DelEnvVar(std::string_view name);
 
 ARROW_EXPORT
 std::string ErrnoMessage(int errnum);
@@ -264,6 +259,8 @@ std::string WinErrorMessage(int errnum);
 
 ARROW_EXPORT
 std::shared_ptr<StatusDetail> StatusDetailFromErrno(int errnum);
+ARROW_EXPORT
+std::optional<int> ErrnoFromStatusDetail(const StatusDetail& detail);
 #if _WIN32
 ARROW_EXPORT
 std::shared_ptr<StatusDetail> StatusDetailFromWinError(int errnum);
@@ -335,7 +332,7 @@ class ARROW_EXPORT TemporaryDir {
 
 class ARROW_EXPORT SignalHandler {
  public:
-  typedef void (*Callback)(int);
+  using Callback = void (*)(int);
 
   SignalHandler();
   explicit SignalHandler(Callback cb);
@@ -416,5 +413,40 @@ int64_t GetCurrentRSS();
 ARROW_EXPORT
 int64_t GetTotalMemoryBytes();
 
-}  // namespace internal
-}  // namespace arrow
+/// \brief Get the number of affinity core on the system.
+///
+/// This is only implemented on Linux.
+/// If a value is returned, it is guaranteed to be greater or equal to one.
+ARROW_EXPORT Result<int32_t> GetNumAffinityCores();
+
+/// \brief Load a dynamic library
+///
+/// This wraps dlopen() except on Windows, where LoadLibrary() is called.
+/// These two platforms handle absolute paths consistently; relative paths
+/// or the library's bare name may be handled but inconsistently.
+///
+/// \return An opaque handle for the dynamic library, which can be used for
+///         subsequent symbol lookup. Nullptr will never be returned; instead
+///         an error will be raised.
+ARROW_EXPORT Result<void*> LoadDynamicLibrary(const PlatformFilename& path);
+
+/// \brief Load a dynamic library
+///
+/// An overload taking null terminated string.
+ARROW_EXPORT Result<void*> LoadDynamicLibrary(const char* path);
+
+/// \brief Retrieve a symbol by name from a library handle.
+///
+/// This wraps dlsym() except on Windows, where GetProcAddress() is called.
+///
+/// \return The address associated with the named symbol. Nullptr will never be
+///         returned; instead an error will be raised.
+ARROW_EXPORT Result<void*> GetSymbol(void* handle, const char* name);
+
+template <typename T>
+Result<T*> GetSymbolAs(void* handle, const char* name) {
+  ARROW_ASSIGN_OR_RAISE(void* sym, GetSymbol(handle, name));
+  return reinterpret_cast<T*>(sym);
+}
+
+}  // namespace arrow::internal

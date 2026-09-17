@@ -51,6 +51,8 @@ TEST(TestStringOps, TestAscii) {
   EXPECT_EQ(ascii_utf8("", 0), 0);
   EXPECT_EQ(ascii_utf8("123", 3), 49);
   EXPECT_EQ(ascii_utf8("999", 3), 57);
+  EXPECT_EQ(ascii_utf8("\x80", 1), -128);
+  EXPECT_EQ(ascii_utf8("\xFF", 1), -1);
 }
 
 TEST(TestStringOps, TestChrBigInt) {
@@ -384,6 +386,13 @@ TEST(TestStringOps, TestRepeat) {
   out_str = repeat_utf8_int32(ctx_ptr, "a", 1, -10, &out_len);
   EXPECT_EQ(std::string(out_str, out_len), "");
   EXPECT_THAT(ctx.get_error(), ::testing::HasSubstr("Repeat number can't be negative"));
+  ctx.Reset();
+
+  out_str = repeat_utf8_int32(ctx_ptr, "aa", 2,
+                              std::numeric_limits<int32_t>::max() / 2 + 1, &out_len);
+  EXPECT_EQ(std::string(out_str, out_len), "");
+  EXPECT_THAT(ctx.get_error(),
+              ::testing::HasSubstr("Would overflow maximum output size"));
   ctx.Reset();
 }
 

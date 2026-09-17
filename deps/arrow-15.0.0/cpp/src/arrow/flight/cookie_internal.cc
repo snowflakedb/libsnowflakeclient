@@ -15,8 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Interfaces for defining middleware for Flight clients. Currently
-// experimental.
+// Interfaces for defining middleware for Flight clients.
 
 #include "arrow/flight/cookie_internal.h"
 #include "arrow/flight/client.h"
@@ -29,7 +28,7 @@
 
 // Mingw-w64 defines strcasecmp in string.h
 #if defined(_WIN32) && !defined(strcasecmp)
-#define strcasecmp stricmp
+#  define strcasecmp stricmp
 #endif
 
 #include <algorithm>
@@ -63,6 +62,11 @@ size_t CaseInsensitiveHash::operator()(const std::string& key) const {
   std::transform(upper_string.begin(), upper_string.end(), upper_string.begin(),
                  ::toupper);
   return std::hash<std::string>{}(upper_string);
+}
+
+bool CaseInsensitiveEqual::operator()(const std::string& lhs,
+                                      const std::string& rhs) const {
+  return strcasecmp(lhs.c_str(), rhs.c_str()) == 0;
 }
 
 Cookie Cookie::Parse(std::string_view cookie_header_value) {
@@ -159,8 +163,8 @@ CookiePair Cookie::ParseCookieAttribute(const std::string& cookie_header_value,
   }
 
   // Key/Value may be URI-encoded.
-  out_key = arrow::internal::UriUnescape(out_key);
-  out_value = arrow::internal::UriUnescape(out_value);
+  out_key = arrow::util::UriUnescape(out_key);
+  out_value = arrow::util::UriUnescape(out_value);
 
   // Strip outer quotes on the value.
   if (out_value.size() >= 2 && out_value[0] == '"' &&

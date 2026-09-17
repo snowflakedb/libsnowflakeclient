@@ -35,6 +35,7 @@
 #include "arrow/type.h"
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/compression.h"
+#include "arrow/util/config.h"
 
 namespace arrow {
 
@@ -315,6 +316,24 @@ TEST_P(TestFeather, SliceStringsRoundTrip) {
 TEST_P(TestFeather, SliceBooleanRoundTrip) {
   std::shared_ptr<RecordBatch> batch;
   ASSERT_OK(ipc::test::MakeBooleanBatchSized(600, &batch));
+  CheckSlices(batch);
+}
+
+TEST_P(TestFeather, SliceListRoundTrip) {
+  if (GetParam().version == kFeatherV1Version) {
+    GTEST_SKIP() << "Feather V1 does not support list types";
+  }
+  std::shared_ptr<RecordBatch> batch;
+  ASSERT_OK(ipc::test::MakeListRecordBatchSized(600, &batch));
+  CheckSlices(batch);
+}
+
+TEST_P(TestFeather, SliceListViewRoundTrip) {
+  if (GetParam().version == kFeatherV1Version) {
+    GTEST_SKIP() << "Feather V1 does not support list view types";
+  }
+  std::shared_ptr<RecordBatch> batch;
+  ASSERT_OK(ipc::test::MakeListViewRecordBatchSized(600, &batch));
   CheckSlices(batch);
 }
 

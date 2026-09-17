@@ -23,8 +23,9 @@
 #include <utility>
 #include <vector>
 
+#include "arrow/util/endian.h"
 #include "arrow/util/key_value_metadata.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "parquet/column_writer.h"
 #include "parquet/encryption/encryption_internal.h"
 #include "parquet/encryption/internal_file_encryptor.h"
@@ -139,39 +140,7 @@ class RowGroupSerializer : public RowGroupWriter::Contents {
     }
 
     const int32_t column_ordinal = next_column_index_++;
-    const auto& path = col_meta->descr()->path();
-    auto meta_encryptor =
-        file_encryptor_ ? file_encryptor_->GetColumnMetaEncryptor(path->ToDotString())
-                        : nullptr;
-    auto data_encryptor =
-        file_encryptor_ ? file_encryptor_->GetColumnDataEncryptor(path->ToDotString())
-                        : nullptr;
-    auto ci_builder = page_index_builder_ && properties_->page_index_enabled(path) &&
-                              properties_->statistics_enabled(path)
-                          ? page_index_builder_->GetColumnIndexBuilder(column_ordinal)
-                          : nullptr;
-    auto oi_builder = page_index_builder_ && properties_->page_index_enabled(path)
-                          ? page_index_builder_->GetOffsetIndexBuilder(column_ordinal)
-                          : nullptr;
-    auto codec_options = properties_->codec_options(path)
-                             ? properties_->codec_options(path).get()
-                             : nullptr;
-
-    std::unique_ptr<PageWriter> pager;
-    if (!codec_options) {
-      pager = PageWriter::Open(sink_, properties_->compression(path), col_meta,
-                               row_group_ordinal_, static_cast<int16_t>(column_ordinal),
-                               properties_->memory_pool(), false, meta_encryptor,
-                               data_encryptor, properties_->page_checksum_enabled(),
-                               ci_builder, oi_builder, CodecOptions());
-    } else {
-      pager = PageWriter::Open(sink_, properties_->compression(path), col_meta,
-                               row_group_ordinal_, static_cast<int16_t>(column_ordinal),
-                               properties_->memory_pool(), false, meta_encryptor,
-                               data_encryptor, properties_->page_checksum_enabled(),
-                               ci_builder, oi_builder, *codec_options);
-    }
-    column_writers_[0] = ColumnWriter::Make(col_meta, std::move(pager), properties_);
+    column_writers_[0] = CreateColumnWriterForColumn(col_meta, column_ordinal);
     return column_writers_[0].get();
   }
 
@@ -288,45 +257,48 @@ class RowGroupSerializer : public RowGroupWriter::Contents {
   }
 
   void InitColumns() {
-    for (int i = 0; i < num_columns(); i++) {
+    for (int i = 0; i < RowGroupSerializer::num_columns(); i++) {
       auto col_meta = metadata_->NextColumnChunk();
-      const auto& path = col_meta->descr()->path();
       const int32_t column_ordinal = next_column_index_++;
-      auto meta_encryptor =
-          file_encryptor_ ? file_encryptor_->GetColumnMetaEncryptor(path->ToDotString())
-                          : nullptr;
-      auto data_encryptor =
-          file_encryptor_ ? file_encryptor_->GetColumnDataEncryptor(path->ToDotString())
-                          : nullptr;
-      auto ci_builder = page_index_builder_ && properties_->page_index_enabled(path)
-                            ? page_index_builder_->GetColumnIndexBuilder(column_ordinal)
-                            : nullptr;
-      auto oi_builder = page_index_builder_ && properties_->page_index_enabled(path)
-                            ? page_index_builder_->GetOffsetIndexBuilder(column_ordinal)
-                            : nullptr;
-      auto codec_options = properties_->codec_options(path)
-                               ? (properties_->codec_options(path)).get()
-                               : nullptr;
-
-      std::unique_ptr<PageWriter> pager;
-      if (!codec_options) {
-        pager = PageWriter::Open(
-            sink_, properties_->compression(path), col_meta, row_group_ordinal_,
-            static_cast<int16_t>(column_ordinal), properties_->memory_pool(),
-            buffered_row_group_, meta_encryptor, data_encryptor,
-            properties_->page_checksum_enabled(), ci_builder, oi_builder, CodecOptions());
-      } else {
-        pager = PageWriter::Open(
-            sink_, properties_->compression(path), col_meta, row_group_ordinal_,
-            static_cast<int16_t>(column_ordinal), properties_->memory_pool(),
-            buffered_row_group_, meta_encryptor, data_encryptor,
-            properties_->page_checksum_enabled(), ci_builder, oi_builder, *codec_options);
-      }
-      column_writers_.push_back(
-          ColumnWriter::Make(col_meta, std::move(pager), properties_));
+      column_writers_.push_back(CreateColumnWriterForColumn(col_meta, column_ordinal));
     }
   }
 
+  std::shared_ptr<ColumnWriter> CreateColumnWriterForColumn(
+      ColumnChunkMetaDataBuilder* col_meta, int32_t column_ordinal) const {
+    const auto& path = col_meta->descr()->path();
+    const ColumnProperties& column_properties = properties_->column_properties(path);
+    auto meta_encryptor =
+        file_encryptor_ ? file_encryptor_->GetColumnMetaEncryptor(path->ToDotString())
+                        : nullptr;
+    auto data_encryptor =
+        file_encryptor_ ? file_encryptor_->GetColumnDataEncryptor(path->ToDotString())
+                        : nullptr;
+    auto ci_builder = page_index_builder_ && column_properties.page_index_enabled()
+                          ? page_index_builder_->GetColumnIndexBuilder(column_ordinal)
+                          : nullptr;
+    auto oi_builder = page_index_builder_ && column_properties.page_index_enabled()
+                          ? page_index_builder_->GetOffsetIndexBuilder(column_ordinal)
+                          : nullptr;
+
+    const CodecOptions* codec_options = column_properties.codec_options()
+                                            ? column_properties.codec_options().get()
+                                            : nullptr;
+    CodecOptions default_codec_options;
+    if (!codec_options) {
+      codec_options = &default_codec_options;
+    }
+    DCHECK_NE(nullptr, codec_options);
+    std::unique_ptr<PageWriter> pager = PageWriter::Open(
+        sink_, column_properties.compression(), col_meta, row_group_ordinal_,
+        static_cast<int16_t>(column_ordinal), properties_->memory_pool(),
+        buffered_row_group_, meta_encryptor, data_encryptor,
+        properties_->page_checksum_enabled(), ci_builder, oi_builder, *codec_options);
+    return ColumnWriter::Make(col_meta, std::move(pager), properties_);
+  }
+
+  // If buffered_row_group_ is false, only column_writers_[0] is used as current writer.
+  // If buffered_row_group_ is true, multiple column writers are used.
   std::vector<std::shared_ptr<ColumnWriter>> column_writers_;
 };
 
@@ -386,7 +358,19 @@ class FileSerializer : public ParquetFileWriter::Contents {
 
   RowGroupWriter* AppendRowGroup(bool buffered_row_group) {
     if (row_group_writer_) {
+      num_rows_ += row_group_writer_->num_rows();
       row_group_writer_->Close();
+    }
+    int16_t row_group_ordinal = -1;  // row group ordinal not set
+    if (file_encryptor_ != nullptr) {
+      // Parquet thrifts using int16 for row group ordinal, so we can't have more than
+      // 32767 row groups in a file.
+      if (num_row_groups_ <= std::numeric_limits<int16_t>::max()) {
+        row_group_ordinal = static_cast<int16_t>(num_row_groups_);
+      } else {
+        throw ParquetException(
+            "Cannot write more than 32767 row groups in an encrypted file");
+      }
     }
     num_row_groups_++;
     auto rg_metadata = metadata_->AppendRowGroup();
@@ -394,8 +378,8 @@ class FileSerializer : public ParquetFileWriter::Contents {
       page_index_builder_->AppendRowGroup();
     }
     std::unique_ptr<RowGroupWriter::Contents> contents(new RowGroupSerializer(
-        sink_, rg_metadata, static_cast<int16_t>(num_row_groups_ - 1), properties_.get(),
-        buffered_row_group, file_encryptor_.get(), page_index_builder_.get()));
+        sink_, rg_metadata, row_group_ordinal, properties_.get(), buffered_row_group,
+        file_encryptor_.get(), page_index_builder_.get()));
     row_group_writer_ = std::make_unique<RowGroupWriter>(std::move(contents));
     return row_group_writer_.get();
   }
@@ -455,17 +439,16 @@ class FileSerializer : public ParquetFileWriter::Contents {
       WriteEncryptedFileMetadata(*file_metadata_, sink_.get(), footer_encryptor, true);
       PARQUET_ASSIGN_OR_THROW(position, sink_->Tell());
       uint32_t footer_and_crypto_len = static_cast<uint32_t>(position - metadata_start);
+      uint32_t footer_and_crypto_len_le =
+          ::arrow::bit_util::ToLittleEndian(footer_and_crypto_len);
       PARQUET_THROW_NOT_OK(
-          sink_->Write(reinterpret_cast<uint8_t*>(&footer_and_crypto_len), 4));
+          sink_->Write(reinterpret_cast<uint8_t*>(&footer_and_crypto_len_le), 4));
       PARQUET_THROW_NOT_OK(sink_->Write(kParquetEMagic, 4));
     } else {  // Encrypted file with plaintext footer
       file_metadata_ = metadata_->Finish(key_value_metadata_);
       auto footer_signing_encryptor = file_encryptor_->GetFooterSigningEncryptor();
       WriteEncryptedFileMetadata(*file_metadata_, sink_.get(), footer_signing_encryptor,
                                  false);
-    }
-    if (file_encryptor_) {
-      file_encryptor_->WipeOutEncryptionKeys();
     }
   }
 
@@ -503,17 +486,30 @@ class FileSerializer : public ParquetFileWriter::Contents {
       // encrypted with footer key.
       if (encrypted_columns.size() != 0) {
         std::vector<std::string> column_path_vec;
-        // First, save all column paths in schema.
+        std::vector<std::string> column_root_vec;
+        // First, save all column paths and root column names in schema.
         for (int i = 0; i < num_columns(); i++) {
           column_path_vec.push_back(schema_.Column(i)->path()->ToDotString());
+          column_root_vec.push_back(schema_.Column(i)->path()->ToDotVector().at(0));
         }
-        // Check if column exists in schema.
+
         for (const auto& elem : encrypted_columns) {
+          // Check if this column exists in schema.
           auto it = std::find(column_path_vec.begin(), column_path_vec.end(), elem.first);
           if (it == column_path_vec.end()) {
-            std::stringstream ss;
-            ss << "Encrypted column " + elem.first + " not in file schema";
-            throw ParquetException(ss.str());
+            // this column does not exist in the schema, this might be a root column name
+            // like `a` while there are `a.key_value.key` and `a.key_value.value` in the
+            // schema.
+            it = std::find(column_root_vec.begin(), column_root_vec.end(), elem.first);
+            if (it == column_root_vec.end()) {
+              // no encrypted columns exist with this root column name
+              std::stringstream ss;
+              ss << "Encrypted column " + elem.first + " not in file schema: ";
+              for (auto& cp : column_path_vec) {
+                ss << cp << " ";
+              }
+              throw ParquetException(ss.str());
+            }
           }
         }
       }
@@ -568,7 +564,10 @@ void WriteFileMetaData(const FileMetaData& file_metadata, ArrowOutputStream* sin
   metadata_len = static_cast<uint32_t>(position) - metadata_len;
 
   // Write Footer
-  PARQUET_THROW_NOT_OK(sink->Write(reinterpret_cast<uint8_t*>(&metadata_len), 4));
+  {
+    uint32_t metadata_len_le = ::arrow::bit_util::ToLittleEndian(metadata_len);
+    PARQUET_THROW_NOT_OK(sink->Write(reinterpret_cast<uint8_t*>(&metadata_len_le), 4));
+  }
   PARQUET_THROW_NOT_OK(sink->Write(kParquetMagic, 4));
 }
 
@@ -591,7 +590,10 @@ void WriteEncryptedFileMetadata(const FileMetaData& file_metadata,
     PARQUET_ASSIGN_OR_THROW(position, sink->Tell());
     metadata_len = static_cast<uint32_t>(position) - metadata_len;
 
-    PARQUET_THROW_NOT_OK(sink->Write(reinterpret_cast<uint8_t*>(&metadata_len), 4));
+    {
+      uint32_t metadata_len_le = ::arrow::bit_util::ToLittleEndian(metadata_len);
+      PARQUET_THROW_NOT_OK(sink->Write(reinterpret_cast<uint8_t*>(&metadata_len_le), 4));
+    }
     PARQUET_THROW_NOT_OK(sink->Write(kParquetMagic, 4));
   }
 }

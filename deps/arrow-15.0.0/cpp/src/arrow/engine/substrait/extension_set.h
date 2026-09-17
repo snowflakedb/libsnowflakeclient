@@ -141,7 +141,7 @@ class ARROW_ENGINE_EXPORT SubstraitCall {
   Result<compute::Expression> GetValueArg(int index) const;
   bool HasValueArg(int index) const;
   void SetValueArg(int index, compute::Expression value_arg);
-  std::optional<std::vector<std::string> const*> GetOption(
+  std::optional<const std::vector<std::string>*> GetOption(
       std::string_view option_name) const;
   void SetOption(std::string_view option_name,
                  const std::vector<std::string_view>& option_preferences);
@@ -295,6 +295,10 @@ class ARROW_ENGINE_EXPORT ExtensionIdRegistry {
 constexpr std::string_view kArrowExtTypesUri =
     "https://github.com/apache/arrow/blob/main/format/substrait/"
     "extension_types.yaml";
+// Extension types that don't match 1:1 with a data type (or the data type is
+// parameterized)
+constexpr std::string_view kTimeNanosTypeName = "time_nanos";
+constexpr Id kTimeNanosId = {kArrowExtTypesUri, kTimeNanosTypeName};
 
 /// A default registry with all supported functions and data types registered
 ///

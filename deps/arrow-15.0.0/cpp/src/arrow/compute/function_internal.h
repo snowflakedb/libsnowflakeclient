@@ -382,9 +382,10 @@ static inline Result<std::shared_ptr<Scalar>> GenericToScalar(std::nullopt_t) {
 }
 
 template <typename T>
-static inline auto GenericToScalar(const std::optional<T>& value)
-    -> Result<decltype(MakeScalar(value.value()))> {
-  return value.has_value() ? MakeScalar(value.value()) : std::make_shared<NullScalar>();
+static inline Result<std::shared_ptr<Scalar>> GenericToScalar(
+    const std::optional<T>& value) {
+  return value.has_value() ? GenericToScalar(value.value())
+                           : std::make_shared<NullScalar>();
 }
 
 template <typename T>
@@ -684,12 +685,13 @@ const FunctionOptionsType* GetFunctionOptionsType(const Properties&... propertie
       auto options = std::make_unique<Options>();
       RETURN_NOT_OK(
           FromStructScalarImpl<Options>(options.get(), scalar, properties_).status_);
-      return std::move(options);
+      // R build with openSUSE155 requires an explicit unique_ptr construction
+      return std::unique_ptr<FunctionOptions>(std::move(options));
     }
     std::unique_ptr<FunctionOptions> Copy(const FunctionOptions& options) const override {
       auto out = std::make_unique<Options>();
       CopyImpl<Options>(out.get(), checked_cast<const Options&>(options), properties_);
-      return std::move(out);
+      return out;
     }
 
    private:

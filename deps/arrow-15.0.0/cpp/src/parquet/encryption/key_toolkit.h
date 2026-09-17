@@ -49,7 +49,7 @@ class PARQUET_EXPORT KeyToolkit {
 
   /// Key encryption key two level cache for unwrapping: token -> KeyEncryptionKeyId ->
   /// KeyEncryptionKeyBytes
-  TwoLevelCacheWithExpiration<std::string>& kek_read_cache_per_token() {
+  TwoLevelCacheWithExpiration<::arrow::util::SecureString>& kek_read_cache_per_token() {
     return key_encryption_key_read_cache_;
   }
 
@@ -62,10 +62,10 @@ class PARQUET_EXPORT KeyToolkit {
   void RemoveCacheEntriesForAllTokens();
 
   void RegisterKmsClientFactory(std::shared_ptr<KmsClientFactory> kms_client_factory) {
-    if (kms_client_factory_ != NULL) {
+    if (kms_client_factory_ != NULLPTR) {
       throw ParquetException("KMS client factory has already been registered.");
     }
-    kms_client_factory_ = kms_client_factory;
+    kms_client_factory_ = std::move(kms_client_factory);
   }
 
   /// Key rotation. In the single wrapping mode, decrypts data keys with old master keys,
@@ -82,7 +82,7 @@ class PARQUET_EXPORT KeyToolkit {
  private:
   TwoLevelCacheWithExpiration<std::shared_ptr<KmsClient>> kms_client_cache_;
   TwoLevelCacheWithExpiration<KeyEncryptionKey> key_encryption_key_write_cache_;
-  TwoLevelCacheWithExpiration<std::string> key_encryption_key_read_cache_;
+  TwoLevelCacheWithExpiration<::arrow::util::SecureString> key_encryption_key_read_cache_;
   std::shared_ptr<KmsClientFactory> kms_client_factory_;
   mutable ::arrow::util::Mutex last_cache_clean_for_key_rotation_time_mutex_;
   internal::TimePoint last_cache_clean_for_key_rotation_time_;
@@ -92,15 +92,15 @@ class PARQUET_EXPORT KeyToolkit {
 // parsing from "key material"
 class PARQUET_EXPORT KeyWithMasterId {
  public:
-  KeyWithMasterId(std::string key_bytes, std::string master_id)
+  KeyWithMasterId(::arrow::util::SecureString key_bytes, std::string master_id)
       : key_bytes_(std::move(key_bytes)), master_id_(std::move(master_id)) {}
 
-  const std::string& data_key() const { return key_bytes_; }
+  const ::arrow::util::SecureString& data_key() const { return key_bytes_; }
   const std::string& master_id() const { return master_id_; }
 
  private:
-  const std::string key_bytes_;
-  const std::string master_id_;
+  ::arrow::util::SecureString key_bytes_;
+  std::string master_id_;
 };
 
 }  // namespace parquet::encryption

@@ -25,6 +25,9 @@
 
 namespace arrow::util {
 
+template <class T>
+class span;
+
 /// std::span polyfill.
 ///
 /// Does not support static extents.
@@ -56,15 +59,12 @@ writing code which would break when it is replaced by std::span.)");
   constexpr span(T* begin, T* end)
       : data_{begin}, size_{static_cast<size_t>(end - begin)} {}
 
-  template <
-      typename R,
-      typename DisableUnlessConstructibleFromDataAndSize =
-          decltype(span<T>(std::data(std::declval<R>()), std::size(std::declval<R>()))),
-      typename DisableUnlessSimilarTypes = std::enable_if_t<std::is_same_v<
-          std::decay_t<std::remove_pointer_t<decltype(std::data(std::declval<R>()))>>,
-          std::decay_t<T>>>>
+  template <typename R, typename RD = decltype(std::data(std::declval<R>())),
+            typename RS = decltype(std::size(std::declval<R>())),
+            typename E = std::enable_if_t<std::is_constructible_v<T*, RD> &&
+                                          std::is_constructible_v<size_t, RS>>>
   // NOLINTNEXTLINE runtime/explicit, non-const reference
-  constexpr span(R&& range) : span{std::data(range), std::size(range)} {}
+  constexpr span(R&& range) : data_{std::data(range)}, size_{std::size(range)} {}
 
   constexpr T* begin() const { return data_; }
   constexpr T* end() const { return data_ + size_; }
@@ -90,7 +90,7 @@ writing code which would break when it is replaced by std::span.)");
     return out;
   }
 
-  constexpr bool operator==(span const& other) const {
+  constexpr bool operator==(const span& other) const {
     if (size_ != other.size_) return false;
 
     if constexpr (std::is_integral_v<T>) {
@@ -106,7 +106,7 @@ writing code which would break when it is replaced by std::span.)");
       return true;
     }
   }
-  constexpr bool operator!=(span const& other) const { return !(*this == other); }
+  constexpr bool operator!=(const span& other) const { return !(*this == other); }
 
  private:
   T* data_{};
@@ -121,7 +121,7 @@ span(T*, size_t) -> span<T>;
 
 template <typename T>
 constexpr span<std::byte const> as_bytes(span<T> s) {
-  return {reinterpret_cast<std::byte const*>(s.data()), s.size_bytes()};
+  return {reinterpret_cast<const std::byte*>(s.data()), s.size_bytes()};
 }
 
 template <typename T>

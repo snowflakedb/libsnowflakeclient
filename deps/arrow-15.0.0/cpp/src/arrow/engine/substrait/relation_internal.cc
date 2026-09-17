@@ -58,16 +58,15 @@
 #include "arrow/status.h"
 #include "arrow/type.h"
 #include "arrow/util/checked_cast.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/string.h"
 #include "arrow/util/uri.h"
 
 namespace arrow {
 
 using internal::checked_cast;
-using internal::StartsWith;
 using internal::ToChars;
-using internal::UriFromAbsolutePath;
+using util::UriFromAbsolutePath;
 
 namespace engine {
 
@@ -91,8 +90,10 @@ Result<EmitInfo> GetEmitInfo(const RelMessage& rel,
   }
   emit_info.expressions = std::move(proj_field_refs);
   emit_info.schema = schema(std::move(emit_fields));
-  return std::move(emit_info);
+  return emit_info;
 }
+
+namespace {
 
 Result<DeclarationInfo> ProcessEmitProject(
     std::optional<substrait::RelCommon> rel_common_opt,
@@ -130,6 +131,8 @@ Result<DeclarationInfo> ProcessEmitProject(
   }
 }
 
+}  // namespace
+
 template <typename RelMessage>
 Result<DeclarationInfo> ProcessEmit(const RelMessage& rel,
                                     const DeclarationInfo& no_emit_declr,
@@ -153,6 +156,7 @@ Result<DeclarationInfo> ProcessEmit(const RelMessage& rel,
     return no_emit_declr;
   }
 }
+
 /// In the specialization, a single ProjectNode is being used to
 /// get the Acero relation with or without emit.
 template <>
@@ -162,6 +166,8 @@ Result<DeclarationInfo> ProcessEmit(const substrait::ProjectRel& rel,
   return ProcessEmitProject(rel.has_common() ? std::optional(rel.common()) : std::nullopt,
                             no_emit_declr, schema);
 }
+
+namespace {
 
 Result<DeclarationInfo> ProcessExtensionEmit(const DeclarationInfo& no_emit_declr,
                                              const std::vector<int>& emit_order) {
@@ -289,6 +295,8 @@ Status DiscoverFilesFromDir(const std::shared_ptr<fs::LocalFileSystem>& local_fs
   return Status::OK();
 }
 
+}  // namespace
+
 namespace internal {
 
 Result<compute::Aggregate> ParseAggregateMeasure(
@@ -393,6 +401,7 @@ Result<DeclarationInfo> FromProto(const substrait::Rel& rel, const ExtensionSet&
 
       auto scan_options = std::make_shared<dataset::ScanOptions>();
       scan_options->use_threads = true;
+      scan_options->add_augmented_fields = false;
 
       if (read.has_filter()) {
         ARROW_ASSIGN_OR_RAISE(scan_options->filter,
@@ -463,7 +472,7 @@ Result<DeclarationInfo> FromProto(const substrait::Rel& rel, const ExtensionSet&
         }
 
         // Extract and parse the read relation's source URI
-        ::arrow::internal::Uri item_uri;
+        ::arrow::util::Uri item_uri;
         switch (item.path_type_case()) {
           case substrait::ReadRel::LocalFiles::FileOrFiles::kUriPath:
             RETURN_NOT_OK(item_uri.Parse(item.uri_path()));
@@ -1023,7 +1032,7 @@ Result<std::unique_ptr<substrait::ReadRel>> NamedTableRelationConverter(
   }
   read_rel->set_allocated_named_table(read_rel_tn.release());
 
-  return std::move(read_rel);
+  return read_rel;
 }
 
 Result<std::unique_ptr<substrait::ReadRel>> ScanRelationConverter(
@@ -1067,7 +1076,7 @@ Result<std::unique_ptr<substrait::ReadRel>> ScanRelationConverter(
     read_rel_lfs->mutable_items()->AddAllocated(read_rel_lfs_ffs.release());
   }
   read_rel->set_allocated_local_files(read_rel_lfs.release());
-  return std::move(read_rel);
+  return read_rel;
 }
 
 Result<std::unique_ptr<substrait::FilterRel>> FilterRelationConverter(
@@ -1096,10 +1105,8 @@ Result<std::unique_ptr<substrait::FilterRel>> FilterRelationConverter(
   ARROW_ASSIGN_OR_RAISE(auto subs_expr,
                         ToProto(bound_expression, ext_set, conversion_options));
   filter_rel->set_allocated_condition(subs_expr.release());
-  return std::move(filter_rel);
+  return filter_rel;
 }
-
-}  // namespace
 
 Status SerializeAndCombineRelations(const acero::Declaration& declaration,
                                     ExtensionSet* ext_set,
@@ -1140,12 +1147,14 @@ Status SerializeAndCombineRelations(const acero::Declaration& declaration,
   return Status::OK();
 }
 
+}  // namespace
+
 Result<std::unique_ptr<substrait::Rel>> ToProto(
     const acero::Declaration& declr, ExtensionSet* ext_set,
     const ConversionOptions& conversion_options) {
   auto rel = std::make_unique<substrait::Rel>();
   RETURN_NOT_OK(SerializeAndCombineRelations(declr, ext_set, &rel, conversion_options));
-  return std::move(rel);
+  return rel;
 }
 
 }  // namespace engine

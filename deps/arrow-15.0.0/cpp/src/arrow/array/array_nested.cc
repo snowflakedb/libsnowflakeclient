@@ -41,7 +41,8 @@
 #include "arrow/util/bitmap_ops.h"
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/list_util.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
+#include "arrow/util/unreachable.h"
 
 namespace arrow {
 
@@ -114,7 +115,7 @@ Result<std::shared_ptr<typename TypeTraits<TYPE>::ArrayType>> ListArrayFromArray
     return Status::TypeError("List offsets must be ", OffsetArrowType::type_name());
   }
 
-  if (null_bitmap != nullptr && offsets.null_count() > 0) {
+  if (null_bitmap != nullptr && offsets.data()->MayHaveNulls()) {
     return Status::Invalid(
         "Ambiguous to specify both validity map and offsets with nulls");
   }
@@ -391,7 +392,7 @@ Result<std::shared_ptr<ArrayData>> ListViewFromListImpl(
   const auto* offsets = list_data->template GetValues<offset_type>(1, 0);
   auto* sizes = sizes_buffer->mutable_data_as<offset_type>();
   // Zero the initial padding area to avoid leaking any data when buffers are
-  // sent over IPC or throught the C Data interface.
+  // sent over IPC or through the C Data interface.
   memset(sizes, 0, list_data->offset * sizeof(offset_type));
   for (int64_t i = list_data->offset; i < buffer_length; i++) {
     sizes[i] = offsets[i + 1] - offsets[i];
@@ -460,13 +461,55 @@ inline void SetListData(VarLengthListLikeArray<TYPE>* self,
   self->Array::SetData(data);
 
   self->list_type_ = checked_cast<const TYPE*>(data->type.get());
-  self->raw_value_offsets_ =
-      data->GetValuesSafe<typename TYPE::offset_type>(1, /*offset=*/0);
+  self->raw_value_offsets_ = data->GetValuesSafe<typename TYPE::offset_type>(1);
   // BaseListViewArray::SetData takes care of setting raw_value_sizes_.
 
   ARROW_CHECK_EQ(self->list_type_->value_type()->id(), data->child_data[0]->type->id());
   DCHECK(self->list_type_->value_type()->Equals(data->child_data[0]->type));
   self->values_ = MakeArray(self->data_->child_data[0]);
+}
+
+Result<std::shared_ptr<Array>> FlattenLogicalListRecursively(const Array& in_array,
+                                                             MemoryPool* memory_pool) {
+  std::shared_ptr<Array> array = in_array.Slice(0, in_array.length());
+  for (auto kind = array->type_id(); is_list(kind) || is_list_view(kind);
+       kind = array->type_id()) {
+    switch (kind) {
+      case Type::LIST: {
+        ARROW_ASSIGN_OR_RAISE(
+            array, (checked_cast<const ListArray*>(array.get())->Flatten(memory_pool)));
+        break;
+      }
+      case Type::LARGE_LIST: {
+        ARROW_ASSIGN_OR_RAISE(
+            array,
+            (checked_cast<const LargeListArray*>(array.get())->Flatten(memory_pool)));
+        break;
+      }
+      case Type::LIST_VIEW: {
+        ARROW_ASSIGN_OR_RAISE(
+            array,
+            (checked_cast<const ListViewArray*>(array.get())->Flatten(memory_pool)));
+        break;
+      }
+      case Type::LARGE_LIST_VIEW: {
+        ARROW_ASSIGN_OR_RAISE(
+            array,
+            (checked_cast<const LargeListViewArray*>(array.get())->Flatten(memory_pool)));
+        break;
+      }
+      case Type::FIXED_SIZE_LIST: {
+        ARROW_ASSIGN_OR_RAISE(
+            array,
+            (checked_cast<const FixedSizeListArray*>(array.get())->Flatten(memory_pool)));
+        break;
+      }
+      default:
+        Unreachable("unexpected non-list type");
+        break;
+    }
+  }
+  return array;
 }
 
 }  // namespace internal
@@ -498,7 +541,7 @@ Result<std::shared_ptr<ListArray>> ListArray::FromArrays(
     const Array& offsets, const Array& values, MemoryPool* pool,
     std::shared_ptr<Buffer> null_bitmap, int64_t null_count) {
   return ListArrayFromArrays<ListType>(std::make_shared<ListType>(values.type()), offsets,
-                                       values, pool, null_bitmap, null_count);
+                                       values, pool, std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<ListArray>> ListArray::FromListView(const ListViewArray& source,
@@ -519,7 +562,7 @@ Result<std::shared_ptr<ListArray>> ListArray::FromArrays(
     return Status::TypeError("Mismatching list value type");
   }
   return ListArrayFromArrays<ListType>(std::move(type), offsets, values, pool,
-                                       null_bitmap, null_count);
+                                       std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<Array>> ListArray::Flatten(MemoryPool* memory_pool) const {
@@ -555,8 +598,8 @@ Result<std::shared_ptr<LargeListArray>> LargeListArray::FromArrays(
     const Array& offsets, const Array& values, MemoryPool* pool,
     std::shared_ptr<Buffer> null_bitmap, int64_t null_count) {
   return ListArrayFromArrays<LargeListType>(
-      std::make_shared<LargeListType>(values.type()), offsets, values, pool, null_bitmap,
-      null_count);
+      std::make_shared<LargeListType>(values.type()), offsets, values, pool,
+      std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<LargeListArray>> LargeListArray::FromListView(
@@ -578,7 +621,7 @@ Result<std::shared_ptr<LargeListArray>> LargeListArray::FromArrays(
     return Status::TypeError("Mismatching list value type");
   }
   return ListArrayFromArrays<LargeListType>(std::move(type), offsets, values, pool,
-                                            null_bitmap, null_count);
+                                            std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<Array>> LargeListArray::Flatten(MemoryPool* memory_pool) const {
@@ -610,7 +653,7 @@ ListViewArray::ListViewArray(std::shared_ptr<DataType> type, int64_t length,
 
 void ListViewArray::SetData(const std::shared_ptr<ArrayData>& data) {
   internal::SetListData(this, data);
-  raw_value_sizes_ = data->GetValuesSafe<ListViewType::offset_type>(2, /*offset=*/0);
+  raw_value_sizes_ = data->GetValuesSafe<ListViewType::offset_type>(2);
 }
 
 Result<std::shared_ptr<ListViewArray>> ListViewArray::FromArrays(
@@ -618,7 +661,7 @@ Result<std::shared_ptr<ListViewArray>> ListViewArray::FromArrays(
     std::shared_ptr<Buffer> null_bitmap, int64_t null_count) {
   return ListViewArrayFromArrays<ListViewType>(
       std::make_shared<ListViewType>(values.type()), offsets, sizes, values, pool,
-      null_bitmap, null_count);
+      std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<ListViewArray>> ListViewArray::FromArrays(
@@ -633,7 +676,7 @@ Result<std::shared_ptr<ListViewArray>> ListViewArray::FromArrays(
     return Status::TypeError("Mismatching list-view value type");
   }
   return ListViewArrayFromArrays<ListViewType>(std::move(type), offsets, sizes, values,
-                                               pool, null_bitmap, null_count);
+                                               pool, std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<ListViewArray>> ListViewArray::FromList(const ListArray& source,
@@ -678,14 +721,14 @@ LargeListViewArray::LargeListViewArray(std::shared_ptr<DataType> type, int64_t l
                                        std::shared_ptr<Buffer> null_bitmap,
                                        int64_t null_count, int64_t offset) {
   LargeListViewArray::SetData(ArrayData::Make(
-      type, length,
+      std::move(type), length,
       {std::move(null_bitmap), std::move(value_offsets), std::move(value_sizes)},
       /*child_data=*/{values->data()}, null_count, offset));
 }
 
 void LargeListViewArray::SetData(const std::shared_ptr<ArrayData>& data) {
   internal::SetListData(this, data);
-  raw_value_sizes_ = data->GetValuesSafe<LargeListViewType::offset_type>(2, /*offset=*/0);
+  raw_value_sizes_ = data->GetValuesSafe<LargeListViewType::offset_type>(2);
 }
 
 Result<std::shared_ptr<LargeListViewArray>> LargeListViewArray::FromArrays(
@@ -693,7 +736,7 @@ Result<std::shared_ptr<LargeListViewArray>> LargeListViewArray::FromArrays(
     std::shared_ptr<Buffer> null_bitmap, int64_t null_count) {
   return ListViewArrayFromArrays<LargeListViewType>(
       std::make_shared<LargeListViewType>(values.type()), offsets, sizes, values, pool,
-      null_bitmap, null_count);
+      std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<LargeListViewArray>> LargeListViewArray::FromArrays(
@@ -708,7 +751,7 @@ Result<std::shared_ptr<LargeListViewArray>> LargeListViewArray::FromArrays(
     return Status::TypeError("Mismatching large list-view value type");
   }
   return ListViewArrayFromArrays<LargeListViewType>(
-      std::move(type), offsets, sizes, values, pool, null_bitmap, null_count);
+      std::move(type), offsets, sizes, values, pool, std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<Array>> LargeListViewArray::Flatten(
@@ -746,7 +789,7 @@ MapArray::MapArray(const std::shared_ptr<DataType>& type, int64_t length,
                    const std::shared_ptr<Array>& items, int64_t null_count,
                    int64_t offset) {
   auto pair_data = ArrayData::Make(type->fields()[0]->type(), keys->data()->length,
-                                   {nullptr}, {keys->data(), items->data()}, 0, offset);
+                                   {nullptr}, {keys->data(), items->data()}, 0);
   auto map_data =
       ArrayData::Make(type, length, std::move(buffers), {pair_data}, null_count, offset);
   SetData(map_data);
@@ -763,7 +806,7 @@ MapArray::MapArray(const std::shared_ptr<DataType>& type, int64_t length,
 Result<std::shared_ptr<Array>> MapArray::FromArraysInternal(
     std::shared_ptr<DataType> type, const std::shared_ptr<Array>& offsets,
     const std::shared_ptr<Array>& keys, const std::shared_ptr<Array>& items,
-    MemoryPool* pool) {
+    MemoryPool* pool, std::shared_ptr<Buffer> null_bitmap) {
   using offset_type = typename MapType::offset_type;
   using OffsetArrowType = typename CTypeTraits<offset_type>::ArrowType;
 
@@ -776,14 +819,23 @@ Result<std::shared_ptr<Array>> MapArray::FromArraysInternal(
   }
 
   if (keys->null_count() != 0) {
-    return Status::Invalid("Map can not contain NULL valued keys");
+    return Status::Invalid("Map cannot contain NULL valued keys");
   }
 
   if (keys->length() != items->length()) {
     return Status::Invalid("Map key and item arrays must be equal length");
   }
 
-  if (offsets->null_count() > 0) {
+  if (null_bitmap != nullptr && offsets->data()->MayHaveNulls()) {
+    return Status::Invalid(
+        "Ambiguous to specify both validity map and offsets with nulls");
+  }
+
+  if (null_bitmap != nullptr && offsets->offset() != 0) {
+    return Status::NotImplemented("Null bitmap with offsets slice not supported.");
+  }
+
+  if (offsets->data()->MayHaveNulls()) {
     ARROW_ASSIGN_OR_RAISE(auto buffers,
                           CleanListOffsets<MapType>(NULLPTR, *offsets, pool));
     return std::make_shared<MapArray>(type, offsets->length() - 1, std::move(buffers),
@@ -792,24 +844,35 @@ Result<std::shared_ptr<Array>> MapArray::FromArraysInternal(
 
   using OffsetArrayType = typename TypeTraits<OffsetArrowType>::ArrayType;
   const auto& typed_offsets = checked_cast<const OffsetArrayType&>(*offsets);
-  auto buffers = BufferVector({nullptr, typed_offsets.values()});
-  return std::make_shared<MapArray>(type, offsets->length() - 1, std::move(buffers), keys,
-                                    items, /*null_count=*/0, offsets->offset());
+
+  BufferVector buffers;
+  buffers.resize(2);
+  int64_t null_count = 0;
+  if (null_bitmap) {
+    buffers[0] = std::move(null_bitmap);
+    null_count = kUnknownNullCount;
+  }
+  buffers[1] = typed_offsets.values();
+  return std::make_shared<MapArray>(std::move(type), offsets->length() - 1,
+                                    std::move(buffers), keys, items,
+                                    /*null_count=*/null_count, offsets->offset());
 }
 
 Result<std::shared_ptr<Array>> MapArray::FromArrays(const std::shared_ptr<Array>& offsets,
                                                     const std::shared_ptr<Array>& keys,
                                                     const std::shared_ptr<Array>& items,
-                                                    MemoryPool* pool) {
+                                                    MemoryPool* pool,
+                                                    std::shared_ptr<Buffer> null_bitmap) {
   return FromArraysInternal(std::make_shared<MapType>(keys->type(), items->type()),
-                            offsets, keys, items, pool);
+                            offsets, keys, items, pool, std::move(null_bitmap));
 }
 
 Result<std::shared_ptr<Array>> MapArray::FromArrays(std::shared_ptr<DataType> type,
                                                     const std::shared_ptr<Array>& offsets,
                                                     const std::shared_ptr<Array>& keys,
                                                     const std::shared_ptr<Array>& items,
-                                                    MemoryPool* pool) {
+                                                    MemoryPool* pool,
+                                                    std::shared_ptr<Buffer> null_bitmap) {
   if (type->id() != Type::MAP) {
     return Status::TypeError("Expected map type, got ", type->ToString());
   }
@@ -820,7 +883,8 @@ Result<std::shared_ptr<Array>> MapArray::FromArrays(std::shared_ptr<DataType> ty
   if (!map_type.item_type()->Equals(items->type())) {
     return Status::TypeError("Mismatching map items type");
   }
-  return FromArraysInternal(std::move(type), offsets, keys, items, pool);
+  return FromArraysInternal(std::move(type), offsets, keys, items, pool,
+                            std::move(null_bitmap));
 }
 
 Status MapArray::ValidateChildData(
@@ -832,13 +896,13 @@ Status MapArray::ValidateChildData(
   if (pair_data->type->id() != Type::STRUCT) {
     return Status::Invalid("Map array child array should have struct type");
   }
-  if (pair_data->null_count != 0) {
+  if (pair_data->MayHaveNulls()) {
     return Status::Invalid("Map array child array should have no nulls");
   }
   if (pair_data->child_data.size() != 2) {
     return Status::Invalid("Map array child array should have two fields");
   }
-  if (pair_data->child_data[0]->null_count != 0) {
+  if (pair_data->child_data[0]->MayHaveNulls()) {
     return Status::Invalid("Map array keys array should have no nulls");
   }
   return Status::OK();
@@ -907,8 +971,8 @@ Result<std::shared_ptr<Array>> FixedSizeListArray::FromArrays(
   int64_t length = values->length() / list_size;
   auto list_type = std::make_shared<FixedSizeListType>(values->type(), list_size);
 
-  return std::make_shared<FixedSizeListArray>(list_type, length, values, null_bitmap,
-                                              null_count);
+  return std::make_shared<FixedSizeListArray>(list_type, length, values,
+                                              std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<Array>> FixedSizeListArray::FromArrays(
@@ -928,8 +992,8 @@ Result<std::shared_ptr<Array>> FixedSizeListArray::FromArrays(
   }
   int64_t length = values->length() / list_type.list_size();
 
-  return std::make_shared<FixedSizeListArray>(type, length, values, null_bitmap,
-                                              null_count);
+  return std::make_shared<FixedSizeListArray>(std::move(type), length, values,
+                                              std::move(null_bitmap), null_count);
 }
 
 Result<std::shared_ptr<Array>> FixedSizeListArray::Flatten(
@@ -940,10 +1004,16 @@ Result<std::shared_ptr<Array>> FixedSizeListArray::Flatten(
 // ----------------------------------------------------------------------
 // Struct
 
+struct StructArray::Impl {
+  mutable ArrayVector boxed_fields_;
+};
+
+StructArray::~StructArray() = default;
 StructArray::StructArray(const std::shared_ptr<ArrayData>& data) {
   ARROW_CHECK_EQ(data->type->id(), Type::STRUCT);
   SetData(data);
-  boxed_fields_.resize(data->child_data.size());
+  impl_ = std::make_unique<Impl>();
+  impl_->boxed_fields_.resize(data_->child_data.size());
 }
 
 StructArray::StructArray(const std::shared_ptr<DataType>& type, int64_t length,
@@ -951,11 +1021,13 @@ StructArray::StructArray(const std::shared_ptr<DataType>& type, int64_t length,
                          std::shared_ptr<Buffer> null_bitmap, int64_t null_count,
                          int64_t offset) {
   ARROW_CHECK_EQ(type->id(), Type::STRUCT);
-  SetData(ArrayData::Make(type, length, {null_bitmap}, null_count, offset));
+  SetData(ArrayData::Make(type, length, {std::move(null_bitmap)}, null_count, offset));
+  data_->child_data.reserve(children.size());
   for (const auto& child : children) {
     data_->child_data.push_back(child->data());
   }
-  boxed_fields_.resize(children.size());
+  impl_ = std::make_unique<Impl>();
+  impl_->boxed_fields_.resize(data_->child_data.size());
 }
 
 Result<std::shared_ptr<StructArray>> StructArray::Make(
@@ -984,7 +1056,7 @@ Result<std::shared_ptr<StructArray>> StructArray::Make(
     null_count = 0;
   }
   return std::make_shared<StructArray>(struct_(fields), length - offset, children,
-                                       null_bitmap, null_count, offset);
+                                       std::move(null_bitmap), null_count, offset);
 }
 
 Result<std::shared_ptr<StructArray>> StructArray::Make(
@@ -1009,23 +1081,37 @@ const ArrayVector& StructArray::fields() const {
   for (int i = 0; i < num_fields(); ++i) {
     (void)field(i);
   }
-  return boxed_fields_;
+  return impl_->boxed_fields_;
 }
 
-const std::shared_ptr<Array>& StructArray::field(int i) const {
-  std::shared_ptr<Array> result = std::atomic_load(&boxed_fields_[i]);
-  if (!result) {
-    std::shared_ptr<ArrayData> field_data;
-    if (data_->offset != 0 || data_->child_data[i]->length != data_->length) {
-      field_data = data_->child_data[i]->Slice(data_->offset, data_->length);
-    } else {
-      field_data = data_->child_data[i];
-    }
-    std::shared_ptr<Array> result = MakeArray(field_data);
-    std::atomic_store(&boxed_fields_[i], result);
-    return boxed_fields_[i];
+std::shared_ptr<Array> StructArray::field(int i) const {
+  // Atomic ops on std::shared_ptr<T> are deprecated in C++20.  They should be
+  // replaced with std::atomic<std::shared_ptr<T>> but not all C++ standard
+  // libraries implement it yet. :-/
+  ARROW_SUPPRESS_DEPRECATION_WARNING
+  std::shared_ptr<Array> result = std::atomic_load(&impl_->boxed_fields_[i]);
+  ARROW_UNSUPPRESS_DEPRECATION_WARNING
+  if (result) {
+    return result;
   }
-  return boxed_fields_[i];
+  std::shared_ptr<ArrayData> field_data;
+  if (data_->offset != 0 || data_->child_data[i]->length != data_->length) {
+    field_data = data_->child_data[i]->Slice(data_->offset, data_->length);
+  } else {
+    field_data = data_->child_data[i];
+  }
+  result = MakeArray(field_data);
+  // Check if some other thread inserted the array in the meantime and return
+  // that in that case.
+  std::shared_ptr<Array> expected = nullptr;
+  ARROW_SUPPRESS_DEPRECATION_WARNING
+  const bool update_successful =
+      std::atomic_compare_exchange_strong(&impl_->boxed_fields_[i], &expected, result);
+  ARROW_UNSUPPRESS_DEPRECATION_WARNING
+  if (!update_successful) {
+    result = std::move(expected);
+  }
+  return result;
 }
 
 std::shared_ptr<Array> StructArray::GetFieldByName(const std::string& name) const {
@@ -1070,7 +1156,8 @@ Result<std::shared_ptr<Array>> StructArray::GetFlattenedField(int index,
   std::shared_ptr<Buffer> flattened_null_bitmap;
   int64_t flattened_null_count = kUnknownNullCount;
 
-  // Need to adjust for parent offset
+  // Push any non-trivial slicing on the parent to the child
+  // (including cases with offset = 0)
   if (data_->offset != 0 || data_->length != child_data->length) {
     child_data = child_data->Slice(data_->offset, data_->length);
   }
@@ -1113,14 +1200,22 @@ Result<std::shared_ptr<Array>> StructArray::GetFlattenedField(int index,
 // ----------------------------------------------------------------------
 // UnionArray
 
+struct UnionArray::Impl {
+  mutable ArrayVector boxed_fields_;
+};
+
+UnionArray::UnionArray() = default;
+UnionArray::~UnionArray() = default;
+
 void UnionArray::SetData(std::shared_ptr<ArrayData> data) {
   this->Array::SetData(std::move(data));
 
   union_type_ = checked_cast<const UnionType*>(data_->type.get());
 
   ARROW_CHECK_GE(data_->buffers.size(), 2);
-  raw_type_codes_ = data->GetValuesSafe<int8_t>(1, /*offset=*/0);
-  boxed_fields_.resize(data_->child_data.size());
+  raw_type_codes_ = data->GetValuesSafe<int8_t>(1);
+  impl_ = std::make_unique<Impl>();
+  impl_->boxed_fields_.resize(data_->child_data.size());
 }
 
 void SparseUnionArray::SetData(std::shared_ptr<ArrayData> data) {
@@ -1133,7 +1228,7 @@ void SparseUnionArray::SetData(std::shared_ptr<ArrayData> data) {
 }
 
 void DenseUnionArray::SetData(const std::shared_ptr<ArrayData>& data) {
-  this->UnionArray::SetData(std::move(data));
+  this->UnionArray::SetData(data);
 
   ARROW_CHECK_EQ(data_->type->id(), Type::DENSE_UNION);
   ARROW_CHECK_EQ(data_->buffers.size(), 3);
@@ -1141,8 +1236,10 @@ void DenseUnionArray::SetData(const std::shared_ptr<ArrayData>& data) {
   // No validity bitmap
   ARROW_CHECK_EQ(data_->buffers[0], nullptr);
 
-  raw_value_offsets_ = data->GetValuesSafe<int32_t>(2, /*offset=*/0);
+  raw_value_offsets_ = data->GetValuesSafe<int32_t>(2);
 }
+
+SparseUnionArray::~SparseUnionArray() = default;
 
 SparseUnionArray::SparseUnionArray(std::shared_ptr<ArrayData> data) {
   SetData(std::move(data));
@@ -1196,6 +1293,8 @@ Result<std::shared_ptr<Array>> SparseUnionArray::GetFlattenedField(
   child_data->null_count = kUnknownNullCount;
   return MakeArray(child_data);
 }
+
+DenseUnionArray::~DenseUnionArray() = default;
 
 DenseUnionArray::DenseUnionArray(const std::shared_ptr<ArrayData>& data) {
   SetData(data);
@@ -1289,23 +1388,34 @@ Result<std::shared_ptr<Array>> SparseUnionArray::Make(
 }
 
 std::shared_ptr<Array> UnionArray::field(int i) const {
-  if (i < 0 ||
-      static_cast<decltype(boxed_fields_)::size_type>(i) >= boxed_fields_.size()) {
+  if (i < 0 || static_cast<size_t>(i) >= impl_->boxed_fields_.size()) {
     return nullptr;
   }
-  std::shared_ptr<Array> result = std::atomic_load(&boxed_fields_[i]);
-  if (!result) {
-    std::shared_ptr<ArrayData> child_data = data_->child_data[i]->Copy();
-    if (mode() == UnionMode::SPARSE) {
-      // Sparse union: need to adjust child if union is sliced
-      // (for dense unions, the need to lookup through the offsets
-      //  makes this unnecessary)
-      if (data_->offset != 0 || child_data->length > data_->length) {
-        child_data = child_data->Slice(data_->offset, data_->length);
-      }
+  ARROW_SUPPRESS_DEPRECATION_WARNING
+  std::shared_ptr<Array> result = std::atomic_load(&impl_->boxed_fields_[i]);
+  ARROW_UNSUPPRESS_DEPRECATION_WARNING
+  if (result) {
+    return result;
+  }
+  std::shared_ptr<ArrayData> child_data = data_->child_data[i]->Copy();
+  if (mode() == UnionMode::SPARSE) {
+    // Sparse union: need to adjust child if union is sliced
+    // (for dense unions, the need to lookup through the offsets
+    //  makes this unnecessary)
+    if (data_->offset != 0 || child_data->length > data_->length) {
+      child_data = child_data->Slice(data_->offset, data_->length);
     }
-    result = MakeArray(child_data);
-    std::atomic_store(&boxed_fields_[i], result);
+  }
+  result = MakeArray(child_data);
+  // Check if some other thread inserted the array in the meantime and return
+  // that in that case.
+  std::shared_ptr<Array> expected = nullptr;
+  ARROW_SUPPRESS_DEPRECATION_WARNING
+  const bool update_successful =
+      std::atomic_compare_exchange_strong(&impl_->boxed_fields_[i], &expected, result);
+  ARROW_UNSUPPRESS_DEPRECATION_WARNING
+  if (!update_successful) {
+    result = std::move(expected);
   }
   return result;
 }

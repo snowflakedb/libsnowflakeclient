@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "arrow/array/builder_primitive.h"
 #include "arrow/compute/expression_internal.h"
 #include "arrow/compute/function_internal.h"
 #include "arrow/compute/registry.h"
@@ -66,8 +67,6 @@ const std::shared_ptr<Schema> kBoringSchema = schema({
     field("ts_s_utc", timestamp(TimeUnit::SECOND, "UTC")),
 });
 
-#define EXPECT_OK ARROW_EXPECT_OK
-
 Expression cast(Expression argument, std::shared_ptr<DataType> to_type) {
   return call("cast", {std::move(argument)},
               compute::CastOptions::Safe(std::move(to_type)));
@@ -79,6 +78,16 @@ Expression true_unless_null(Expression argument) {
 
 Expression add(Expression l, Expression r) {
   return call("add", {std::move(l), std::move(r)});
+}
+
+std::string make_range_json(int start, int end) {
+  std::string result = "[";
+  for (int i = start; i <= end; ++i) {
+    if (i > start) result += ",";
+    result += std::to_string(i);
+  }
+  result += "]";
+  return result;
 }
 
 const auto no_change = std::nullopt;
@@ -215,6 +224,9 @@ TEST(ExpressionUtils, MakeExecBatch) {
   auto duplicated_names =
       RecordBatch::Make(schema({GetField("i32"), GetField("i32")}), kNumRows, {i32, i32});
   ASSERT_RAISES(Invalid, MakeExecBatch(*kBoringSchema, duplicated_names));
+
+  ASSERT_OK_AND_ASSIGN(auto boring_table, Table::MakeEmpty(kBoringSchema));
+  ASSERT_RAISES(NotImplemented, MakeExecBatch(*kBoringSchema, boring_table));
 }
 
 class WidgetifyOptions : public compute::FunctionOptions {
@@ -336,6 +348,15 @@ TEST(Expression, Equality) {
     EXPECT_EQ(literal(std::numeric_limits<double>::quiet_NaN()),
               literal(std::numeric_limits<double>::signaling_NaN()));
   }
+
+  // Equality when underlying `impl_` is null.
+  Expression expr1;
+  Expression expr2(literal(1));
+  EXPECT_NE(literal("a"), expr1);
+  EXPECT_NE(expr1, literal("a"));
+
+  EXPECT_FALSE(expr1.Equals(expr2));
+  EXPECT_FALSE(expr2.Equals(expr1));
 
   EXPECT_EQ(field_ref("a"), field_ref("a"));
   EXPECT_NE(field_ref("a"), field_ref("b"));
@@ -604,7 +625,129 @@ TEST(Expression, BindCall) {
                 add(cast(field_ref("i32"), float32()), literal(3.5F)));
 }
 
+static Status RegisterInvalidInit() {
+  const std::string name = "invalid_init";
+  struct CastableFunction : public ScalarFunction {
+    using ScalarFunction::ScalarFunction;
+
+    Result<const Kernel*> DispatchBest(std::vector<TypeHolder>* types) const override {
+      return Status::Invalid("Shouldn't call DispatchBest on this function");
+    }
+  };
+  auto func =
+      std::make_shared<CastableFunction>(name, Arity::Unary(), FunctionDoc::Empty());
+
+  auto func_exec = [](KernelContext*, const ExecSpan&, ExecResult*) -> Status {
+    return Status::OK();
+  };
+  auto func_init = [](KernelContext*,
+                      const KernelInitArgs&) -> Result<std::unique_ptr<KernelState>> {
+    return Status::Invalid("Invalid Init");
+  };
+
+  ScalarKernel kernel({int64()}, int64(), func_exec, func_init);
+  ARROW_RETURN_NOT_OK(func->AddKernel(kernel));
+
+  auto registry = GetFunctionRegistry();
+  ARROW_RETURN_NOT_OK(registry->AddFunction(std::move(func)));
+
+  return Status::OK();
+}
+
+// GH-47268: The bad status in call binding is discarded.
+TEST(Expression, BindCallError) {
+  ASSERT_OK(RegisterInvalidInit());
+  auto expr = call("invalid_init", {field_ref("i64")});
+  EXPECT_FALSE(expr.IsBound());
+
+  ASSERT_RAISES_WITH_MESSAGE(Invalid, "Invalid: Invalid Init",
+                             expr.Bind(*kBoringSchema).status());
+}
+
+TEST(Expression, BindWithAliasCasts) {
+  auto fm = GetFunctionRegistry();
+  EXPECT_OK(fm->AddAlias("alias_cast", "cast"));
+
+  auto expr = call("alias_cast", {field_ref("f1")}, CastOptions::Unsafe(arrow::int32()));
+  EXPECT_FALSE(expr.IsBound());
+
+  auto schema = arrow::schema({field("f1", decimal128(30, 3))});
+  ExpectBindsTo(expr, no_change, &expr, *schema);
+}
+
+TEST(Expression, BindWithDecimalArithmeticOps) {
+  static const std::vector<std::pair<int, int>> scales = {{3, 9}, {6, 6}, {9, 3}};
+
+  for (std::string suffix : {"", "_checked"}) {
+    for (std::string arith_op : {"add", "subtract", "multiply", "divide"}) {
+      std::string name = arith_op + suffix;
+      SCOPED_TRACE(name);
+
+      for (auto s : scales) {
+        auto schema = arrow::schema({field("d1", decimal256(30, s.first)),
+                                     field("d2", decimal256(20, s.second))});
+        auto expr = call(name, {field_ref("d1"), field_ref("d2")});
+        EXPECT_FALSE(expr.IsBound());
+        ExpectBindsTo(expr, no_change, &expr, *schema);
+      }
+    }
+  }
+}
+
+TEST(Expression, BindWithDecimalDivision) {
+  auto expect_decimal_division_type = [](std::string name,
+                                         std::shared_ptr<DataType> dividend,
+                                         std::shared_ptr<DataType> divisor,
+                                         std::shared_ptr<DataType> expected) {
+    auto schema = arrow::schema({field("dividend", dividend), field("divisor", divisor)});
+    auto expr = call(name, {field_ref("dividend"), field_ref("divisor")});
+    ASSERT_OK_AND_ASSIGN(auto bound, expr.Bind(*schema));
+    EXPECT_TRUE(bound.IsBound());
+    EXPECT_TRUE(bound.type()->Equals(expected));
+  };
+
+  for (std::string name : {"divide", "divide_checked"}) {
+    SCOPED_TRACE(name);
+
+    expect_decimal_division_type(name, int64(), arrow::decimal128(1, 0),
+                                 decimal128(23, 4));
+    expect_decimal_division_type(name, arrow::decimal128(1, 0), int64(),
+                                 decimal128(21, 20));
+
+    expect_decimal_division_type(name, decimal128(2, 1), decimal128(2, 1),
+                                 decimal128(6, 4));
+    expect_decimal_division_type(name, decimal256(2, 1), decimal256(2, 1),
+                                 decimal256(6, 4));
+    expect_decimal_division_type(name, decimal128(2, 1), decimal256(2, 1),
+                                 decimal256(6, 4));
+    expect_decimal_division_type(name, decimal256(2, 1), decimal128(2, 1),
+                                 decimal256(6, 4));
+
+    expect_decimal_division_type(name, decimal128(2, 0), decimal128(2, 1),
+                                 decimal128(7, 4));
+    expect_decimal_division_type(name, decimal128(2, 1), decimal128(2, 0),
+                                 decimal128(5, 4));
+
+    // GH-39875: Expression call to decimal(3 ,2) / decimal(15, 2) wrong result type.
+    // decimal128(3, 2) / decimal128(15, 2)
+    // -> decimal128(19, 18) / decimal128(15, 2) = decimal128(19, 16)
+    expect_decimal_division_type(name, decimal128(3, 2), decimal128(15, 2),
+                                 decimal128(19, 16));
+
+    // GH-40911: Expression call to decimal(7 ,2) / decimal(6, 1) wrong result type.
+    // decimal128(7, 2) / decimal128(6, 1)
+    // -> decimal128(14, 9) / decimal128(6, 1) = decimal128(14, 8)
+    expect_decimal_division_type(name, decimal128(7, 2), decimal128(6, 1),
+                                 decimal128(14, 8));
+  }
+}
+
 TEST(Expression, BindWithImplicitCasts) {
+  auto exciting_schema = schema(
+      {field("i64", int64()), field("dec128_3_2", decimal128(3, 2)),
+       field("dec128_4_2", decimal128(4, 2)), field("dec128_5_3", decimal128(5, 3)),
+       field("dec256_3_2", decimal256(3, 2)), field("dec256_4_2", decimal256(4, 2)),
+       field("dec256_5_3", decimal256(5, 3))});
   for (auto cmp : {equal, not_equal, less, less_equal, greater, greater_equal}) {
     // cast arguments to common numeric type
     ExpectBindsTo(cmp(field_ref("i64"), field_ref("i32")),
@@ -665,6 +808,82 @@ TEST(Expression, BindWithImplicitCasts) {
     ExpectBindsTo(cmp(field_ref("i32"), literal(std::make_shared<DoubleScalar>(10.0))),
                   cmp(cast(field_ref("i32"), float32()),
                       literal(std::make_shared<FloatScalar>(10.0f))));
+
+    // decimal int
+    ExpectBindsTo(cmp(field_ref("dec128_3_2"), field_ref("i64")),
+                  cmp(field_ref("dec128_3_2"), cast(field_ref("i64"), decimal128(21, 2))),
+                  /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("i64"), field_ref("dec128_3_2")),
+                  cmp(cast(field_ref("i64"), decimal128(21, 2)), field_ref("dec128_3_2")),
+                  /*bound_out=*/nullptr, *exciting_schema);
+
+    // decimal decimal with different widths different precisions but same scale
+    ExpectBindsTo(
+        cmp(field_ref("dec128_3_2"), field_ref("dec256_4_2")),
+        cmp(cast(field_ref("dec128_3_2"), decimal256(3, 2)), field_ref("dec256_4_2")),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec256_4_2"), field_ref("dec128_3_2")),
+        cmp(field_ref("dec256_4_2"), cast(field_ref("dec128_3_2"), decimal256(3, 2))),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec128_4_2"), field_ref("dec256_3_2")),
+        cmp(cast(field_ref("dec128_4_2"), decimal256(4, 2)), field_ref("dec256_3_2")),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec256_3_2"), field_ref("dec128_4_2")),
+        cmp(field_ref("dec256_3_2"), cast(field_ref("dec128_4_2"), decimal256(4, 2))),
+        /*bound_out=*/nullptr, *exciting_schema);
+
+    // decimal decimal with different widths different scales
+    ExpectBindsTo(
+        cmp(field_ref("dec128_3_2"), field_ref("dec256_5_3")),
+        cmp(cast(field_ref("dec128_3_2"), decimal256(4, 3)), field_ref("dec256_5_3")),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec256_5_3"), field_ref("dec128_3_2")),
+        cmp(field_ref("dec256_5_3"), cast(field_ref("dec128_3_2"), decimal256(4, 3))),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("dec128_5_3"), field_ref("dec256_3_2")),
+                  cmp(cast(field_ref("dec128_5_3"), decimal256(5, 3)),
+                      cast(field_ref("dec256_3_2"), decimal256(4, 3))),
+                  /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("dec256_3_2"), field_ref("dec128_5_3")),
+                  cmp(cast(field_ref("dec256_3_2"), decimal256(4, 3)),
+                      cast(field_ref("dec128_5_3"), decimal256(5, 3))),
+                  /*bound_out=*/nullptr, *exciting_schema);
+
+    // decimal decimal with same width same precision but different scales (no cast)
+    ExpectBindsTo(cmp(field_ref("dec128_3_2"), field_ref("dec128_4_2")),
+                  cmp(field_ref("dec128_3_2"), field_ref("dec128_4_2")),
+                  /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("dec128_4_2"), field_ref("dec128_3_2")),
+                  cmp(field_ref("dec128_4_2"), field_ref("dec128_3_2")),
+                  /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("dec256_3_2"), field_ref("dec256_4_2")),
+                  cmp(field_ref("dec256_3_2"), field_ref("dec256_4_2")),
+                  /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(cmp(field_ref("dec256_4_2"), field_ref("dec256_3_2")),
+                  cmp(field_ref("dec256_4_2"), field_ref("dec256_3_2")),
+                  /*bound_out=*/nullptr, *exciting_schema);
+
+    // decimal decimal with same width but different scales
+    ExpectBindsTo(
+        cmp(field_ref("dec128_3_2"), field_ref("dec128_5_3")),
+        cmp(cast(field_ref("dec128_3_2"), decimal128(4, 3)), field_ref("dec128_5_3")),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec128_5_3"), field_ref("dec128_3_2")),
+        cmp(field_ref("dec128_5_3"), cast(field_ref("dec128_3_2"), decimal128(4, 3))),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec256_3_2"), field_ref("dec256_5_3")),
+        cmp(cast(field_ref("dec256_3_2"), decimal256(4, 3)), field_ref("dec256_5_3")),
+        /*bound_out=*/nullptr, *exciting_schema);
+    ExpectBindsTo(
+        cmp(field_ref("dec256_5_3"), field_ref("dec256_3_2")),
+        cmp(field_ref("dec256_5_3"), cast(field_ref("dec256_3_2"), decimal256(4, 3))),
+        /*bound_out=*/nullptr, *exciting_schema);
   }
 
   compute::SetLookupOptions in_a{ArrayFromJSON(utf8(), R"(["a"])")};
@@ -672,6 +891,51 @@ TEST(Expression, BindWithImplicitCasts) {
   // cast dictionary to value type
   ExpectBindsTo(call("is_in", {field_ref("dict_str")}, in_a),
                 call("is_in", {cast(field_ref("dict_str"), utf8())}, in_a));
+}
+
+TEST(Expression, BindWithImplicitCastsForCaseWhenOnDecimal) {
+  auto exciting_schema = schema(
+      {field("a", struct_({field("", boolean())})),
+       field("dec128_20_3", decimal128(20, 3)), field("dec128_21_3", decimal128(21, 3)),
+       field("dec128_20_1", decimal128(20, 1)), field("dec128_21_1", decimal128(21, 1)),
+       field("dec256_20_3", decimal256(20, 3)), field("dec256_21_3", decimal256(21, 3)),
+       field("dec256_20_1", decimal256(20, 1)), field("dec256_21_1", decimal256(21, 1))});
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec128_20_3"),
+                                   field_ref("dec128_21_3")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec128_20_3"), decimal128(21, 3)),
+                      field_ref("dec128_21_3")}),
+                /*bound_out=*/nullptr, *exciting_schema);
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec128_20_1"),
+                                   field_ref("dec128_21_3")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec128_20_1"), decimal128(22, 3)),
+                      cast(field_ref("dec128_21_3"), decimal128(22, 3))}),
+                /*bound_out=*/nullptr, *exciting_schema);
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec128_20_3"),
+                                   field_ref("dec128_21_1")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec128_20_3"), decimal128(23, 3)),
+                      cast(field_ref("dec128_21_1"), decimal128(23, 3))}),
+                /*bound_out=*/nullptr, *exciting_schema);
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec128_20_3"),
+                                   field_ref("dec256_21_3")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec128_20_3"), decimal256(21, 3)),
+                      field_ref("dec256_21_3")}),
+                /*bound_out=*/nullptr, *exciting_schema);
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec256_20_1"),
+                                   field_ref("dec128_21_3")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec256_20_1"), decimal256(22, 3)),
+                      cast(field_ref("dec128_21_3"), decimal256(22, 3))}),
+                /*bound_out=*/nullptr, *exciting_schema);
+  ExpectBindsTo(call("case_when", {field_ref("a"), field_ref("dec256_20_3"),
+                                   field_ref("dec256_21_1")}),
+                call("case_when",
+                     {field_ref("a"), cast(field_ref("dec256_20_3"), decimal256(23, 3)),
+                      cast(field_ref("dec256_21_1"), decimal256(23, 3))}),
+                /*bound_out=*/nullptr, *exciting_schema);
 }
 
 TEST(Expression, BindNestedCall) {
@@ -863,6 +1127,62 @@ TEST(Expression, ExecuteCall) {
   ])"));
 }
 
+TEST(Expression, ExecuteCallWithNoArguments) {
+  const int kCount = 10;
+  auto random_options = RandomOptions::FromSeed(/*seed=*/0);
+  ExecBatch input({}, kCount);
+
+  Expression random_expr = call("random", {}, random_options);
+  ASSERT_OK_AND_ASSIGN(random_expr, random_expr.Bind(float64()));
+  ASSERT_OK_AND_ASSIGN(auto simplify_expr,
+                       SimplifyWithGuarantee(random_expr, input.guarantee));
+
+  ASSERT_OK_AND_ASSIGN(Datum actual, ExecuteScalarExpression(simplify_expr, input));
+  compute::ExecContext* exec_context = default_exec_context();
+  ASSERT_OK_AND_ASSIGN(auto function,
+                       exec_context->func_registry()->GetFunction("random"));
+  ASSERT_OK_AND_ASSIGN(Datum expected,
+                       function->Execute(input, &random_options, exec_context));
+  AssertDatumsEqual(actual, expected, /*verbose=*/true);
+
+  EXPECT_EQ(actual.length(), kCount);
+}
+
+TEST(Expression, ExecuteChunkedArray) {
+  // GH-41923: compute should generate the right result if input
+  // ExecBatch is `chunked_array`.
+  auto input_schema = struct_({field("a", struct_({
+                                              field("a", float64()),
+                                              field("b", float64()),
+                                          }))});
+
+  auto chunked_array_input = ChunkedArrayFromJSON(input_schema, {R"([
+    {"a": {"a": 6.125, "b": 3.375}},
+    {"a": {"a": 0.0,   "b": 1}}
+  ])",
+                                                                 R"([
+    {"a": {"a": -1,    "b": 4.75}}
+  ])"});
+
+  ASSERT_OK_AND_ASSIGN(auto table_input,
+                       Table::FromChunkedStructArray(chunked_array_input));
+
+  auto expr = add(field_ref(FieldRef("a", "a")), field_ref(FieldRef("a", "b")));
+
+  ASSERT_OK_AND_ASSIGN(expr, expr.Bind(input_schema));
+  std::vector<Datum> inputs{table_input->column(0)};
+  ExecBatch batch{inputs, 3};
+
+  ASSERT_OK_AND_ASSIGN(Datum res, ExecuteScalarExpression(expr, batch));
+  ASSERT_TRUE(res.is_chunked_array());
+
+  AssertDatumsEqual(res, ChunkedArrayFromJSON(float64(), {R"([
+    9.5,
+    1,
+    3.75
+  ])"}));
+}
+
 TEST(Expression, ExecuteDictionaryTransparent) {
   ExpectExecute(
       equal(field_ref("a"), field_ref("b")),
@@ -901,7 +1221,7 @@ TEST(Expression, ExecuteDictionaryTransparent) {
 void ExpectIdenticalIfUnchanged(Expression modified, Expression original) {
   if (modified == original) {
     // no change -> must be identical
-    EXPECT_TRUE(Identical(modified, original)) << "  " << original.ToString();
+    EXPECT_TRUE(Expression::Identical(modified, original)) << "  " << original.ToString();
   }
 }
 
@@ -1352,6 +1672,36 @@ TEST(Expression, SingleComparisonGuarantees) {
   }
 }
 
+static Status RegisterMyRandom() {
+  const std::string name = "my_random";
+  auto func = std::make_shared<ScalarFunction>(name, Arity::Unary(), FunctionDoc::Empty(),
+                                               nullptr, /*is_pure=*/false);
+
+  auto func_exec = [](KernelContext* /*ctx*/, const ExecSpan& /*batch*/,
+                      ExecResult* /*out*/) -> Status { return Status::OK(); };
+
+  ScalarKernel kernel({int32()}, float64(), func_exec);
+  ARROW_RETURN_NOT_OK(func->AddKernel(kernel));
+
+  auto registry = GetFunctionRegistry();
+  ARROW_RETURN_NOT_OK(registry->AddFunction(std::move(func)));
+
+  return Status::OK();
+}
+
+TEST(Expression, SimplifyImpureFunctionCall) {
+  // skip simplification for impure function with no arguments
+  auto impure_expr = call("random", {});
+  Simplify{impure_expr}.WithGuarantee(literal("")).Expect(impure_expr);
+
+  // simplify impure function's arguments
+  ASSERT_OK(RegisterMyRandom());
+  auto pure_expr = call("add", {field_ref("i32"), literal(3)});
+  Simplify{call("my_random", {pure_expr})}
+      .WithGuarantee(equal(field_ref("i32"), literal(1)))
+      .Expect(call("my_random", {literal(4)}));
+}
+
 TEST(Expression, SimplifyWithGuarantee) {
   // drop both members of a conjunctive filter
   Simplify{
@@ -1505,6 +1855,154 @@ TEST(Expression, SimplifyWithComparisonAndNullableCaveat) {
           true_unless_null(field_ref("i32"))));  // not satisfiable, will drop row group
 }
 
+TEST(Expression, SimplifyIsIn) {
+  auto is_in = [](Expression field, std::shared_ptr<DataType> value_set_type,
+                  std::string json_array,
+                  SetLookupOptions::NullMatchingBehavior null_matching_behavior) {
+    SetLookupOptions options{ArrayFromJSON(value_set_type, json_array),
+                             null_matching_behavior};
+    return call("is_in", {field}, options);
+  };
+
+  for (SetLookupOptions::NullMatchingBehavior null_matching : {
+           SetLookupOptions::MATCH,
+           SetLookupOptions::SKIP,
+           SetLookupOptions::EMIT_NULL,
+           SetLookupOptions::INCONCLUSIVE,
+       }) {
+    Simplify{is_in(field_ref("i32"), int32(), "[]", null_matching)}
+        .WithGuarantee(greater(field_ref("i32"), literal(2)))
+        .Expect(false);
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(equal(field_ref("i32"), literal(6)))
+        .Expect(false);
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(greater(field_ref("i32"), literal(3)))
+        .Expect(is_in(field_ref("i32"), int32(), "[5,7,9]", null_matching));
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(greater(field_ref("i32"), literal(9)))
+        .Expect(false);
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(less_equal(field_ref("i32"), literal(0)))
+        .Expect(false);
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(greater(field_ref("i32"), literal(0)))
+        .ExpectUnchanged();
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(less_equal(field_ref("i32"), literal(9)))
+        .ExpectUnchanged();
+
+    Simplify{is_in(field_ref("i32"), int32(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(and_(less_equal(field_ref("i32"), literal(7)),
+                            greater(field_ref("i32"), literal(4))))
+        .Expect(is_in(field_ref("i32"), int32(), "[5,7]", null_matching));
+
+    Simplify{is_in(field_ref("u32"), int8(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(greater(field_ref("u32"), literal(3)))
+        .Expect(is_in(field_ref("u32"), int8(), "[5,7,9]", null_matching));
+
+    Simplify{is_in(field_ref("u32"), int64(), "[1,3,5,7,9]", null_matching)}
+        .WithGuarantee(greater(field_ref("u32"), literal(3)))
+        .Expect(is_in(field_ref("u32"), int64(), "[5,7,9]", null_matching));
+
+    Simplify{is_in(field_ref("u32"), int64(), make_range_json(1, 40), null_matching)}
+        .WithGuarantee(greater(field_ref("u32"), literal(10)))
+        .Expect(is_in(field_ref("u32"), int64(), make_range_json(11, 40), null_matching));
+
+    // For large ranges we don't do any simplification, see
+    // `kIsInSimplificationMaxValueSet` in expression.cc.
+    Simplify{is_in(field_ref("u32"), int64(), make_range_json(1, 100), null_matching)}
+        .WithGuarantee(greater(field_ref("u32"), literal(3)))
+        .ExpectUnchanged();
+  }
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3]", SetLookupOptions::MATCH),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::MATCH));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::MATCH),
+  }
+      .WithGuarantee(greater(field_ref("i32"), literal(2)))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::MATCH));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::MATCH),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .Expect(is_in(field_ref("i32"), int32(), "[3,null]", SetLookupOptions::MATCH));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3]", SetLookupOptions::SKIP),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::SKIP));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::SKIP),
+  }
+      .WithGuarantee(greater(field_ref("i32"), literal(2)))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::SKIP));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::SKIP),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::SKIP));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3]", SetLookupOptions::EMIT_NULL),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .ExpectUnchanged();
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::EMIT_NULL),
+  }
+      .WithGuarantee(greater(field_ref("i32"), literal(2)))
+      .Expect(is_in(field_ref("i32"), int32(), "[3]", SetLookupOptions::EMIT_NULL));
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::EMIT_NULL),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .ExpectUnchanged();
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3]", SetLookupOptions::INCONCLUSIVE),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .ExpectUnchanged();
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::INCONCLUSIVE),
+  }
+      .WithGuarantee(greater(field_ref("i32"), literal(2)))
+      .ExpectUnchanged();
+
+  Simplify{
+      is_in(field_ref("i32"), int32(), "[1,2,3,null]", SetLookupOptions::INCONCLUSIVE),
+  }
+      .WithGuarantee(
+          or_(greater(field_ref("i32"), literal(2)), is_null(field_ref("i32"))))
+      .ExpectUnchanged();
+}
+
 TEST(Expression, SimplifyThenExecute) {
   auto filter =
       or_({equal(field_ref("f32"), literal(0)),
@@ -1530,6 +2028,40 @@ TEST(Expression, SimplifyThenExecute) {
   ExpectExecute(filter, input, &evaluated);
   ExpectExecute(simplified, input, &simplified_evaluated);
   AssertDatumsEqual(evaluated, simplified_evaluated, /*verbose=*/true);
+}
+
+TEST(Expression, SimplifyIsInThenExecute) {
+  auto input = RecordBatchFromJSON(kBoringSchema, R"([
+      {"i64": 2, "i32": 5},
+      {"i64": 5, "i32": 6},
+      {"i64": 3, "i32": 6},
+      {"i64": 3, "i32": 5},
+      {"i64": 4, "i32": 5},
+      {"i64": 2, "i32": 7},
+      {"i64": 5, "i32": 5}
+  ])");
+
+  std::vector<Expression> guarantees{greater(field_ref("i64"), literal(1)),
+                                     greater_equal(field_ref("i32"), literal(5)),
+                                     less_equal(field_ref("i64"), literal(5))};
+
+  for (const Expression& guarantee : guarantees) {
+    auto filter =
+        call("is_in", {guarantee.call()->arguments[0]},
+             compute::SetLookupOptions{ArrayFromJSON(int32(), "[1,2,3]"), true});
+    ASSERT_OK_AND_ASSIGN(filter, filter.Bind(*kBoringSchema));
+    ASSERT_OK_AND_ASSIGN(auto simplified, SimplifyWithGuarantee(filter, guarantee));
+
+    Datum evaluated, simplified_evaluated;
+    ExpectExecute(filter, input, &evaluated);
+    ExpectExecute(simplified, input, &simplified_evaluated);
+    if (simplified_evaluated.is_scalar()) {
+      ASSERT_OK_AND_ASSIGN(
+          simplified_evaluated,
+          MakeArrayFromScalar(*simplified_evaluated.scalar(), evaluated.length()));
+    }
+    AssertDatumsEqual(evaluated, simplified_evaluated, /*verbose=*/true);
+  }
 }
 
 TEST(Expression, Filter) {

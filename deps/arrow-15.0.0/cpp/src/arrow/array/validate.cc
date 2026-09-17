@@ -28,9 +28,9 @@
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/decimal.h"
 #include "arrow/util/int_util_overflow.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/ree_util.h"
-#include "arrow/util/sort.h"
+#include "arrow/util/sort_internal.h"
 #include "arrow/util/string.h"
 #include "arrow/util/unreachable.h"
 #include "arrow/util/utf8.h"
@@ -143,6 +143,16 @@ struct ValidateArrayImpl {
   }
 
   Status Visit(const FixedWidthType&) { return ValidateFixedWidthBuffers(); }
+
+  Status Visit(const Decimal32Type& type) {
+    RETURN_NOT_OK(ValidateFixedWidthBuffers());
+    return ValidateDecimals(type);
+  }
+
+  Status Visit(const Decimal64Type& type) {
+    RETURN_NOT_OK(ValidateFixedWidthBuffers());
+    return ValidateDecimals(type);
+  }
 
   Status Visit(const Decimal128Type& type) {
     RETURN_NOT_OK(ValidateFixedWidthBuffers());
@@ -550,7 +560,7 @@ struct ValidateArrayImpl {
     if (full_validation) {
       if (data.null_count != kUnknownNullCount) {
         int64_t actual_null_count;
-        if (HasValidityBitmap(data.type->id()) && data.buffers[0]) {
+        if (may_have_validity_bitmap(data.type->id()) && data.buffers[0]) {
           // Do not call GetNullCount() as it would also set the `null_count` member
           actual_null_count = data.length - CountSetBits(data.buffers[0]->data(),
                                                          data.offset, data.length);
@@ -985,10 +995,22 @@ Status ValidateArrayFull(const Array& array) { return ValidateArrayFull(*array.d
 
 ARROW_EXPORT
 Status ValidateUTF8(const ArrayData& data) {
-  DCHECK(data.type->id() == Type::STRING || data.type->id() == Type::STRING_VIEW ||
-         data.type->id() == Type::LARGE_STRING);
-  UTF8DataValidator validator{data};
-  return VisitTypeInline(*data.type, &validator);
+  const auto& storage_type =
+      (data.type->id() == Type::EXTENSION)
+          ? checked_cast<const ExtensionType&>(*data.type).storage_type()
+          : data.type;
+  DCHECK(storage_type->id() == Type::STRING || storage_type->id() == Type::STRING_VIEW ||
+         storage_type->id() == Type::LARGE_STRING);
+
+  if (data.type->id() == Type::EXTENSION) {
+    ArrayData ext_data(data);
+    ext_data.type = storage_type;
+    UTF8DataValidator validator{ext_data};
+    return VisitTypeInline(*storage_type, &validator);
+  } else {
+    UTF8DataValidator validator{data};
+    return VisitTypeInline(*storage_type, &validator);
+  }
 }
 
 ARROW_EXPORT

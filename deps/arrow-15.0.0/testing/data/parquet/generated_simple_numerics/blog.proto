@@ -1,0 +1,51 @@
+syntax = "proto2";
+
+package org.apache.arrow.rust.example;
+
+option java_outer_classname = "Blogs";
+
+//message User {
+//    required int32 id = 1;
+//    optional int32 name_id = 2;
+//}
+//
+//message Comment {
+//    required int32 user_id = 1;
+//    required int32 title_id = 2;
+//    optional int32 body_id = 3;
+//    repeated Reply replies = 4;
+//}
+//
+//message Reply {
+//    required int32 user_id = 1;
+//    required int32 head_id = 2;
+//    optional int32 body_id = 3;
+//}
+//
+//message View {
+//    required int32 user_id = 1;
+//}
+//
+//message Blog {
+//    required User creator = 1;
+//    required int32 body_id = 2;
+//    repeated Comment comments = 3;
+//    repeated View views = 4;
+//}
+
+message Reply {
+    required int32 reply_id = 1;
+    optional int32 next_id = 2;
+}
+
+message Score {
+    required float user_score = 1;
+    optional double system_score = 2;
+}
+
+message Blog {
+    optional Reply reply = 1;
+    optional int64 blog_id = 2;
+    required bool deleted = 3;
+    required Score score = 4;
+}

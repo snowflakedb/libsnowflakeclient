@@ -16,7 +16,7 @@
 // under the License.
 
 // String functions
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/value_parsing.h"
 
 extern "C" {
@@ -152,7 +152,7 @@ gdv_int32 utf8_char_length(char c) {
 
 FORCE_INLINE
 void set_error_for_invalid_utf(int64_t execution_context, char val) {
-  char const* fmt = "unexpected byte \\%02hhx encountered while decoding utf8 string";
+  const char* fmt = "unexpected byte \\%02hhx encountered while decoding utf8 string";
   int size = static_cast<int>(strlen(fmt)) + 64;
   char* error = reinterpret_cast<char*>(malloc(size));
   snprintf(error, size, fmt, (unsigned char)val);
@@ -841,7 +841,12 @@ const char* repeat_utf8_int32(gdv_int64 context, const char* in, gdv_int32 in_le
     *out_len = 0;
     return "";
   }
-  *out_len = repeat_number * in_len;
+  if (ARROW_PREDICT_FALSE(
+          arrow::internal::MultiplyWithOverflow(repeat_number, in_len, out_len))) {
+    gdv_fn_context_set_error_msg(context, "Would overflow maximum output size");
+    *out_len = 0;
+    return "";
+  }
   char* ret = reinterpret_cast<char*>(gdv_fn_context_arena_malloc(context, *out_len));
   if (ret == nullptr) {
     gdv_fn_context_set_error_msg(context, "Could not allocate memory for output string");
@@ -1377,7 +1382,7 @@ gdv_int32 ascii_utf8(const char* data, gdv_int32 data_len) {
   if (data_len == 0) {
     return 0;
   }
-  return static_cast<gdv_int32>(data[0]);
+  return static_cast<gdv_int32>(static_cast<signed char>(data[0]));
 }
 
 // Returns the ASCII character having the binary equivalent to A.

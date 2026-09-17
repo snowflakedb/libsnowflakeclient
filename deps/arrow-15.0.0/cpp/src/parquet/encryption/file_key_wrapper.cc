@@ -22,6 +22,8 @@
 #include "parquet/encryption/key_toolkit_internal.h"
 #include "parquet/exception.h"
 
+using ::arrow::util::SecureString;
+
 namespace parquet::encryption {
 
 FileKeyWrapper::FileKeyWrapper(KeyToolkit* key_toolkit,
@@ -49,11 +51,11 @@ FileKeyWrapper::FileKeyWrapper(KeyToolkit* key_toolkit,
   }
 }
 
-std::string FileKeyWrapper::GetEncryptionKeyMetadata(const std::string& data_key,
+std::string FileKeyWrapper::GetEncryptionKeyMetadata(const SecureString& data_key,
                                                      const std::string& master_key_id,
                                                      bool is_footer_key,
                                                      std::string key_id_in_file) {
-  if (kms_client_ == NULL) {
+  if (kms_client_ == NULLPTR) {
     throw ParquetException("No KMS client available. See previous errors.");
   }
 
@@ -70,7 +72,7 @@ std::string FileKeyWrapper::GetEncryptionKeyMetadata(const std::string& data_key
         });
     // Encrypt DEK with KEK
     const std::string& aad = key_encryption_key.kek_id();
-    const std::string& kek_bytes = key_encryption_key.kek_bytes();
+    const SecureString& kek_bytes = key_encryption_key.kek_bytes();
     encoded_wrapped_dek = internal::EncryptKeyLocally(data_key, kek_bytes, aad);
     encoded_kek_id = key_encryption_key.encoded_kek_id();
     encoded_wrapped_kek = key_encryption_key.encoded_wrapped_kek();
@@ -103,7 +105,7 @@ std::string FileKeyWrapper::GetEncryptionKeyMetadata(const std::string& data_key
       key_counter_++;
     }
   }
-  key_material_store_->AddKeyMaterial(key_id_in_file, serialized_key_material);
+  key_material_store_->AddKeyMaterial(key_id_in_file, std::move(serialized_key_material));
   std::string serialized_key_metadata =
       KeyMetadata::CreateSerializedForExternalMaterial(key_id_in_file);
   return serialized_key_metadata;
@@ -111,16 +113,17 @@ std::string FileKeyWrapper::GetEncryptionKeyMetadata(const std::string& data_key
 
 KeyEncryptionKey FileKeyWrapper::CreateKeyEncryptionKey(
     const std::string& master_key_id) {
-  std::string kek_bytes(kKeyEncryptionKeyLength, '\0');
-  RandBytes(reinterpret_cast<uint8_t*>(&kek_bytes[0]), kKeyEncryptionKeyLength);
+  SecureString kek_bytes(kKeyEncryptionKeyLength, '\0');
+  RandBytes(kek_bytes.as_span().data(), kKeyEncryptionKeyLength);
 
   std::string kek_id(kKeyEncryptionKeyIdLength, '\0');
-  RandBytes(reinterpret_cast<uint8_t*>(&kek_id[0]), kKeyEncryptionKeyIdLength);
+  RandBytes(reinterpret_cast<uint8_t*>(kek_id.data()), kKeyEncryptionKeyIdLength);
 
   // Encrypt KEK with Master key
   std::string encoded_wrapped_kek = kms_client_->WrapKey(kek_bytes, master_key_id);
 
-  return KeyEncryptionKey(kek_bytes, kek_id, encoded_wrapped_kek);
+  return KeyEncryptionKey(std::move(kek_bytes), std::move(kek_id),
+                          std::move(encoded_wrapped_kek));
 }
 
 }  // namespace parquet::encryption

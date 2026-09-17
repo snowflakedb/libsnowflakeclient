@@ -20,6 +20,8 @@
 #include "arrow/compute/function.h"
 #include "arrow/compute/kernels/vector_sort_internal.h"
 #include "arrow/compute/registry.h"
+#include "arrow/compute/registry_internal.h"
+#include "arrow/util/logging_internal.h"
 
 namespace arrow {
 
@@ -406,10 +408,7 @@ class TableSelector : public TypeVisitor {
 
     // Find the target chunk and index in the target chunk from an
     // index in chunked array.
-    template <typename ArrayType>
-    ResolvedChunk<ArrayType> GetChunk(int64_t index) const {
-      return resolver.Resolve<ArrayType>(index);
-    }
+    ResolvedChunk GetChunk(int64_t index) const { return resolver.Resolve(index); }
 
     const SortOrder order;
     const std::shared_ptr<DataType> type;
@@ -495,7 +494,6 @@ class TableSelector : public TypeVisitor {
 
   template <typename InType, SortOrder sort_order>
   Status SelectKthInternal() {
-    using ArrayType = typename TypeTraits<InType>::ArrayType;
     auto& comparator = comparator_;
     const auto& first_sort_key = sort_keys_[0];
 
@@ -509,10 +507,10 @@ class TableSelector : public TypeVisitor {
     std::function<bool(const uint64_t&, const uint64_t&)> cmp;
     SelectKComparator<sort_order> select_k_comparator;
     cmp = [&](const uint64_t& left, const uint64_t& right) -> bool {
-      auto chunk_left = first_sort_key.template GetChunk<ArrayType>(left);
-      auto chunk_right = first_sort_key.template GetChunk<ArrayType>(right);
-      auto value_left = chunk_left.Value();
-      auto value_right = chunk_right.Value();
+      auto chunk_left = first_sort_key.GetChunk(left);
+      auto chunk_right = first_sort_key.GetChunk(right);
+      auto value_left = chunk_left.Value<InType>();
+      auto value_right = chunk_right.Value<InType>();
       if (value_left == value_right) {
         return comparator.Compare(left, right, 1);
       }

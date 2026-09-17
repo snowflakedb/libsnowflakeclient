@@ -23,13 +23,11 @@
 #include "arrow/filesystem/util_internal.h"
 #include "arrow/result.h"
 #include "arrow/status.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/string.h"
 #include "arrow/util/uri.h"
 
 namespace arrow {
-
-using internal::StartsWith;
 
 namespace fs {
 namespace internal {
@@ -137,6 +135,18 @@ Status ValidateAbstractPathParts(const std::vector<std::string>& parts) {
   return Status::OK();
 }
 
+Status ValidateAbstractPath(std::string_view path) {
+  auto pos = path.find_first_of(kSep);
+  while (pos != path.npos) {
+    ++pos;
+    if (path.length() > pos && path[pos] == kSep) {
+      return Status::Invalid("Empty path component");
+    }
+    pos = path.find_first_of(kSep, pos);
+  }
+  return Status::OK();
+}
+
 std::string ConcatAbstractPath(std::string_view base, std::string_view stem) {
   DCHECK(!stem.empty());
   if (base.empty()) {
@@ -224,7 +234,7 @@ bool IsAncestorOf(std::string_view ancestor, std::string_view descendant) {
   }
 
   descendant = RemoveTrailingSlash(descendant);
-  if (!StartsWith(descendant, ancestor)) {
+  if (!descendant.starts_with(ancestor)) {
     // an ancestor path is a prefix of descendant paths
     return false;
   }
@@ -237,7 +247,7 @@ bool IsAncestorOf(std::string_view ancestor, std::string_view descendant) {
   }
 
   // "/hello/w" is not an ancestor of "/hello/world"
-  return StartsWith(descendant, std::string{kSep});
+  return descendant.starts_with(std::string{kSep});
 }
 
 std::optional<std::string_view> RemoveAncestor(std::string_view ancestor,
@@ -344,7 +354,7 @@ bool IsLikelyUri(std::string_view v) {
     // with 36 characters.
     return false;
   }
-  return ::arrow::internal::IsValidUriScheme(v.substr(0, pos));
+  return ::arrow::util::IsValidUriScheme(v.substr(0, pos));
 }
 
 struct Globber::Impl {

@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "arrow/util/logging_internal.h"
 #include "gandiva/bitmap_accumulator.h"
 #include "gandiva/decimal_ir.h"
 #include "gandiva/dex.h"
@@ -277,6 +278,8 @@ Status LLVMGenerator::CodeGenExprValue(DexPtr value_expr, int buffer_count,
                                        std::string& fn_name,
                                        SelectionVector::Mode selection_vector_mode) {
   llvm::IRBuilder<>* builder = ir_builder();
+  const auto output_type_id = output->Type()->id();
+
   // Create fn prototype :
   //   int expr_1 (long **addrs, long *offsets, long **bitmaps,
   //               long *context_ptr, long nrec)
@@ -341,12 +344,18 @@ Status LLVMGenerator::CodeGenExprValue(DexPtr value_expr, int buffer_count,
 
   // Add reference to output vector (in entry block)
   builder->SetInsertPoint(loop_entry);
+
   llvm::Value* output_ref =
       GetDataReference(arg_addrs, output->data_idx(), output->field());
-  llvm::Value* output_buffer_ptr_ref = GetDataBufferPtrReference(
-      arg_addrs, output->data_buffer_ptr_idx(), output->field());
+  llvm::Value* output_buffer_ptr_ref =
+      arrow::is_binary_like(output_type_id)
+          ? GetDataBufferPtrReference(arg_addrs, output->data_buffer_ptr_idx(),
+                                      output->field())
+          : nullptr;
   llvm::Value* output_offset_ref =
-      GetOffsetsReference(arg_addrs, output->offsets_idx(), output->field());
+      arrow::is_binary_like(output_type_id)
+          ? GetOffsetsReference(arg_addrs, output->offsets_idx(), output->field())
+          : nullptr;
 
   std::vector<llvm::Value*> slice_offsets;
   for (int idx = 0; idx < buffer_count; idx++) {
@@ -388,11 +397,15 @@ Status LLVMGenerator::CodeGenExprValue(DexPtr value_expr, int buffer_count,
   // save the value in the output vector.
   builder->SetInsertPoint(loop_body_tail);
 
-  auto output_type_id = output->Type()->id();
   if (output_type_id == arrow::Type::BOOL) {
     SetPackedBitValue(output_ref, loop_var, output_value->data());
-  } else if (arrow::is_primitive(output_type_id) ||
-             output_type_id == arrow::Type::DECIMAL) {
+  } else if (output_type_id == arrow::Type::DECIMAL) {
+    // Arrow decimal128 data is only 8-byte aligned, not 16-byte aligned.
+    // Use CreateAlignedStore with 8-byte alignment to match Arrow's actual alignment.
+    auto slot_offset =
+        builder->CreateGEP(types()->IRType(output_type_id), output_ref, loop_var);
+    builder->CreateAlignedStore(output_value->data(), slot_offset, llvm::MaybeAlign(8));
+  } else if (arrow::is_primitive(output_type_id)) {
     auto slot_offset =
         builder->CreateGEP(types()->IRType(output_type_id), output_ref, loop_var);
     builder->CreateStore(output_value->data(), slot_offset);
@@ -594,7 +607,12 @@ void LLVMGenerator::Visitor::Visit(const VectorReadFixedLenValueDex& dex) {
 
     case arrow::Type::DECIMAL: {
       auto slot_offset = builder->CreateGEP(types->i128_type(), slot_ref, slot_index);
-      slot_value = builder->CreateLoad(types->i128_type(), slot_offset, dex.FieldName());
+      // Arrow decimal128 data is only 8-byte aligned, not 16-byte aligned.
+      // Using CreateLoad with default alignment (16 for i128) causes crashes on
+      // misaligned data. Use CreateAlignedLoad with 8-byte alignment to match Arrow's
+      // actual alignment.
+      slot_value = builder->CreateAlignedLoad(
+          types->i128_type(), slot_offset, llvm::MaybeAlign(8), false, dex.FieldName());
       lvalue = generator_->BuildDecimalLValue(slot_value, dex.FieldType());
       break;
     }
@@ -723,7 +741,7 @@ void LLVMGenerator::Visitor::Visit(const LiteralDex& dex) {
     case arrow::Type::BINARY: {
       const std::string& str = std::get<std::string>(dex.holder());
 
-      value = ir_builder()->CreateGlobalStringPtr(str.c_str());
+      value = CreateGlobalStringPtr(str);
       len = types->i32_constant(static_cast<int32_t>(str.length()));
       break;
     }
@@ -751,7 +769,7 @@ void LLVMGenerator::Visitor::Visit(const LiteralDex& dex) {
       auto int128_value =
           llvm::ConstantInt::get(llvm::Type::getInt128Ty(*generator_->context()),
                                  Decimal128(scalar.value()).ToIntegerString(), 10);
-      auto type = arrow::decimal(scalar.precision(), scalar.scale());
+      auto type = arrow::decimal128(scalar.precision(), scalar.scale());
       auto lvalue = generator_->BuildDecimalLValue(int128_value, type);
       // set it as the l-value and return.
       result_ = lvalue;
@@ -1251,7 +1269,7 @@ LValuePtr LLVMGenerator::Visitor::BuildFunctionCall(const NativeFunction* func,
     // Make the function call
     auto out = decimalIR.CallDecimalFunction(func->pc_name(), llvm_return_type, *params);
     ret_lvalue->set_data(out);
-    return std::move(ret_lvalue);
+    return ret_lvalue;
   } else {
     bool isDecimalFunction = false;
     for (auto& arg : *params) {
