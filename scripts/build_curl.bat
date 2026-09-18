@@ -80,7 +80,7 @@ set CURL_SOURCE_DIR=%DEPS_DIR%\%CURL_DIR%
 set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
 
 rd /S /Q %CURL_SOURCE_DIR%
-curl https://curl.se/download/curl-%CURL_SRC_VERSION%.zip -o %DEPS_DIR%\curl-%CURL_SRC_VERSION%.zip
+curl https://curl.se/download/curl-%CURL_SRC_VERSION%.zip -o %DEPS_DIR%\curl-%CURL_SRC_VERSION%.zip --ssl-no-revoke
 pushd %DEPS_DIR%
   powershell -Command "Expand-Archive -Path .\curl-%CURL_SRC_VERSION%.zip -DestinationPath ."
   move curl-%CURL_SRC_VERSION% curl
