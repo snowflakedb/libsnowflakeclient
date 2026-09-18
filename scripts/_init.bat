@@ -60,9 +60,17 @@ if "%target_name%"=="" (
 	goto :error
 )
 
+if /I "%vs_version%"=="VS16" (
+    set vsdir=vs16
+) else if /I "%vs_version%"=="VS17" (
+    set vsdir=vs17
+) else (
+    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16]
+    goto :error
+)
+
 ::Always use Visual Studio 2022
 set cmake_generator=Visual Studio 17 2022
-set vsdir=vs17
 if "%VCINSTALLDIR%" == "" (
     if exist "c:\Program Files\Microsoft Visual Studio\2022\Community\VC" (
         set "VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC"
@@ -78,10 +86,6 @@ if "%VCINSTALLDIR%" == "" (
             goto :error
         )
     )
-)
-
-if /I "%vs_version%"=="VS16" (
-    set vsdir=vs16
 )
 
 if "%dynamic_runtime%"=="" (

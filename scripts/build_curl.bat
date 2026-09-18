@@ -63,16 +63,6 @@ if "%dynamic_runtime%"=="OFF" (
 	set sharedlibs=OFF
 )
 
-if "%vs_version%"=="VS17" (
-    set vc_version="Visual Studio 17 2022"
-)
-if "%vs_version%"=="VS16" (
-    set vc_version="Visual Studio 16 2019"
-)
-if "%vs_version%"=="VS15" (
-    set vc_version="Visual Studio 15 2017"
-)
-
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 set DEPS_DIR=%scriptdir%\..\deps
@@ -140,10 +130,7 @@ popd
 
 echo === building curl
 cd "%currdir%\deps\%CURL_DIR%"
-cmake ^
-. -G %vc_version% ^
--A %cmake_architecture% ^
--T %ToolSetVersion% ^
+cmake . -G "%cmake_generator%" -A %cmake_architecture% -T "%ToolSetVersion%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^
 -DBUILD_STATIC_LIBS=%staticlibs% ^
