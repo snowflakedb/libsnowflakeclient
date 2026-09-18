@@ -56,6 +56,7 @@ arrow_configure_opts+=(
     "-DARROW_SIMD_LEVEL=NONE"
     "-DARROW_WITH_BACKTRACE=OFF"
     "-DARROW_JEMALLOC_USE_SHARED=OFF"
+    "-DARROW_MIMALLOC=OFF"
     "-DARROW_BUILD_TESTS=OFF"
     "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
     "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
