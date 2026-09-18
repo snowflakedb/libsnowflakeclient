@@ -100,8 +100,8 @@ cmake ..\ ^
 -DBoost_INCLUDE_DIR=%DEPENDENCY_DIR%\boost\include ^
 -DBOOST_SYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_system.lib ^
 -DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib ^
--DCMAKE_POLICY_DEFAULT_CMP0141=NEW ^
 -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded ^
+-DCMAKE_POLICY_DEFAULT_CMP0141=NEW ^
 %arrow_msvc_debug%
 
 if %ERRORLEVEL% NEQ 0 goto :error
