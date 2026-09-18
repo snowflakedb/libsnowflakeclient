@@ -373,7 +373,7 @@ else()
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
-        if (T STREQUAL "test_fips")
+        if (T MATCHES "test_fips")
             if (WIN32)
                 set_tests_properties(${T} PROPERTIES
                     ENVIRONMENT

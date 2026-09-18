@@ -58,6 +58,9 @@ void test_fips_enabled(void **unused) {
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "true");
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "yes");
+  test_simple_conn_helper(SF_BOOLEAN_TRUE);
+
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "on");
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
@@ -71,6 +74,9 @@ void test_fips_enabled(void **unused) {
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "off");
+  test_simple_conn_helper(SF_BOOLEAN_TRUE);
+
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "no");
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
   sf_unsetenv(SF_FIPS_ENABLED_ENV_VAR);
@@ -93,6 +99,9 @@ void test_fips_disabled(void **unused) {
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "on");
   test_simple_conn_helper(SF_BOOLEAN_FALSE);
 
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "yes");
+  test_simple_conn_helper(SF_BOOLEAN_FALSE);
+
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "0");
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
@@ -103,6 +112,9 @@ void test_fips_disabled(void **unused) {
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
   sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "off");
+  test_simple_conn_helper(SF_BOOLEAN_TRUE);
+
+  sf_setenv(SF_FIPS_ENABLED_ENV_VAR, "no");
   test_simple_conn_helper(SF_BOOLEAN_TRUE);
 
   sf_unsetenv(SF_FIPS_ENABLED_ENV_VAR);
@@ -121,6 +133,8 @@ void test_fips_not_loaded(void **unused) {
   sf_bool fips_enabled = SF_BOOLEAN_TRUE;
   snowflake_global_get_attribute(SF_GLOBAL_FIPS_ENABLED, &fips_enabled, 0);
   assert_int_equal(fips_enabled, SF_BOOLEAN_FALSE);
+
+  test_simple_conn_helper(SF_BOOLEAN_FALSE);
 
   if (prov != NULL) {
     OSSL_PROVIDER_load(NULL, "fips");
