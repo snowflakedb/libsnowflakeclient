@@ -61,6 +61,7 @@ arrow_configure_opts+=(
     "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
     "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
     "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
+    "-DARROW_RUNTIME_SIMD_LEVEL=NONE" 
 )
 
 rm -rf $ARROW_BUILD_DIR
