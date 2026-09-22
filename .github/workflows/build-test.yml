@@ -124,14 +124,15 @@ jobs:
               if: matrix.vs_version == 'VS16'
               shell: pwsh
               run: |
+                $ErrorActionPreference = 'Stop'
                 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
                 $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-                $installPath = & $vswhere `
+                $installPath = (& $vswhere `
                   -latest `
                   -products * `
                   -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-                  -property installationPath
-                if (-not $installPath) {
+                  -property installationPath).Trim()
+                if (-not $installPath -or -not (Test-Path $installPath)) {
                   throw "Could not locate Visual Studio 2022"
                 }
                 & $installer modify `
@@ -146,6 +147,23 @@ jobs:
                 if ($LASTEXITCODE -notin 0, 3010) {
                   throw "VS2022 v142 installation failed with exit code $LASTEXITCODE"
                 }
+                $msvcRoot = Join-Path $installPath 'VC\Tools\MSVC'
+                $v142Toolset = Get-ChildItem $msvcRoot -Directory |
+                  Where-Object { $_.Name -like '14.29.*' } |
+                  Sort-Object Name -Descending |
+                  Select-Object -First 1
+                if (-not $v142Toolset) {
+                  throw "v142 MSVC toolset was not installed"
+                }
+                $spectreLib = Join-Path $v142Toolset.FullName 'lib\spectre'
+                foreach ($architecture in @('x64', 'x86')) {
+                  $libraryPath = Join-Path $spectreLib $architecture
+
+                  if (-not (Test-Path $libraryPath)) {
+                    throw "Spectre libraries were not installed: $libraryPath"
+                  }
+                }
+                Write-Host "v142 Spectre libraries installed at $spectreLib"
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
