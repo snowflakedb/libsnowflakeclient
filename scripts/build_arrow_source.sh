@@ -26,6 +26,7 @@ ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread -DBOOST_FILESYSTEM_VERSION=3"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
+    arrow_configure_opts+=("-DBUILD_WARNING_LEVEL=PRODUCTION") 
     ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build-debug
     if [[ "$PLATFORM" == "darwin" ]]; then
         ARROW_CXXFLAGS="$ARROW_CXXFLAGS -Wno-error=unused-const-variable -Wno-error=unneeded-internal-declaration -Wno-error=deprecated-declarations"
