@@ -101,7 +101,7 @@ jobs:
             matrix:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
-                vs_version: [ 'VS17' ]
+                vs_version: [ 'VS16', 'VS17' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v5
@@ -120,6 +120,11 @@ jobs:
               run: |
                 git config --system core.longpaths true
                 reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+            - name: Install v142 Spectre-mitigated libraries
+              shell: cmd
+              run: |
+                "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre --quiet --norestart --nocache
+              if: matrix.vs_version == 'VS16'
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
