@@ -101,7 +101,7 @@ jobs:
             matrix:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
-                vs_version: [ 'VS17' ]
+                vs_version: [ 'VS16', 'VS17' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v5
@@ -120,6 +120,32 @@ jobs:
               run: |
                 git config --system core.longpaths true
                 reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+            - name: Install VS2022 v142 C++ Build Tools
+              if: matrix.vs_version == 'VS16'
+              shell: pwsh
+              run: |
+                $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+                $installPath = & $vswhere `
+                  -latest `
+                  -products * `
+                  -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+                  -property installationPath
+                if (-not $installPath) {
+                  throw "Could not locate Visual Studio 2022"
+                }
+                & $installer modify `
+                  --installPath "$installPath" `
+                  --add Microsoft.VisualStudio.Workload.VCTools `
+                  --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+                  --add Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64 `
+                  --add Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre `
+                  --quiet `
+                  --wait `
+                  --norestart
+                if ($LASTEXITCODE -notin 0, 3010) {
+                  throw "VS2022 v142 installation failed with exit code $LASTEXITCODE"
+                }
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
