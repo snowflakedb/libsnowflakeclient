@@ -145,9 +145,9 @@ jobs:
                   "--installPath"
                   "`"$installPath`""
                   "--add"
-                  "Microsoft.VisualStudio.Component.VC.v142.x86.x64"
+                  "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64"
                   "--add"
-                  "Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre"
+                  "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre"
                   "--quiet"
                   "--norestart"
                 )
