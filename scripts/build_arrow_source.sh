@@ -56,6 +56,7 @@ arrow_configure_opts+=(
     "-DARROW_SIMD_LEVEL=NONE"
     "-DARROW_WITH_BACKTRACE=OFF"
 	"-DARROW_MIMALLOC=OFF"
+    "-DARROW_JEMALLOC=ON"
     "-DARROW_JEMALLOC_USE_SHARED=OFF"
     "-DARROW_BUILD_TESTS=OFF"
     "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
@@ -63,6 +64,19 @@ arrow_configure_opts+=(
     "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
     "-DARROW_RUNTIME_SIMD_LEVEL=NONE" 
 )
+
+# jemalloc bakes the page size in at compile time: a binary built for a smaller
+# page size aborts on a larger-page host, so build for the largest target.
+if [[ "$PLATFORM" == "darwin" ]]; then
+    if [[ "$ARCH" == "universal" ]]; then
+        # must cover Apple Silicon (16k) even when built on an Intel runner
+        arrow_configure_opts+=("-DARROW_JEMALLOC_LG_PAGE=14")
+    fi
+    # single-arch mac: host detection is already correct
+elif [[ "$PLATFORM" == "linux" ]] && [[ "$(uname -m)" =~ ^(aarch64|arm64)$ ]]; then
+    # cover both 4k (AL2023/Ubuntu) and 64k (RHEL) aarch64 kernels
+    arrow_configure_opts+=("-DARROW_JEMALLOC_LG_PAGE=16")
+fi
 
 rm -rf $ARROW_BUILD_DIR
 rm -rf $ARROW_DEPS_BUILD_DIR
