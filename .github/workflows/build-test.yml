@@ -123,8 +123,53 @@ jobs:
             - name: Install v142 Spectre-mitigated libraries
               shell: cmd
               run: |
-                "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre --norestart --nocache
+                "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre --quiet --norestart --nocache
               if: matrix.vs_version == 'VS16'
+            - name: Verify v142 Spectre-mitigated libraries
+              if: matrix.vs_version == 'VS16'
+              shell: pwsh
+              run: |
+                $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                if (-not (Test-Path $vswhere)) {
+                  throw "vswhere.exe was not found at $vswhere"
+                }
+
+                $installPath = & $vswhere `
+                  -latest `
+                  -products * `
+                  -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+                  -property installationPath
+
+                if (-not $installPath -or -not (Test-Path $installPath)) {
+                  throw "Unable to locate a Visual Studio installation containing the MSVC tools."
+                }
+
+                $toolsetRoot = Join-Path $installPath "VC\Tools\MSVC"
+                $v142Toolset = Get-ChildItem $toolsetRoot -Directory |
+                  Where-Object { $_.Name -match '^14\.2\d+\.' } |
+                  Sort-Object Name -Descending |
+                  Select-Object -First 1
+
+                if (-not $v142Toolset) {
+                  Get-ChildItem $toolsetRoot -Directory -ErrorAction SilentlyContinue |
+                    Select-Object -ExpandProperty FullName
+                  throw "No v142 MSVC toolset was found under $toolsetRoot"
+                }
+
+                $libraryPath = Join-Path $v142Toolset.FullName "lib\${{ matrix.platform }}\spectre"
+
+                Write-Host "Visual Studio installation: $installPath"
+                Write-Host "v142 toolset: $($v142Toolset.FullName)"
+                Write-Host "Checking Spectre library path: $libraryPath"
+
+                if (-not (Test-Path $libraryPath -PathType Container)) {
+                  Get-ChildItem $v142Toolset.FullName -Recurse -Directory -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -match 'spectre' } |
+                    Select-Object -ExpandProperty FullName
+                  throw "v142 Spectre libraries are missing for platform ${{ matrix.platform }}: $libraryPath"
+                }
+
+                Write-Host "v142 Spectre libraries verified successfully."
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
