@@ -137,15 +137,28 @@ jobs:
                   throw "No Visual Studio installation containing MSVC was found."
                 }
                 $setup = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
-                & $setup modify `
-                  --installPath "$installPath" `
-                  --add Microsoft.VisualStudio.Component.VC.v142.x86.x64 `
-                  --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre `
-                  --quiet `
-                  --wait `
-                  --norestart
-                if ($LASTEXITCODE -ne 0) {
-                  throw "Visual Studio modification failed with exit code $LASTEXITCODE"
+                if (-not (Test-Path $setup)) {
+                  throw "Visual Studio setup.exe was not found at $setup"
+                }
+                $arguments = @(
+                  "modify"
+                  "--installPath"
+                  $installPath
+                  "--add"
+                  "Microsoft.VisualStudio.Component.VC.v142.x86.x64"
+                  "--add"
+                  "Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre"
+                  "--quiet"
+                  "--norestart"
+                )
+                $installer = Start-Process `
+                  -FilePath $setup `
+                  -ArgumentList $arguments `
+                  -Wait `
+                  -PassThru `
+                  -NoNewWindow
+                if ($installer.ExitCode -ne 0) {
+                  throw "Visual Studio modification failed with exit code $($installer.ExitCode)"
                 }
                 Write-Host "Installed v142 components into $installPath"
             - name: Verify v142 Spectre-mitigated libraries
