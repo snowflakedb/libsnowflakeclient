@@ -141,12 +141,16 @@ jobs:
                 if (-not $installPath -or -not (Test-Path $installPath)) {
                   throw "No Visual Studio installation containing MSVC was found."
                 }
+                $quotedInstallPath = '"' + $installPath + '"'
                 $arguments = @(
-                  "modify",
-                  "--installPath", $installPath,
-                  "--add", "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64",
-                  "--add", "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre",
-                  "--norestart",
+                  "modify"
+                  "--installPath"
+                  $quotedInstallPath
+                  "--add"
+                  "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64"
+                  "--add"
+                  "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre"
+                  "--norestart"
                   "--quiet"
                 )
                 $platforms = @("x64", "x86")
