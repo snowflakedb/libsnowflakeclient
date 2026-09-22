@@ -121,10 +121,17 @@ jobs:
                 git config --system core.longpaths true
                 reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
             - name: Install v142 Spectre-mitigated libraries
-              shell: cmd
-              run: |
-                "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre --quiet --norestart --nocache
               if: matrix.vs_version == 'VS16'
+              shell: cmd
+              run: >
+                "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe"
+                modify
+                --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+                --add Microsoft.VisualStudio.Component.VC.v142.x86.x64
+                --add Microsoft.VisualStudio.Component.VC.v142.x86.x64.Spectre
+                --quiet
+                --wait
+                --norestart
             - name: Verify v142 Spectre-mitigated libraries
               if: matrix.vs_version == 'VS16'
               shell: pwsh
