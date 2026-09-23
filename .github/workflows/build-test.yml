@@ -135,12 +135,22 @@ jobs:
                 }
                 Write-Host "Starting Visual Studio component installation..."
                 # Run installer and block until finished
-                $process = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
-                  "--quiet --wait --norestart --nocache modify " +
-                  "--installPath `"$installPath`" " +
-                  "--add Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre " +
-                  "--includeRecommended"
-                )
+                $process = Start-Process `
+                  -FilePath $installer `
+                  -Wait `
+                  -PassThru `
+                  -ArgumentList @(
+                    "modify",
+                    "--quiet",
+                    "--wait",
+                    "--norestart",
+                    "--nocache",
+                    "--installPath",
+                    $installPath,
+                    "--add",
+                    "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre",
+                    "--includeRecommended"
+                  )
                 # Check exit code (0 or 3010 means success)
                 if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
                     Write-Error "VS Installer failed with exit code: $($process.ExitCode)"
