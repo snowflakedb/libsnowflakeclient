@@ -1,4 +1,0 @@
-usr/lib/*/cmake/ArrowCompute/
-usr/lib/*/libarrow_compute.a
-usr/lib/*/libarrow_compute.so
-usr/lib/*/pkgconfig/arrow-compute.pc

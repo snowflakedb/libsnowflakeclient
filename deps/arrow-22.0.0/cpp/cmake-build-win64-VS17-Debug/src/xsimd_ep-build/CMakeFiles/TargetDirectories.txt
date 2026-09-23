@@ -1,3 +1,0 @@
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/xsimd_ep-build/CMakeFiles/INSTALL.dir
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/xsimd_ep-build/CMakeFiles/ALL_BUILD.dir
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/xsimd_ep-build/CMakeFiles/ZERO_CHECK.dir

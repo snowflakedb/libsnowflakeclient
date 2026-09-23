@@ -1,8 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/Program Files/CMake/share/cmake-3.31/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/arrow/arrow.pc.generate.in
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/ArrowConfig.cmake.in
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/CMakeLists.txt
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/arrow.pc.in
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/util/config.h.cmake
-C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/util/config_internal.h.cmake

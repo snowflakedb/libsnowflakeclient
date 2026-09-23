@@ -1,6 +1,0 @@
-ubuntu
-centos
-redhat
-rhel
-rocky
-opensuse
