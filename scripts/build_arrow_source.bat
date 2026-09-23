@@ -32,7 +32,7 @@ if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
-set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-%arrow_src_version%
+set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-22.0.0
 set ARROW_CMAKE_BUILD_DIR=%ARROW_SOURCE_DIR%\cpp\cmake-build-%arcdir%-%vs_version%-%build_type%
 set DEPENDENCY_DIR=%scriptdir%..\deps-build\%build_dir%
 set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
@@ -98,7 +98,10 @@ cmake ..\ ^
 -DARROW_JEMALLOC=OFF ^
 -DARROW_JEMALLOC_USE_SHARED=OFF ^
 -DARROW_BUILD_TESTS=OFF ^
--DBoost_SOURCE=BUNDLED ^
+-DBoost_SOURCE=SYSTEM ^
+-DBoost_ROOT="%DEPENDENCY_DIR%\boost" ^
+-DBOOST_INCLUDEDIR="%DEPENDENCY_DIR%\boost\include" ^
+-DBOOST_LIBRARYDIR="%DEPENDENCY_DIR%\boost\lib" ^
 %arrow_msvc_debug%
 
 if %ERRORLEVEL% NEQ 0 goto :error

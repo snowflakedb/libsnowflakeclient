@@ -60,7 +60,9 @@ arrow_configure_opts+=(
     "-DARROW_JEMALLOC=ON"
     "-DARROW_JEMALLOC_USE_SHARED=OFF"
     "-DARROW_BUILD_TESTS=OFF"
-	"-DBoost_SOURCE=BUNDLED"
+	"-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
+    "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
+    "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
     "-DARROW_RUNTIME_SIMD_LEVEL=NONE" 
 )
 
