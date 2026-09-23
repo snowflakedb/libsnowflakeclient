@@ -39,9 +39,6 @@ rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
 if "%ARROW_FROM_SOURCE%"=="1" (
-    echo "%scriptdir%build_boost_source.bat"
-    call "%scriptdir%build_boost_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
-	if %ERRORLEVEL% NEQ 0 goto :error
 	if /I "%platform%"=="x64" (
         call "%scriptdir%build_arrow_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
         if %ERRORLEVEL% NEQ 0 goto :error

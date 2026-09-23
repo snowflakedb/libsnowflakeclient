@@ -24,7 +24,6 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
 if [[ -n "$ARROW_FROM_SOURCE" ]]; then
-    $DIR/build_boost_source.sh -t $target
     $DIR/build_arrow_source.sh -t $target
     exit 0
 fi
