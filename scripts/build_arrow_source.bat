@@ -39,7 +39,7 @@ set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
 set ARROW_DEPS_INSTALL_DIR=%DEPENDENCY_DIR%\arrow_deps
 
 rd /S /Q %ARROW_SOURCE_DIR%
-git clone --single-branch --branch apache-arrow-%arrow_src_version% --recursive %ARROW_SOURCE_DIR%
+git clone --single-branch --branch apache-arrow-%arrow_src_version% https://github.com/apache/arrow --recursive %ARROW_SOURCE_DIR%
 cd %ARROW_SOURCE_DIR%
 git submodule update --init --recursive
 

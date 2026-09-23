@@ -23,7 +23,7 @@ ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
 rm -rf $ARROW_SOURCE_DIR
-git clone --single-branch --branch apache-arrow-$ARROW_SRC_VERSION --recursive $ARROW_SOURCE_DIR
+git clone --single-branch --branch apache-arrow-$ARROW_SRC_VERSION --recursive https://github.com/apache/arrow $ARROW_SOURCE_DIR
 pushd $ARROW_SOURCE_DIR
   git submodule update --init --recursive
 popd
