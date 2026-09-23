@@ -2,7 +2,7 @@
  * File:   FileLock.cpp *
  */
 
-#include "FileLock.hpp"
+#include "snowflake/FileLock.hpp"
 
 #include <thread>
 #include <boost/filesystem.hpp>
