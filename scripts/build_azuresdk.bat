@@ -4,7 +4,7 @@
 ::
 @echo off
 set azure_src_version=12.18.0
-set azure_build_version=4
+set azure_build_version=2
 set azure_version=%azure_src_version%.%azure_build_version%
 call %*
 goto :EOF
@@ -15,7 +15,7 @@ goto :EOF
 
 :build
 setlocal
-set azure_dir=a
+set azure_dir=azure-sdk-for-cpp
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -44,7 +44,7 @@ if "%dynamic_runtime%"=="OFF" (
 
 @echo off
 set AZURE_SOURCE_DIR=%scriptdir%..\deps\%azure_dir%
-set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\%arcdir%-%build_type%
+set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
 set AZURE_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\azure
 
 rd /S /Q %AZURE_SOURCE_DIR%
