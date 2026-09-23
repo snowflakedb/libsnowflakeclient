@@ -148,22 +148,34 @@ jobs:
                   throw "VS2022 v142 installation failed with exit code $LASTEXITCODE"
                 }
                 $msvcRoot = Join-Path $installPath 'VC\Tools\MSVC'
-                $v142Toolset = Get-ChildItem $msvcRoot -Directory |
+                $v142Toolsets = Get-ChildItem $msvcRoot -Directory |
                   Where-Object { $_.Name -like '14.29.*' } |
-                  Sort-Object Name -Descending |
-                  Select-Object -First 1
-                if (-not $v142Toolset) {
-                  throw "v142 MSVC toolset was not installed"
+                  Sort-Object Name -Descending
+                if (-not $v142Toolsets) {
+                  throw "v142 MSVC toolset was not installed under $msvcRoot"
                 }
-                $spectreLib = Join-Path $v142Toolset.FullName 'lib\spectre'
-                foreach ($architecture in @('x64', 'x86')) {
-                  $libraryPath = Join-Path $spectreLib $architecture
-
-                  if (-not (Test-Path $libraryPath)) {
-                    throw "Spectre libraries were not installed: $libraryPath"
+                $spectreLibraries = foreach ($toolset in $v142Toolsets) {
+                  $spectreRoot = Join-Path $toolset.FullName 'lib\spectre'
+                  if ((Test-Path (Join-Path $spectreRoot 'x64')) -and
+                      (Test-Path (Join-Path $spectreRoot 'x86'))) {
+                    $spectreRoot
+                    break
                   }
                 }
-                Write-Host "v142 Spectre libraries installed at $spectreLib"
+                if (-not $spectreLibraries) {
+                  Write-Host "Installed MSVC toolsets:"
+                  Get-ChildItem $msvcRoot -Directory | ForEach-Object {
+                    Write-Host $_.FullName
+                  }
+                  Write-Host "Available Spectre directories:"
+                  Get-ChildItem $msvcRoot -Directory -Recurse -ErrorAction SilentlyContinue |
+                    Where-Object { $_.FullName -like '*\lib\spectre' } |
+                    ForEach-Object {
+                      Write-Host $_.FullName
+                    }
+                  throw "v142 Spectre libraries were not installed"
+                }
+                Write-Host "v142 Spectre libraries installed at $spectreLibraries"
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
