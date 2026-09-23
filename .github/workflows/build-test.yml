@@ -136,7 +136,7 @@ jobs:
                 Write-Host "Starting Visual Studio component installation..."
                 # Run installer and block until finished
                 $process = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
-                  "--quiet --wait --norestart --nocache modify" +
+                  "--quiet --wait --norestart --nocache modify " +
                   "--installPath `"$installPath`" " +
                   "--add Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre " +
                   "--includeRecommended"
