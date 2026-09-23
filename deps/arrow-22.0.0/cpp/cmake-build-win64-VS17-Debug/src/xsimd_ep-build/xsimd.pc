@@ -1,0 +1,8 @@
+prefix=C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/xsimd_ep/src/xsimd_ep-install
+libdir=C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/xsimd_ep/src/xsimd_ep-install/lib
+includedir=C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/xsimd_ep/src/xsimd_ep-install/include
+
+Name: xsimd
+Description: xsimd provides a unified means for using SIMD features for library authors..
+Version: 13.0.0
+Cflags: -I${includedir}

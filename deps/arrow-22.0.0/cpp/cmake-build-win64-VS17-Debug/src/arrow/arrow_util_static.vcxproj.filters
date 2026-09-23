@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\align_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\async_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\atfork_internal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\basic_decimal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bit_block_counter.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bit_run_reader.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bit_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bitmap.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bitmap_builders.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bitmap_ops.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bpacking.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\byte_size.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\byte_stream_split_internal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\cancel.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\compression.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\counting_semaphore.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\cpu_info.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\crc32.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\debug.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\decimal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\delimiting.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\dict_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\fixed_width_internal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\float16.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\formatting.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\future.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\hashing.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\int_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\io_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\list_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\logger.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\logging.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\key_value_metadata.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\math_internal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\memory.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\mutex.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\ree_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\secure_string.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\string.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\string_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\task_group.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\tdigest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\thread_pool.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\time.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\tracing.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\trie.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\union_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\unreachable.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\uri.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\utf8.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\value_parsing.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\byte_stream_split_internal_avx2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bpacking_avx2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\bpacking_avx512.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D8F8BA11-487C-3959-854C-AE8E979087BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

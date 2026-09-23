@@ -22,6 +22,12 @@ ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
+rm -rf $ARROW_SOURCE_DIR
+git clone --single-branch --branch apache-arrow-$ARROW_SRC_VERSION --recursive $ARROW_SOURCE_DIR
+pushd $ARROW_SOURCE_DIR
+  git submodule update --init --recursive
+popd
+
 ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread -DBOOST_FILESYSTEM_VERSION=3"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then

@@ -1,0 +1,1 @@
+C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\Debug\arrow_array_static.lib

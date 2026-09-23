@@ -1,0 +1,10 @@
+^C:\WORKSPACES\LIBSNOWFLAKECLIENT\DEPS\ARROW-22.0.0\CPP\CMAKE-BUILD-WIN64-VS17-DEBUG\SRC\XSIMD_EP-BUILD\CMAKEFILES\6F42638BA4C83F13F47316E87305A813\INSTALL_FORCE.RULE
+setlocal
+cd .
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

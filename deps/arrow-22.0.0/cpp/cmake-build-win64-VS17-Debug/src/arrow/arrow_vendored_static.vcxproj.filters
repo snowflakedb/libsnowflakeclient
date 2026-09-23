@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\base64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\datetime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\bignum-dtoa.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\bignum.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\cached-powers.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\double-to-string.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\fast-dtoa.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\fixed-dtoa.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\string-to-double.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\double-conversion\strtod.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\musl\strptime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriCommon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriCompare.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriEscape.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriFile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriIp4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriIp4Base.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriMemory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriNormalize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriNormalizeBase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriParse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriParseBase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriQuery.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriRecompose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriResolve.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\vendored\uriparser\UriShorten.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D8F8BA11-487C-3959-854C-AE8E979087BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

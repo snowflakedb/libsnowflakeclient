@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\buffered.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\caching.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\compressed.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\file.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\hdfs.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\hdfs_internal.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\interfaces.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\memory.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\slow.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\stdio.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\io\transform.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D8F8BA11-487C-3959-854C-AE8E979087BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

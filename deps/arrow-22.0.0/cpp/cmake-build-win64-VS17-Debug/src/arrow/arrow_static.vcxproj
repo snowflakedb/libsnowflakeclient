@@ -1,0 +1,546 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{93F9E665-D383-378E-A195-409E556A0AD3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>arrow_static</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\debug\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">arrow_static.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">arrow_static</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\debug\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">arrow_static.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">arrow_static</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\debug\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">arrow_static.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">arrow_static</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\debug\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">arrow_static.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">arrow_static</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /ZH:SHA_256 /bigobj /utf-8 /arch:SSE4.2</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>5105;4365;4267;4838;4800;4996;4065</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /ZH:SHA_256 /bigobj /utf-8 /arch:SSE4.2</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>5105;4365;4267;4838;4800;4996;4065</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /ZH:SHA_256 /bigobj /utf-8 /arch:SSE4.2</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>5105;4365;4267;4838;4800;4996;4065</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /ZH:SHA_256 /bigobj /utf-8 /arch:SSE4.2</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>5105;4365;4267;4838;4800;4996;4065</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;NDEBUG;ARROW_STATIC;ARROW_FLIGHT_STATIC;ARROW_FLIGHT_SQL_STATIC;ARROW_EXPORTING;ARROW_WITH_TIMING_TESTS;__SSE2__;__SSE4_1__;__SSE4_2__;ARROW_HAVE_RUNTIME_SSE4_2;ARROW_HAVE_RUNTIME_AVX2;ARROW_HAVE_RUNTIME_BMI2;ARROW_HAVE_RUNTIME_AVX512;_CRT_SECURE_NO_WARNINGS;ARROW_HAVE_SSE4_2;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp -BC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug --check-stamp-file C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/arrow/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.31\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow.pc.generate.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\ArrowConfig.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\arrow.pc.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config.h.cmake;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config_internal.h.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp -BC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug --check-stamp-file C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/arrow/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.31\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow.pc.generate.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\ArrowConfig.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\arrow.pc.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config.h.cmake;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config_internal.h.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp -BC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug --check-stamp-file C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/arrow/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.31\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow.pc.generate.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\ArrowConfig.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\arrow.pc.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config.h.cmake;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config_internal.h.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/src/arrow/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp -BC:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug --check-stamp-file C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/src/arrow/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.31\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow.pc.generate.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\ArrowConfig.cmake.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\arrow.pc.in;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config.h.cmake;C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\util\config_internal.h.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\builder.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\buffer.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\chunked_array.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\chunk_resolver.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\compare.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\config.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\datum.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\device.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\device_allocation_type_set.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\extension_type.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\extension\bool8.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\extension\json.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\extension\uuid.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\pretty_print.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\record_batch.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\result.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\scalar.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\sparse_tensor.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\status.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\table.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\table_builder.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\tensor.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\tensor\coo_converter.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\tensor\csf_converter.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\tensor\csx_converter.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\type.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\type_traits.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\visitor.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\c\bridge.cc" />
+    <ClCompile Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\src\arrow\c\dlpack.cc" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_base.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_binary.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_decimal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_dict.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_nested.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_primitive.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\array_run_end.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_adaptive.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_base.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_binary.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_decimal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_dict.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_run_end.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_nested.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_primitive.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\builder_union.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\concatenate.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\data.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\diff.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\statistics.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.dir\$(Configuration)\validate.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\api_aggregate.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\api_scalar.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\api_vector.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\cast.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\exec.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\expression.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\function.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\function_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\kernel.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\ordering.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\registry.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\chunked_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\codegen_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_boolean.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_dictionary.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_extension.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_nested.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_numeric.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_string.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\scalar_cast_temporal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\temporal_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_hash.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_selection.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_selection_filter_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_selection_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_selection_take_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.dir\$(Configuration)\vector_swizzle.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\buffered.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\caching.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\compressed.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\file.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\hdfs.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\hdfs_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\interfaces.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\memory.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\slow.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\stdio.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.dir\$(Configuration)\transform.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\dictionary.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\feather.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\message.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\metadata_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\options.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\reader.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.dir\$(Configuration)\writer.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_memory_pool_static.dir\$(Configuration)\memory_pool.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\align_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\async_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\atfork_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\basic_decimal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bit_block_counter.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bit_run_reader.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bit_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bitmap.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bitmap_builders.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bitmap_ops.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bpacking.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\byte_size.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\byte_stream_split_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\cancel.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\compression.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\counting_semaphore.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\cpu_info.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\crc32.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\debug.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\decimal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\delimiting.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\dict_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\fixed_width_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\float16.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\formatting.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\future.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\hashing.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\int_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\io_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\list_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\logger.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\logging.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\key_value_metadata.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\math_internal.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\memory.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\mutex.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\ree_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\secure_string.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\string.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\string_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\task_group.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\tdigest.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\thread_pool.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\time.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\tracing.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\trie.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\union_util.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\unreachable.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\uri.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\utf8.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\value_parsing.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\byte_stream_split_internal_avx2.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bpacking_avx2.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.dir\$(Configuration)\bpacking_avx512.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\base64.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\datetime.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\bignum-dtoa.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\bignum.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\cached-powers.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\double-to-string.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\fast-dtoa.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\fixed-dtoa.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\string-to-double.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\strtod.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\strptime.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriCommon.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriCompare.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriEscape.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriFile.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriIp4.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriIp4Base.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriMemory.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriNormalize.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriNormalizeBase.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriParse.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriParseBase.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriQuery.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriRecompose.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriResolve.obj" />
+    <Object Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.dir\$(Configuration)\UriShorten.obj" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\ZERO_CHECK.vcxproj">
+      <Project>{254D59F6-4236-390A-B024-73208EBD2436}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_array_static.vcxproj">
+      <Project>{60C1509C-8091-3ED9-981A-0A35BA9FD390}</Project>
+      <Name>arrow_array_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_compute_core_static.vcxproj">
+      <Project>{2B8A4D98-9371-3A4D-BE56-05AFF0148609}</Project>
+      <Name>arrow_compute_core_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_io_static.vcxproj">
+      <Project>{811F557D-E6D5-3181-916F-7CED2FCDDE6C}</Project>
+      <Name>arrow_io_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_ipc_static.vcxproj">
+      <Project>{418639AE-8E95-39DD-BD4B-E90E41B31486}</Project>
+      <Name>arrow_ipc_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_memory_pool_static.vcxproj">
+      <Project>{95FF2F4E-701E-356A-8EDC-83B36F40CE96}</Project>
+      <Name>arrow_memory_pool_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_util_static.vcxproj">
+      <Project>{85DAD566-2816-36E5-94E4-685B867943D1}</Project>
+      <Name>arrow_util_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\src\arrow\arrow_vendored_static.vcxproj">
+      <Project>{44B6AFF9-D114-362A-9DF0-88931DD85436}</Project>
+      <Name>arrow_vendored_static</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\xsimd_ep.vcxproj">
+      <Project>{85BA4D0F-B159-3F34-95D7-18995473EEC9}</Project>
+      <Name>xsimd_ep</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

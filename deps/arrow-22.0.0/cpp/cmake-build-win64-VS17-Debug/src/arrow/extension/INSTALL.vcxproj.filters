@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\0a7af361fa05e3bb487a9a7e6fd11fbf\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{6ACE40A2-5D82-3AC5-BFDD-DBD0F85A2D0E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

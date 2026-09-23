@@ -1,0 +1,24 @@
+name: style check
+on: [push, pull_request]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.job }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  formatting-check:
+    name: Format check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run clang-format style check for C/C++ programs.
+      uses: jidicula/clang-format-action@v4.11.0
+      with:
+        clang-format-version: '17'
+        exclude-regex: 'doctest.h'
+  inlining-check:
+    runs-on: ubuntu-latest
+    name: Check inline keyword usage
+    steps:
+    - uses: actions/checkout@v2
+    - run: sudo apt install clang-tools
+    - run: sh ./test/check_inline_specifier.sh .
+

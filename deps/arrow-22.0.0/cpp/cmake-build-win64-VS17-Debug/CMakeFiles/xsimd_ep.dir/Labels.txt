@@ -1,0 +1,13 @@
+# Target labels
+ xsimd_ep
+# Source files and their labels
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/xsimd_ep
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/8b742a4227d3d7b1a60f5a9fa059da5c/xsimd_ep.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/149d3de39795db9e5843c7bdb91eefdd/xsimd_ep-complete.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-build.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-configure.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-download.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-install.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-mkdir.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-patch.rule
+C:/workspaces/libsnowflakeclient/deps/arrow-22.0.0/cpp/cmake-build-win64-VS17-Debug/CMakeFiles/ba5fc0702e1272318e1231a521f0b00d/xsimd_ep-update.rule

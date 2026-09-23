@@ -1,0 +1,155 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#pragma once
+
+#include <arrow-glib/arrow-glib.h>
+#include <parquet-glib/version.h>
+
+G_BEGIN_DECLS
+
+#define GPARQUET_TYPE_WRITER_PROPERTIES (gparquet_writer_properties_get_type())
+GPARQUET_AVAILABLE_IN_0_17
+G_DECLARE_DERIVABLE_TYPE(GParquetWriterProperties,
+                         gparquet_writer_properties,
+                         GPARQUET,
+                         WRITER_PROPERTIES,
+                         GObject)
+struct _GParquetWriterPropertiesClass
+{
+  GObjectClass parent_class;
+};
+
+GPARQUET_AVAILABLE_IN_0_17
+GParquetWriterProperties *
+gparquet_writer_properties_new(void);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_set_compression(GParquetWriterProperties *properties,
+                                           GArrowCompressionType compression_type,
+                                           const gchar *path);
+GPARQUET_AVAILABLE_IN_0_17
+GArrowCompressionType
+gparquet_writer_properties_get_compression_path(GParquetWriterProperties *properties,
+                                                const gchar *path);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_enable_dictionary(GParquetWriterProperties *properties,
+                                             const gchar *path);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_disable_dictionary(GParquetWriterProperties *properties,
+                                              const gchar *path);
+GPARQUET_AVAILABLE_IN_0_17
+gboolean
+gparquet_writer_properties_is_dictionary_enabled(GParquetWriterProperties *properties,
+                                                 const gchar *path);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_set_dictionary_page_size_limit(
+  GParquetWriterProperties *properties, gint64 limit);
+GPARQUET_AVAILABLE_IN_0_17
+gint64
+gparquet_writer_properties_get_dictionary_page_size_limit(
+  GParquetWriterProperties *properties);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_set_batch_size(GParquetWriterProperties *properties,
+                                          gint64 batch_size);
+GPARQUET_AVAILABLE_IN_0_17
+gint64
+gparquet_writer_properties_get_batch_size(GParquetWriterProperties *properties);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_set_max_row_group_length(GParquetWriterProperties *properties,
+                                                    gint64 length);
+GPARQUET_AVAILABLE_IN_0_17
+gint64
+gparquet_writer_properties_get_max_row_group_length(GParquetWriterProperties *properties);
+GPARQUET_AVAILABLE_IN_0_17
+void
+gparquet_writer_properties_set_data_page_size(GParquetWriterProperties *properties,
+                                              gint64 data_page_size);
+GPARQUET_AVAILABLE_IN_0_17
+gint64
+gparquet_writer_properties_get_data_page_size(GParquetWriterProperties *properties);
+
+#define GPARQUET_TYPE_ARROW_FILE_WRITER (gparquet_arrow_file_writer_get_type())
+GPARQUET_AVAILABLE_IN_0_11
+G_DECLARE_DERIVABLE_TYPE(GParquetArrowFileWriter,
+                         gparquet_arrow_file_writer,
+                         GPARQUET,
+                         ARROW_FILE_WRITER,
+                         GObject)
+struct _GParquetArrowFileWriterClass
+{
+  GObjectClass parent_class;
+};
+
+GPARQUET_AVAILABLE_IN_0_11
+GParquetArrowFileWriter *
+gparquet_arrow_file_writer_new_arrow(GArrowSchema *schema,
+                                     GArrowOutputStream *sink,
+                                     GParquetWriterProperties *writer_properties,
+                                     GError **error);
+
+GPARQUET_AVAILABLE_IN_0_11
+GParquetArrowFileWriter *
+gparquet_arrow_file_writer_new_path(GArrowSchema *schema,
+                                    const gchar *path,
+                                    GParquetWriterProperties *writer_properties,
+                                    GError **error);
+
+GPARQUET_AVAILABLE_IN_18_0
+GArrowSchema *
+gparquet_arrow_file_writer_get_schema(GParquetArrowFileWriter *writer);
+
+GPARQUET_AVAILABLE_IN_18_0
+gboolean
+gparquet_arrow_file_writer_write_record_batch(GParquetArrowFileWriter *writer,
+                                              GArrowRecordBatch *record_batch,
+                                              GError **error);
+
+GPARQUET_AVAILABLE_IN_0_11
+gboolean
+gparquet_arrow_file_writer_write_table(GParquetArrowFileWriter *writer,
+                                       GArrowTable *table,
+                                       gsize chunk_size,
+                                       GError **error);
+
+GPARQUET_AVAILABLE_IN_18_0
+gboolean
+gparquet_arrow_file_writer_new_row_group(GParquetArrowFileWriter *writer, GError **error);
+
+GPARQUET_AVAILABLE_IN_18_0
+gboolean
+gparquet_arrow_file_writer_new_buffered_row_group(GParquetArrowFileWriter *writer,
+                                                  GError **error);
+
+GPARQUET_AVAILABLE_IN_18_0
+gboolean
+gparquet_arrow_file_writer_write_chunked_array(GParquetArrowFileWriter *writer,
+                                               GArrowChunkedArray *chunked_array,
+                                               GError **error);
+
+GPARQUET_AVAILABLE_IN_0_11
+gboolean
+gparquet_arrow_file_writer_close(GParquetArrowFileWriter *writer, GError **error);
+
+G_END_DECLS

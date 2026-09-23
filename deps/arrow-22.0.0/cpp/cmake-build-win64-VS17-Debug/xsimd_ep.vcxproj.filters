@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\ba5fc0702e1272318e1231a521f0b00d\xsimd_ep-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\149d3de39795db9e5843c7bdb91eefdd\xsimd_ep-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\8b742a4227d3d7b1a60f5a9fa059da5c\xsimd_ep.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\workspaces\libsnowflakeclient\deps\arrow-22.0.0\cpp\cmake-build-win64-VS17-Debug\CMakeFiles\xsimd_ep" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{6ACE40A2-5D82-3AC5-BFDD-DBD0F85A2D0E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

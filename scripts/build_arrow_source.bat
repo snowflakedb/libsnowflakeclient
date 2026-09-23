@@ -32,11 +32,17 @@ if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
+::set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-%arrow_src_version%
 set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-22.0.0
 set ARROW_CMAKE_BUILD_DIR=%ARROW_SOURCE_DIR%\cpp\cmake-build-%arcdir%-%vs_version%-%build_type%
 set DEPENDENCY_DIR=%scriptdir%..\deps-build\%build_dir%
 set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
 set ARROW_DEPS_INSTALL_DIR=%DEPENDENCY_DIR%\arrow_deps
+
+rd /S /Q %ARROW_SOURCE_DIR%
+git clone --single-branch --branch apache-arrow-%arrow_src_version% --recursive %ARROW_SOURCE_DIR%
+cd %ARROW_SOURCE_DIR%
+git submodule update --init --recursive
 
 rd /S /Q %ARROW_CMAKE_BUILD_DIR%
 md %ARROW_CMAKE_BUILD_DIR%
