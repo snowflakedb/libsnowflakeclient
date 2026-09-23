@@ -3,7 +3,7 @@
 ::
 @echo off
 set arrow_src_version=22.0.0
-set arrow_build_version=3
+set arrow_build_version=1
 :: The full version number for dependency packaging/uploading/downloading
 if "%ARROW_FROM_SOURCE%"=="1" (
     set arrow_version=%arrow_src_version%.%arrow_build_version%
@@ -39,7 +39,7 @@ rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
 if "%ARROW_FROM_SOURCE%"=="1" (
-	echo "%scriptdir%build_boost_source.bat"
+    echo "%scriptdir%build_boost_source.bat"
     call "%scriptdir%build_boost_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 	if %ERRORLEVEL% NEQ 0 goto :error
 	if /I "%platform%"=="x64" (

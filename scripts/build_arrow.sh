@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 export ARROW_SRC_VERSION=22.0.0
-export ARROW_BUILD_VERSION=3
+export ARROW_BUILD_VERSION=1
 #The full version number for dependency packaging/uploading/downloading
 export ARROW_VERSION=${ARROW_SRC_VERSION}.${ARROW_BUILD_VERSION}
 
@@ -24,7 +24,7 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
 if [[ -n "$ARROW_FROM_SOURCE" ]]; then
-	$DIR/build_boost_source.sh -t $target
+    $DIR/build_boost_source.sh -t $target
     $DIR/build_arrow_source.sh -t $target
     exit 0
 fi
