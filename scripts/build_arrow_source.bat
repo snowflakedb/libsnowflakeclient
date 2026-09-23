@@ -38,6 +38,11 @@ set DEPENDENCY_DIR=%scriptdir%..\deps-build\%build_dir%
 set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
 set ARROW_DEPS_INSTALL_DIR=%DEPENDENCY_DIR%\arrow_deps
 
+rd /S /Q %ARROW_SOURCE_DIR%
+git clone --single-branch --branch apache-arrow-%arrow_src_version% --recursive https://github.com/apache/arrow %ARROW_SOURCE_DIR%
+cd %ARROW_SOURCE_DIR%
+git submodule update --init --recursive
+
 rd /S /Q %ARROW_CMAKE_BUILD_DIR%
 md %ARROW_CMAKE_BUILD_DIR%
 rd /S /Q %ARROW_INSTALL_DIR%
@@ -94,11 +99,14 @@ cmake ..\ ^
 -DARROW_USE_GLOG=OFF ^
 -DARROW_HDFS=OFF ^
 -DARROW_WITH_BACKTRACE=OFF ^
+-DARROW_MIMALLOC=OFF ^
+-DARROW_JEMALLOC=OFF ^
 -DARROW_JEMALLOC_USE_SHARED=OFF ^
 -DARROW_BUILD_TESTS=OFF ^
--DBoost_INCLUDE_DIR=%DEPENDENCY_DIR%\boost\include ^
--DBOOST_SYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_system.lib ^
--DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib ^
+-DBoost_SOURCE=SYSTEM ^
+-DBoost_ROOT="%DEPENDENCY_DIR%\boost" ^
+-DBOOST_INCLUDEDIR="%DEPENDENCY_DIR%\boost\include" ^
+-DBOOST_LIBRARYDIR="%DEPENDENCY_DIR%\boost\lib" ^
 %arrow_msvc_debug%
 
 if %ERRORLEVEL% NEQ 0 goto :error
