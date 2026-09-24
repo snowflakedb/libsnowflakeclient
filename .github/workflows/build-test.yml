@@ -124,47 +124,36 @@ jobs:
               if: matrix.vs_version == 'VS16'
               shell: pwsh
               run: |
-                # Locate the VS Installer
                 $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
                 if (-not (Test-Path $installer)) {
-                    $installer = "${env:ProgramFiles}\Microsoft Visual Studio\Installer\setup.exe"
+                  $installer = "${env:ProgramFiles}\Microsoft Visual Studio\Installer\setup.exe"
+                }
+                if (-not (Test-Path $installer)) {
+                  throw "Visual Studio Installer was not found"
                 }
                 $installPath = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
                 if (-not (Test-Path $installPath)) {
                   throw "Visual Studio installation was not found: $installPath"
                 }
-                Write-Host "Starting Visual Studio component installation..."
-                # Run installer and block until finished
                 $logPath = Join-Path $env:RUNNER_TEMP "vs-installer.log"
-                $process = Start-Process `
-                  -FilePath $installer `
-                  -Wait `
-                  -PassThru `
-                  -ArgumentList @(
-                    "modify",
-                    "--quiet",
-                    "--norestart",
-                    "--nocache",
-                    "--installPath",
-                    "`"$installPath`"",
-                    "--add",
-                    "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre",
-                    "--includeRecommended",
-                    "--log",
-                    "`"$logPath`""
-                  )
+                Write-Host "Installing v142 Spectre libraries into $installPath"
+                & $installer modify `
+                  --quiet `
+                  --norestart `
+                  --wait `
+                  --installPath $installPath `
+                  --add Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre `
+                  --includeRecommended `
+                  --log $logPath
+                $exitCode = $LASTEXITCODE
                 if (Test-Path $logPath) {
-                    Write-Host "Visual Studio Installer log:"
-                    Get-Content $logPath
-                } else {
-                    Write-Warning "Visual Studio Installer log was not created: $logPath"
+                  Write-Host "Visual Studio Installer log:"
+                  Get-Content $logPath
                 }
-                # Check exit code (0 or 3010 means success)
-                if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
-                    Write-Error "VS Installer failed with exit code: $($process.ExitCode)"
-                    exit $process.ExitCode
+                # 0 = success; 3010 = success, reboot required
+                if ($exitCode -ne 0 -and $exitCode -ne 3010) {
+                  throw "VS Installer failed with exit code: $exitCode"
                 }
-                Write-Host "Installation completed successfully."
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v5
