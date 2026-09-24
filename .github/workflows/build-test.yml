@@ -146,12 +146,12 @@ jobs:
                     "--norestart",
                     "--nocache",
                     "--installPath",
-                    $installPath,
+                    "`"$installPath`"",
                     "--add",
                     "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre",
                     "--includeRecommended",
                     "--log",
-                    $logPath
+                    "`"$logPath`""
                   )
                 if (Test-Path $logPath) {
                     Write-Host "Visual Studio Installer log:"
