@@ -135,20 +135,58 @@ jobs:
                 if (-not (Test-Path $installPath)) {
                   throw "Visual Studio installation was not found: $installPath"
                 }
-                $logPath = Join-Path $env:RUNNER_TEMP "vs-installer.log"
-                Write-Host "Installing v142 Spectre libraries into $installPath"
-                & $installer modify `
-                  --quiet `
-                  --norestart `
-                  --wait `
-                  --installPath $installPath `
-                  --add Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre `
-                  --includeRecommended `
-                  --log $logPath
-                $exitCode = $LASTEXITCODE
-                if (Test-Path $logPath) {
-                  Write-Host "Visual Studio Installer log:"
-                  Get-Content $logPath
+                $logDir = Join-Path $env:RUNNER_TEMP "vs-installer-logs"
+                New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+                $stdoutPath = Join-Path $logDir "setup.stdout.log"
+                $stderrPath = Join-Path $logDir "setup.stderr.log"
+                $startTime = Get-Date
+                $arguments = @(
+                  'modify'
+                  '--quiet'
+                  '--norestart'
+                  "--installPath `"$installPath`""
+                  '--add'
+                  'Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre'
+                  '--includeRecommended'
+                )
+                Write-Host "Running Visual Studio Installer:"
+                Write-Host "$installer $($arguments -join ' ')"
+                $process = Start-Process `
+                  -FilePath $installer `
+                  -ArgumentList $arguments `
+                  -Wait `
+                  -PassThru `
+                  -RedirectStandardOutput $stdoutPath `
+                  -RedirectStandardError $stderrPath
+                $exitCode = $process.ExitCode
+                Write-Host "Visual Studio Installer exit code: $exitCode"
+                Write-Host "::group::Visual Studio Installer stdout"
+                if (Test-Path $stdoutPath) {
+                  Get-Content -Path $stdoutPath
+                } else {
+                  Write-Host "No stdout was produced."
+                }
+                Write-Host "::endgroup::"
+                Write-Host "::group::Visual Studio Installer stderr"
+                if (Test-Path $stderrPath) {
+                  Get-Content -Path $stderrPath
+                } else {
+                  Write-Host "No stderr was produced."
+                }
+                Write-Host "::endgroup::"
+                # Print recently modified Visual Studio logs from the runner TEMP directory.
+                $installerLogs = Get-ChildItem `
+                  -Path $env:TEMP `
+                  -Filter "*.log" `
+                  -File `
+                  -Recurse `
+                  -ErrorAction SilentlyContinue |
+                  Where-Object { $_.LastWriteTime -ge $startTime } |
+                  Sort-Object LastWriteTime
+                foreach ($log in $installerLogs) {
+                  Write-Host "::group::$($log.FullName)"
+                  Get-Content -Path $log.FullName
+                  Write-Host "::endgroup::"
                 }
                 # 0 = success; 3010 = success, reboot required
                 if ($exitCode -ne 0 -and $exitCode -ne 3010) {
