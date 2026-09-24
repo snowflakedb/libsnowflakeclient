@@ -64,6 +64,11 @@ if /I "%dynamic_runtime%"=="on" (
     set runtimelink=static
 )
 
+set msvctoolset=14.3
+if /I "%ToolSetVersion%"=="v142" (
+    set msvctoolset=14.2
+)
+
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system,url
 if %ERRORLEVEL% NEQ 0 goto :error
 b2 ^
@@ -72,7 +77,7 @@ b2 ^
     --exec-prefix=%BOOST_INSTALL_DIR%^
     --layout=system^
     --with-system --with-filesystem --with-regex --with-url^
-    link=static runtime-link=%runtimelink% toolset=msvc-14.3 threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
+    link=static runtime-link=%runtimelink% toolset=msvc-%msvctoolset% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
     cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl"^
     install
 
