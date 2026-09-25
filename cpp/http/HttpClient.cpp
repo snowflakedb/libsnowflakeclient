@@ -1,6 +1,7 @@
 
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
+#include "constants.h"
 #include <curl/curl.h>
 
 namespace Snowflake {
@@ -39,6 +40,7 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, SimpleHttpClient::writeheader);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*) &response);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
 
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());

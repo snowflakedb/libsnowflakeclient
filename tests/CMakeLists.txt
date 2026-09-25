@@ -92,6 +92,7 @@ SET(TESTS_CXX
         test_crl
         test_unit_ocsp_cache
         test_unit_stopwatch
+        test_tls_version
 )
 
 if (LINUX)
