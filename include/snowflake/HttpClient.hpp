@@ -64,6 +64,7 @@ namespace Snowflake {
     public:
       virtual boost::optional<HttpResponse> run(HttpRequest req) = 0;
       virtual ~IHttpClient() = default;
+      virtual std::string getNegotiatedTLSVersion() = 0;
 
       static IHttpClient* createSimple(const HttpClientConfig&);
       static IHttpClient* getInstance();
