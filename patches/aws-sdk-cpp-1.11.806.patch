@@ -104,8 +104,8 @@ index 657193f2e11..72fa9359d0b 100644
 +            {
 +                tlsVersion = m_tlsVersion;
 +            }
-+            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, m_tlsVersion);
-+            AWS_LOGSTREAM_INFO(CURL_HTTP_CLIENT_TAG, "TLS version: " << m_tlsVersion);
++            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, tlsVersion);
++            AWS_LOGSTREAM_INFO(CURL_HTTP_CLIENT_TAG, "TLS version: " << tlsVersion);
          }
          else
          {
