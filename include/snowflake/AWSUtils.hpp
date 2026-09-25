@@ -10,10 +10,10 @@ namespace Snowflake {
   namespace Client {
     namespace AwsUtils {
 
-        struct AwsStsEndpoint {
-            std::string authority;
-            std::string baseUrl;
-        };
+      struct AwsStsEndpoint {
+        std::string authority;
+        std::string baseUrl;
+      };
 
       /*
        * Shared initialization of aws sdk to avoid multiple initialization.
@@ -37,7 +37,9 @@ namespace Snowflake {
         // failure. Used by the WIF role-assumption (impersonation) chain.
         virtual boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials& currentCreds,
-            const std::string& roleArn) = 0;
+            const std::string& roleArn,
+            const std::string& region,
+            const std::string& configuredHost) = 0;
         // Calls AWS STS GetWebIdentityToken for outbound identity federation
         // (SNOW-2919437). Returns the signed JWT on success, or boost::none on
         // any failure (HTTP error, signing failure, malformed response).

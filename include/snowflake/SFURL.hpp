@@ -420,11 +420,10 @@ public:
     return m_proxy;
   }
 
-  inline int getParamsSize() const
+  inline size_t getParamsSize() const
   {
     return m_params.m_list.size();
   }
-
 
 private:
 

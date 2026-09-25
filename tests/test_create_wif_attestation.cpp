@@ -73,7 +73,9 @@ public:
   // every call so tests can assert on chain ordering and per-step inputs.
   boost::optional<Aws::Auth::AWSCredentials> assumeRole(
       const Aws::Auth::AWSCredentials& currentCreds,
-      const std::string& roleArn) override {
+      const std::string& roleArn,
+      const std::string&,
+      const std::string&) override {
     assumeRoleCallCount++;
     assumeRoleArns.push_back(roleArn);
     assumeRoleInputCreds.push_back(currentCreds);
@@ -338,7 +340,7 @@ void test_unit_aws_attestation_jwt_success_with_full_url_wif_host(void**) {
     assert_true(attestationOpt.has_value());
 
     assert_string_equal(awsSdkWrapper.lastGetWebIdentityTokenHost.c_str(),
-        "sts.custom.example.com");
+        "https://sts.custom.example.com/");
 }
 
 void test_unit_aws_attestation_jwt_sdk_failure(void **) {
@@ -355,6 +357,52 @@ void test_unit_aws_attestation_jwt_sdk_failure(void **) {
   // Must fail closed: no silent fallback to a different credential format.
   assert_false(attestationOpt.has_value());
   assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 1);
+}
+
+struct StsEndpointCase {
+  const char *name;
+  const char *wifHost;
+  const char *region;
+  const char *expectedAuthority;
+  const char *expectedBaseUrl;
+  bool expectedError;
+};
+
+const StsEndpointCase STS_ENDPOINT_CASES[] = {
+  {"regional default us-east-1", "", "us-east-1", "sts.us-east-1.amazonaws.com", "https://sts.us-east-1.amazonaws.com", false},
+  {"regional default cn-north-1", "", "cn-north-1", "sts.cn-north-1.amazonaws.com.cn", "https://sts.cn-north-1.amazonaws.com.cn", false},
+  {"regional default us-gov-west-1", "", "us-gov-west-1", "sts.us-gov-west-1.amazonaws.com", "https://sts.us-gov-west-1.amazonaws.com", false},
+  {"regional default us-iso-east-1", "", "us-iso-east-1", "sts.us-iso-east-1.c2s.ic.gov", "https://sts.us-iso-east-1.c2s.ic.gov", false},
+  {"regional default us-isob-east-1", "", "us-isob-east-1", "sts.us-isob-east-1.sc2s.sgov.gov", "https://sts.us-isob-east-1.sc2s.sgov.gov", false},
+  {"regional default eu-isoe-west-1", "", "eu-isoe-west-1", "sts.eu-isoe-west-1.cloud.adc-e.uk", "https://sts.eu-isoe-west-1.cloud.adc-e.uk", false},
+  {"regional default us-isof-south-1", "", "us-isof-south-1", "sts.us-isof-south-1.csp.hci.ic.gov", "https://sts.us-isof-south-1.csp.hci.ic.gov", false},
+  {"regional default eusc-de-east-1", "", "eusc-de-east-1", "sts.eusc-de-east-1.amazonaws.eu", "https://sts.eusc-de-east-1.amazonaws.eu", false},
+  {"bare host", "sts.custom.example.com", "us-custom-1", "sts.custom.example.com", "https://sts.custom.example.com", false},
+  {"host with port", "sts.custom.example.com:8443", "us-custom-1", "sts.custom.example.com:8443", "https://sts.custom.example.com:8443", false},
+  {"full URL", "https://sts.custom.example.com", "us-custom-1", "sts.custom.example.com", "https://sts.custom.example.com", false},
+  {"trailing slashes", "https://sts.custom.example.com///", "us-custom-1", "sts.custom.example.com", "https://sts.custom.example.com", false},
+  {"http scheme", "http://sts.custom.example.com", "us-custom-1", "sts.custom.example.com", "http://sts.custom.example.com", false},
+  {"whitespace", "  sts.custom.example.com  ", "us-custom-1", "sts.custom.example.com", "https://sts.custom.example.com", false},
+  {"invalid scheme", "ftp://sts.custom.example.com", "us-custom-1", "", "", true},
+  {"with query", "https://sts.custom.example.com?Action=Foo", "us-custom-1", "", "", true},
+  {"no hostname", "https:///sts", "us-custom-2", "", "", true},
+  {"fragment", "https://sts.custom.example.com#frag", "us-custom-2", "", "", true},
+  {"user info", "https://user:pass@sts.custom.example.com", "us-custom-2", "", "", true}, // pragma: allowlist secret
+};
+
+void test_unit_aws_sts_endpoint_for(void **) {
+  auto awsSdkInit = AwsUtils::initAwsSdk();
+  for (const auto &tc : STS_ENDPOINT_CASES) {
+    print_message("case: %s\n", tc.name);
+    const auto endpointOpt = AwsUtils::resolveStsEndpoint(tc.region, tc.wifHost);
+    if (tc.expectedError) {
+      assert_false(endpointOpt.has_value());
+      continue;
+    }
+    assert_true(endpointOpt.has_value());
+    assert_string_equal(endpointOpt->authority.c_str(), tc.expectedAuthority);
+    assert_string_equal(endpointOpt->baseUrl.c_str(), tc.expectedBaseUrl);
+  }
 }
 
 // With impersonation set, the assumed credentials MUST be the ones handed to
@@ -1404,18 +1452,15 @@ void test_unit_wif_aws_use_outbound_token_connection_string(void **) {
 void test_unit_wif_host_normalization(void**) {
   AttestationConfig config;
 
-  // Unset -> both accessors return empty.
-  assert_string_equal(config.getWifHostForAws().c_str(), "");
+  // Unset -> accessor returns empty.
   assert_string_equal(config.getWifHostForGcp().c_str(), "");
 
-  // Bare hostname -> AWS uses it unchanged; GCP builds a base URL from it.
+  // Bare hostname -> GCP builds a base URL from it.
   config.wifHost = std::string("sts.us-gov-east-1.amazonaws.com");
-  assert_string_equal(config.getWifHostForAws().c_str(), "sts.us-gov-east-1.amazonaws.com");
   assert_string_equal(config.getWifHostForGcp().c_str(), "https://sts.us-gov-east-1.amazonaws.com/v1");
 
-  // Full URL -> AWS extracts the bare host; GCP uses it unchanged.
+  // Full URL -> GCP uses it unchanged.
   config.wifHost = std::string("https://iamcredentials.privategoogleapis.com/v1");
-  assert_string_equal(config.getWifHostForAws().c_str(), "iamcredentials.privategoogleapis.com");
   assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
 
   // Full URL with a trailing slash -> GCP strips it.
@@ -1604,6 +1649,7 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_custom_wif_config),
       cmocka_unit_test(test_unit_aws_attestation_jwt_success_with_full_url_wif_host),
       cmocka_unit_test(test_unit_aws_attestation_jwt_sdk_failure),
+      cmocka_unit_test(test_unit_aws_sts_endpoint_for),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation),
       cmocka_unit_test(test_unit_aws_attestation_jwt_with_impersonation_chain),
       cmocka_unit_test(test_unit_aws_attestation_jwt_impersonation_failure),

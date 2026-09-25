@@ -9,6 +9,7 @@
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/sts/STSClient.h>
+#include <aws/sts/STSEndpointProvider.h>
 #include <aws/sts/model/AssumeRoleRequest.h>
 #include <aws/sts/model/GetCallerIdentityRequest.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
@@ -64,6 +65,7 @@ namespace Snowflake {
         return awssdk;
       }
 
+      namespace {
       boost::optional<AwsStsEndpoint> defaultStsEndpoint(const std::string& region) {
           using Origin = Aws::Endpoint::EndpointParameter::ParameterOrigin;
 
@@ -99,7 +101,7 @@ namespace Snowflake {
           std::string baseUrl = scheme + "://" + authority + uri.GetURLEncodedPath().c_str();
           Util::trimTrailingSlashes(baseUrl);
 
-          return AwsStsEndpoint{ authority, baseUrl};
+          return AwsStsEndpoint{ authority, baseUrl };
       }
 
       boost::optional<AwsStsEndpoint> parseWorkloadIdentityHost(const std::string& rawHost) {
@@ -113,7 +115,13 @@ namespace Snowflake {
               host = "https://" + host;
           }
 
-          SFURL url = SFURL::parse(host);
+          SFURL url;
+          try {
+              url = SFURL::parse(host);
+          } catch (const SFURLParseError&) {
+              CXX_LOG_ERROR("workloadIdentityHost \"%s\" is malformed", host.c_str());
+              return boost::none;
+          }
 
           if (url.scheme() != "https" && url.scheme() != "http") {
               CXX_LOG_ERROR("workloadIdentityHost \"%s\" must use https or http, got scheme \"%s\"",
@@ -138,6 +146,7 @@ namespace Snowflake {
           std::string baseUrl = url.scheme() + "://" + authority + url.path();
           Util::trimTrailingSlashes(baseUrl);
           return AwsStsEndpoint{ authority, baseUrl };
+      }
       }
 
       boost::optional<AwsStsEndpoint> resolveStsEndpoint(const std::string& region,
@@ -218,12 +227,25 @@ namespace Snowflake {
         // call through the same DI seam they use for getWebIdentityToken.
         boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials &currentCreds,
-            const std::string &roleArn) override {
+            const std::string &roleArn,
+            const std::string &region,
+            const std::string &configuredHost) override {
           auto awsSdk = initAwsSdk();
 
           CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
 
-          const Aws::STS::STSClient stsClient(currentCreds);
+          const auto endpointOpt = resolveStsEndpoint(region, configuredHost);
+          if (!endpointOpt) {
+            CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
+            return boost::none;
+          }
+
+          Aws::STS::STSClientConfiguration clientConfig;
+          clientConfig.region = region;
+          if (!configuredHost.empty()) {
+            clientConfig.endpointOverride = endpointOpt->baseUrl;
+          }
+          const Aws::STS::STSClient stsClient(currentCreds, nullptr, clientConfig);
 
           Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
           assumeRoleRequest.SetRoleArn(roleArn.c_str());
@@ -258,12 +280,12 @@ namespace Snowflake {
         ) override {
           auto awsSdk = initAwsSdk();
 
-          AwsStsEndpoint endpoint = resolveStsEndpoint(region, configuredHost).value_or(AwsStsEndpoint{});
-
-          if (endpoint.baseUrl.empty()) {
+          const auto endpointOpt = resolveStsEndpoint(region, configuredHost);
+          if (!endpointOpt) {
             CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
             return boost::none;
           }
+          const AwsStsEndpoint &endpoint = endpointOpt.get();
           const std::string url = endpoint.baseUrl;
 
           // Query-protocol form body. URL-encode user-supplied parameters.

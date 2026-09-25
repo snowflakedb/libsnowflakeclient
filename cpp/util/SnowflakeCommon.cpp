@@ -1,5 +1,7 @@
 #define CURL_STATICLIB
 #include <string.h>
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -380,7 +382,6 @@ void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerStri
       headers[key] = value;
     }
   }
-
 }
 
 std::string Snowflake::Client::Util::trimWhitespace(const std::string& s) {

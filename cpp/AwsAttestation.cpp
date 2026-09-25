@@ -3,11 +3,8 @@
 #include <picojson.h>
 #include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"
-#include "util/SnowflakeCommon.hpp"
-#include "snowflake/SFURL.hpp"
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/sts/STSEndpointProvider.h>
 #include <sstream>
 #include <string>
 
@@ -53,7 +50,9 @@ namespace Snowflake::Client {
   boost::optional<Aws::Auth::AWSCredentials> assumeAwsRoleChain(
     AwsUtils::ISdkWrapper &sdkWrapper,
     const Aws::Auth::AWSCredentials &initialCreds,
-    const std::vector<std::string> &roleArnChain) {
+    const std::vector<std::string> &roleArnChain,
+    const std::string &region,
+    const std::string &configuredHost) {
 
     if (roleArnChain.empty()) {
       CXX_LOG_ERROR("Role ARN chain is empty");
@@ -63,7 +62,7 @@ namespace Snowflake::Client {
     Aws::Auth::AWSCredentials currentCreds = initialCreds;
 
     for (const auto &roleArn: roleArnChain) {
-      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn);
+      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn, region, configuredHost);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role in chain: %s", roleArn.c_str());
         return boost::none;
@@ -88,6 +87,7 @@ namespace Snowflake::Client {
       return boost::none;
     }
     const std::string &region = regionOpt.get();
+    const std::string configuredHost = config.getWifHost();
 
     if (config.workloadIdentityImpersonationPath &&
         !config.workloadIdentityImpersonationPath.get().empty()) {
@@ -103,7 +103,7 @@ namespace Snowflake::Client {
 
       CXX_LOG_DEBUG("Role ARN chain size: %zu", roleArnChain.size());
 
-      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain);
+      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain, region, configuredHost);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role chain");
         return boost::none;
@@ -117,7 +117,7 @@ namespace Snowflake::Client {
           "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
           region.c_str());
       auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, config.getWifHostForAws());
+          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, configuredHost);
       if (!jwtOpt) {
         CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
         return boost::none;
@@ -127,9 +127,13 @@ namespace Snowflake::Client {
       return Attestation::makeAws(jwt);
     }
 
-    const std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
-    const std::string host = std::string("sts") + "." + region + "." + domain;
-    const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
+    const auto endpointOpt = AwsUtils::resolveStsEndpoint(region, configuredHost);
+    if (!endpointOpt) {
+      CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
+      return boost::none;
+    }
+    const std::string &host = endpointOpt->authority;
+    const std::string url = endpointOpt->baseUrl + "/?Action=GetCallerIdentity&Version=2011-06-15";
 
     auto request = Aws::Http::CreateHttpRequest(
       Aws::String(url),
