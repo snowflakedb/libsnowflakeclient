@@ -1449,21 +1449,17 @@ void test_unit_wif_aws_use_outbound_token_connection_string(void **) {
   snowflake_term(conn);
 }
 
-void test_unit_wif_host_normalization(void**) {
+void test_unit_wif_host_normalization_for_gcp(void**) {
   AttestationConfig config;
 
-  // Unset -> accessor returns empty.
   assert_string_equal(config.getWifHostForGcp().c_str(), "");
 
-  // Bare hostname -> GCP builds a base URL from it.
-  config.wifHost = std::string("sts.us-gov-east-1.amazonaws.com");
-  assert_string_equal(config.getWifHostForGcp().c_str(), "https://sts.us-gov-east-1.amazonaws.com/v1");
+  config.wifHost = std::string("iamcredentials.privategoogleapis.com");
+  assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
 
-  // Full URL -> GCP uses it unchanged.
   config.wifHost = std::string("https://iamcredentials.privategoogleapis.com/v1");
   assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
 
-  // Full URL with a trailing slash -> GCP strips it.
   config.wifHost = std::string("https://iamcredentials.privategoogleapis.com/v1/");
   assert_string_equal(config.getWifHostForGcp().c_str(), "https://iamcredentials.privategoogleapis.com/v1");
 }
@@ -1687,7 +1683,7 @@ int main() {
       cmocka_unit_test(test_unit_oidc_attestation_missing_token),
       cmocka_unit_test(test_unit_wif_attestation_config),
       cmocka_unit_test(test_unit_wif_aws_use_outbound_token_connection_string),
-      cmocka_unit_test(test_unit_wif_host_normalization),
+      cmocka_unit_test(test_unit_wif_host_normalization_for_gcp),
       cmocka_unit_test(test_unit_wif_host_accept_apex_com),
       cmocka_unit_test(test_unit_wif_host_accept_subdomain_com),
       cmocka_unit_test(test_unit_wif_host_accept_nested_subdomain_com),
