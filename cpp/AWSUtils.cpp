@@ -3,6 +3,8 @@
 #include <aws/core/Aws.h>
 #include "logger/SFLogger.hpp"
 #include "logger/SFAwsLogger.hpp"
+#include "snowflake/SFURL.hpp"
+#include "util/SnowflakeCommon.hpp"
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/LogLevel.h>
@@ -60,6 +62,90 @@ namespace Snowflake {
         }
         s_sdkMutex.unlock();
         return awssdk;
+      }
+
+      boost::optional<AwsStsEndpoint> defaultStsEndpoint(const std::string& region) {
+          using Origin = Aws::Endpoint::EndpointParameter::ParameterOrigin;
+
+          Aws::STS::Endpoint::STSEndpointProvider provider;
+          Aws::Endpoint::EndpointParameters params;
+          params.emplace_back("Region", Aws::String(region.c_str()), Origin::BUILT_IN);
+          params.emplace_back("UseFIPS", false, Origin::BUILT_IN);
+          params.emplace_back("UseDualStack", false, Origin::BUILT_IN);
+          params.emplace_back("UseGlobalEndpoint", false, Origin::BUILT_IN);
+
+          auto outcome = provider.ResolveEndpoint(params);
+          if (!outcome.IsSuccess()) {
+              CXX_LOG_ERROR("could not resolve an STS endpoint for region \"%s\": %s",
+                  region.c_str(), outcome.GetError().GetMessage().c_str());
+              return boost::none;
+          }
+
+          const Aws::Http::URI& uri = outcome.GetResult().GetURI();
+          const std::string scheme = Aws::Http::SchemeMapper::ToString(uri.GetScheme());
+
+          std::string authority = uri.GetAuthority().c_str();
+          const uint16_t defaultPort = (uri.GetScheme() == Aws::Http::Scheme::HTTPS) ? 443 : 80;
+          if (!authority.empty() && uri.GetPort() != defaultPort) {
+              authority += ":" + std::to_string(uri.GetPort());
+          }
+
+          if (authority.empty()) {
+              CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" has no host: \"%s\"",
+                  region.c_str(), outcome.GetResult().GetURL().c_str());
+              return boost::none;
+          }
+
+          std::string baseUrl = scheme + "://" + authority + uri.GetURLEncodedPath().c_str();
+          Util::trimTrailingSlashes(baseUrl);
+
+          return AwsStsEndpoint{ authority, baseUrl};
+      }
+
+      boost::optional<AwsStsEndpoint> parseWorkloadIdentityHost(const std::string& rawHost) {
+          std::string host = Util::trimWhitespace(rawHost);
+          if (host.empty()) {
+              CXX_LOG_ERROR("workloadIdentityHost is empty");
+              return boost::none;
+          }
+
+          if (host.find("://") == std::string::npos) {
+              host = "https://" + host;
+          }
+
+          SFURL url = SFURL::parse(host);
+
+          if (url.scheme() != "https" && url.scheme() != "http") {
+              CXX_LOG_ERROR("workloadIdentityHost \"%s\" must use https or http, got scheme \"%s\"",
+                  host.c_str(), url.scheme().c_str());
+              return boost::none;
+          }
+          if (url.host().empty()) {
+              CXX_LOG_ERROR("workloadIdentityHost \"%s\" does not contain a hostname", host.c_str());
+              return boost::none;
+          }
+          if (!url.userInfo().empty() || url.getParamsSize() != 0 || !url.fragment().empty()) {
+              CXX_LOG_ERROR("workloadIdentityHost \"%s\" must not contain user info, a query or a fragment",
+                  host.c_str());
+              return boost::none;
+          }
+
+          std::string authority = url.host();
+          if (!url.port().empty()) {
+              authority += ":" + url.port();
+          }
+
+          std::string baseUrl = url.scheme() + "://" + authority + url.path();
+          Util::trimTrailingSlashes(baseUrl);
+          return AwsStsEndpoint{ authority, baseUrl };
+      }
+
+      boost::optional<AwsStsEndpoint> resolveStsEndpoint(const std::string& region,
+          const std::string& configuredHost) {
+          if (!configuredHost.empty()) {
+              return parseWorkloadIdentityHost(configuredHost);
+          }
+          return defaultStsEndpoint(region);
       }
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName) {
@@ -172,8 +258,13 @@ namespace Snowflake {
         ) override {
           auto awsSdk = initAwsSdk();
 
-          const std::string host = configuredHost.empty() ? "sts." + region + "." + getDomainSuffixForRegionalUrl(region) : configuredHost;
-          const std::string url = "https://" + host + "/";
+          AwsStsEndpoint endpoint = resolveStsEndpoint(region, configuredHost).value_or(AwsStsEndpoint{});
+
+          if (endpoint.baseUrl.empty()) {
+            CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
+            return boost::none;
+          }
+          const std::string url = endpoint.baseUrl;
 
           // Query-protocol form body. URL-encode user-supplied parameters.
           const std::string body =
@@ -185,7 +276,7 @@ namespace Snowflake {
               Aws::String(url),
               Aws::Http::HttpMethod::HTTP_POST,
               Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
-          request->SetHeaderValue("Host", host);
+          request->SetHeaderValue("Host", endpoint.authority);
           request->SetContentType("application/x-www-form-urlencoded");
 
           auto bodyStream = Aws::MakeShared<Aws::StringStream>("getWebIdentityToken");

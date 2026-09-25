@@ -3,8 +3,11 @@
 #include <picojson.h>
 #include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"
+#include "util/SnowflakeCommon.hpp"
+#include "snowflake/SFURL.hpp"
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
+#include <aws/sts/STSEndpointProvider.h>
 #include <sstream>
 #include <string>
 

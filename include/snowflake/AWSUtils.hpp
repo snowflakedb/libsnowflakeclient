@@ -9,6 +9,12 @@
 namespace Snowflake {
   namespace Client {
     namespace AwsUtils {
+
+        struct AwsStsEndpoint {
+            std::string authority;
+            std::string baseUrl;
+        };
+
       /*
        * Shared initialization of aws sdk to avoid multiple initialization.
        * To initialize aws sdk, call initAwsSdk() and hold the returned shared_ptr as long as you use AWS SDK.
@@ -18,6 +24,9 @@ namespace Snowflake {
       std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown = false);
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName);
+
+      boost::optional<AwsStsEndpoint> resolveStsEndpoint(const std::string& region,
+          const std::string& configuredHost);
 
       class ISdkWrapper {
       public:

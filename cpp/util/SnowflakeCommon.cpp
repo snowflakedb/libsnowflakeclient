@@ -380,4 +380,18 @@ void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerStri
       headers[key] = value;
     }
   }
+
+}
+
+std::string Snowflake::Client::Util::trimWhitespace(const std::string& s) {
+    const auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+    auto begin = std::find_if_not(s.begin(), s.end(), isSpace);
+    auto end = std::find_if_not(s.rbegin(), s.rend(), isSpace).base();
+    return (begin < end) ? std::string(begin, end) : std::string();
+}
+
+void Snowflake::Client::Util::trimTrailingSlashes(std::string& s) {
+    while (!s.empty() && s.back() == '/') {
+        s.pop_back();
+    }
 }
