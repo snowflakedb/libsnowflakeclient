@@ -18,7 +18,7 @@ index 433f22dc7..f235c888b 100644
  add_subdirectory(sdk/storage)
  add_subdirectory(sdk/template)
 diff --git a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
-index 2ffd76cee..359412574 100644
+index 2ffd76cee..f556b1443 100644
 --- a/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 +++ b/sdk/core/azure-core/inc/azure/core/http/curl_transport.hpp
 @@ -91,6 +91,8 @@ namespace Azure { namespace Core { namespace Http {
@@ -30,8 +30,17 @@ index 2ffd76cee..359412574 100644
      /**
       * @brief Username to be used for proxy connections.
       *
+@@ -199,6 +201,8 @@ namespace Azure { namespace Core { namespace Http {
+      * @brief If set, enables libcurl's internal SSL session caching.
+      */
+     bool EnableCurlSslCaching = true;
++
++    long tlsVersion = 0;
+   };
+ 
+   /**
 diff --git a/sdk/core/azure-core/src/http/curl/curl.cpp b/sdk/core/azure-core/src/http/curl/curl.cpp
-index b9180c119..33073c94d 100644
+index b9180c119..510e88757 100644
 --- a/sdk/core/azure-core/src/http/curl/curl.cpp
 +++ b/sdk/core/azure-core/src/http/curl/curl.cpp
 @@ -764,7 +764,7 @@ inline std::string CurlSession::GetHTTPMessagePreBody(Azure::Core::Http::Request
@@ -61,8 +70,21 @@ index b9180c119..33073c94d 100644
    if (options.Proxy)
    {
      if (!SetLibcurlOption(m_handle, CURLOPT_PROXY, options.Proxy->c_str(), &result))
+@@ -2645,6 +2656,12 @@ CurlConnection::CurlConnection(
+   }
+ 
+   //   Make libcurl to support only TLS v1.2 or later
++  long tlsVersion = CURL_SSLVERSION_TLSv1_2;
++  if (options.tlsVersion > 0)
++  {
++    tlsVersion = options.tlsVersion;
++  }
++  Log::Write(Logger::Level::Informational, "TLS Version: " + std::to_string(tlsVersion));
+   if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2, &result))
+   {
+     throw Azure::Core::Http::TransportException(
 diff --git a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
-index 60ccb558f..6a86cf8d0 100644
+index 60ccb558f..a89aa6aa8 100644
 --- a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 +++ b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 @@ -131,6 +131,12 @@ namespace Azure { namespace Core {
