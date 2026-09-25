@@ -208,6 +208,10 @@ void test_unit_aws_attestation_china_region_success(void **) {
   test_attestation_success("cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
 }
 
+void test_unit_aws_attestation_iso_region_success(void **) {
+  test_attestation_success("us-iso-east-1", "sts.us-iso-east-1.c2s.ic.gov");
+}
+
 void test_unit_aws_attestation_failed(FakeAwsSdkWrapper *awsSdkWrapper) {
   AttestationConfig config;
   config.type = AttestationType::AWS;
@@ -1708,6 +1712,7 @@ int main() {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_unit_aws_attestation_success),
       cmocka_unit_test(test_unit_aws_attestation_china_region_success),
+      cmocka_unit_test(test_unit_aws_attestation_iso_region_success),
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_aws_attestation_outbound_jwt_disabled),
