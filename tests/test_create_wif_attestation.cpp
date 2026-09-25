@@ -74,11 +74,13 @@ public:
   boost::optional<Aws::Auth::AWSCredentials> assumeRole(
       const Aws::Auth::AWSCredentials& currentCreds,
       const std::string& roleArn,
-      const std::string&,
-      const std::string&) override {
+      const std::string& r,
+      const std::string& host) override {
     assumeRoleCallCount++;
     assumeRoleArns.push_back(roleArn);
     assumeRoleInputCreds.push_back(currentCreds);
+    assumeRoleRegions.push_back(r);
+    assumeRoleHosts.push_back(host);
     auto it = assumeRoleResults.find(roleArn);
     if (it == assumeRoleResults.end()) {
       return boost::none;
@@ -116,6 +118,8 @@ public:
   int assumeRoleCallCount = 0;
   std::vector<std::string> assumeRoleArns;
   std::vector<Aws::Auth::AWSCredentials> assumeRoleInputCreds;
+  std::vector<std::string> assumeRoleRegions;
+  std::vector<std::string> assumeRoleHosts;
 
 private:
   boost::optional<std::string> region;
@@ -596,6 +600,73 @@ void test_unit_aws_attestation_legacy_with_impersonation(void **) {
   assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 1);
   assert_string_equal(awsSdkWrapper.assumeRoleArns[0].c_str(), roleArn.c_str());
   assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
+}
+
+void test_unit_aws_attestation_legacy_with_wif_host(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.wifHost = "https://sts.custom.example.com/";
+
+  const auto attestationOpt = createAttestation(config);
+  assertAwsLegacyPresignedAttestation(attestationOpt, "sts.custom.example.com");
+  assert_int_equal(awsSdkWrapper.getWebIdentityTokenCallCount, 0);
+}
+
+void test_unit_aws_attestation_legacy_with_invalid_wif_host(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.wifHost = "ftp://sts.custom.example.com";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_chain_with_wif_host(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  const std::string arn1 = "arn:aws:iam::111111111111:role/Role1";
+  const std::string arn2 = "arn:aws:iam::222222222222:role/Role2";
+  const std::string wifHost = "https://sts.custom.example.com";
+  awsSdkWrapper.assumeRoleResults[arn1] = Aws::Auth::AWSCredentials("AK1", "SK1", "ST1");
+  awsSdkWrapper.assumeRoleResults[arn2] = Aws::Auth::AWSCredentials("AK2", "SK2", "ST2");
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = arn1 + "," + arn2;
+  config.wifHost = wifHost;
+
+  const auto attestationOpt = createAttestation(config);
+  assertAwsLegacyPresignedAttestation(attestationOpt, "sts.custom.example.com");
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 2);
+  for (int i = 0; i < 2; i++) {
+    assert_string_equal(awsSdkWrapper.assumeRoleRegions[i].c_str(), AWS_TEST_REGION.c_str());
+    assert_string_equal(awsSdkWrapper.assumeRoleHosts[i].c_str(), wifHost.c_str());
+  }
+}
+
+void test_unit_aws_attestation_impersonation_without_wif_host(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  const std::string roleArn = "arn:aws:iam::123456789012:role/TestRole";
+  awsSdkWrapper.assumeRoleResults[roleArn] = Aws::Auth::AWSCredentials("AK1", "SK1", "ST1");
+
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = roleArn;
+
+  const auto attestationOpt = createAttestation(config);
+  assertAwsLegacyPresignedAttestation(attestationOpt, "sts." + AWS_TEST_REGION + ".amazonaws.com");
+
+  assert_int_equal(awsSdkWrapper.assumeRoleCallCount, 1);
+  assert_string_equal(awsSdkWrapper.assumeRoleRegions[0].c_str(), AWS_TEST_REGION.c_str());
+  assert_string_equal(awsSdkWrapper.assumeRoleHosts[0].c_str(), "");
 }
 
 void test_unit_aws_attestation_impersonation_with_missing_region(void **) {
@@ -1653,6 +1724,10 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_fallback),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_jwt),
       cmocka_unit_test(test_unit_aws_attestation_legacy_with_impersonation),
+      cmocka_unit_test(test_unit_aws_attestation_legacy_with_wif_host),
+      cmocka_unit_test(test_unit_aws_attestation_legacy_with_invalid_wif_host),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_chain_with_wif_host),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_without_wif_host),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_region),
       cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_credentials),
       cmocka_unit_test(test_unit_gcp_attestation_success),
