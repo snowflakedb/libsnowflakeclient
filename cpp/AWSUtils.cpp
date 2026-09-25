@@ -3,10 +3,13 @@
 #include <aws/core/Aws.h>
 #include "logger/SFLogger.hpp"
 #include "logger/SFAwsLogger.hpp"
+#include "snowflake/SFURL.hpp"
+#include "util/SnowflakeCommon.hpp"
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/sts/STSClient.h>
+#include <aws/sts/STSEndpointProvider.h>
 #include <aws/sts/model/AssumeRoleRequest.h>
 #include <aws/sts/model/GetCallerIdentityRequest.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
@@ -62,43 +65,139 @@ namespace Snowflake {
         return awssdk;
       }
 
+
+      namespace {
+          // Bound the GetWebIdentityToken response body we materialize into
+          // memory. Real STS responses for this API are ~1-5 KiB (a JWT plus
+          // XML wrapping). The cap is defense in depth so a misbehaving
+          // intermediary returning a runaway body can't OOM the process.
+          constexpr size_t MAX_STS_RESPONSE_BODY_BYTES = 64 * 1024;
+
+          // Connect / request timeouts for the STS GetWebIdentityToken HTTP
+          // call. Mirrors the values used by SnowflakeS3Client for AWS HTTP
+          // clients so users get a uniform, bounded failure mode when STS is
+          // unreachable or the network blackholes.
+          constexpr long STS_CONNECT_TIMEOUT_MS = 30000;
+          constexpr long STS_REQUEST_TIMEOUT_MS = 40000;
+
+          // Truncate a string for safe error logging. STS error responses are not
+          // sensitive themselves, but bodies of unexpected non-error responses
+          // might contain unexpected data; truncate as defense in depth.
+          std::string truncateForLog(const std::string& s, size_t max = 256) {
+              if (s.size() <= max) return s;
+              return s.substr(0, max) + "...(truncated)";
+          }
+
+          // Read up to maxBytes from a response body stream into a string.
+          // Pairs with MAX_STS_RESPONSE_BODY_BYTES to bound peak memory.
+          std::string readBoundedResponseBody(std::istream& stream, size_t maxBytes) {
+              std::string buf;
+              buf.resize(maxBytes);
+              stream.read(&buf[0], static_cast<std::streamsize>(maxBytes));
+              buf.resize(static_cast<size_t>(stream.gcount()));
+              return buf;
+          }
+
+          AwsStsEndpoint endpointFromUrl(const SFURL& url) {
+              std::string authority = url.host();
+              if (!url.port().empty()) {
+                  authority += ":" + url.port();
+              }
+
+              std::string baseUrl = url.scheme() + "://" + authority + url.path();
+              Util::trimTrailingSlashes(baseUrl);
+              return AwsStsEndpoint{ authority, baseUrl };
+          }
+
+          boost::optional<AwsStsEndpoint> defaultStsEndpoint(const std::string& region) {
+              using Origin = Aws::Endpoint::EndpointParameter::ParameterOrigin;
+
+              Aws::STS::Endpoint::STSEndpointProvider provider;
+              Aws::Endpoint::EndpointParameters params;
+              params.emplace_back("Region", Aws::String(region.c_str()), Origin::BUILT_IN);
+              params.emplace_back("UseFIPS", false, Origin::BUILT_IN);
+              params.emplace_back("UseDualStack", false, Origin::BUILT_IN);
+              params.emplace_back("UseGlobalEndpoint", false, Origin::BUILT_IN);
+
+              auto outcome = provider.ResolveEndpoint(params);
+              if (!outcome.IsSuccess()) {
+                  CXX_LOG_ERROR("could not resolve an STS endpoint for region \"%s\": %s",
+                      region.c_str(), outcome.GetError().GetMessage().c_str());
+                  return boost::none;
+              }
+
+              const std::string resolvedUrl = outcome.GetResult().GetURL().c_str();
+              SFURL url;
+              try {
+                  url = SFURL::parse(resolvedUrl);
+              }
+              catch (const SFURLParseError&) {
+                  CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" is malformed: \"%s\"",
+                      region.c_str(), resolvedUrl.c_str());
+                  return boost::none;
+              }
+
+              if (url.host().empty()) {
+                  CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" has no host: \"%s\"",
+                      region.c_str(), resolvedUrl.c_str());
+                  return boost::none;
+              }
+
+              return endpointFromUrl(url);
+          }
+
+          boost::optional<AwsStsEndpoint> parseWorkloadIdentityHost(const std::string& rawHost) {
+              std::string host = Util::trimWhitespace(rawHost);
+              if (host.empty()) {
+                  CXX_LOG_ERROR("workloadIdentityHost is empty");
+                  return boost::none;
+              }
+
+              if (host.find("://") == std::string::npos) {
+                  host = "https://" + host;
+              }
+
+              SFURL url;
+              try {
+                  url = SFURL::parse(host);
+              }
+              catch (const SFURLParseError&) {
+                  CXX_LOG_ERROR("workloadIdentityHost \"%s\" is malformed", host.c_str());
+                  return boost::none;
+              }
+
+              if (url.scheme() != "https" && url.scheme() != "http") {
+                  CXX_LOG_ERROR("workloadIdentityHost \"%s\" must use https or http, got scheme \"%s\"",
+                      host.c_str(), url.scheme().c_str());
+                  return boost::none;
+              }
+              if (url.host().empty()) {
+                  CXX_LOG_ERROR("workloadIdentityHost \"%s\" does not contain a hostname", host.c_str());
+                  return boost::none;
+              }
+              if (!url.userInfo().empty() || url.getParamsSize() != 0 || !url.fragment().empty()) {
+                  CXX_LOG_ERROR("workloadIdentityHost \"%s\" must not contain user info, a query or a fragment",
+                      host.c_str());
+                  return boost::none;
+              }
+
+              return endpointFromUrl(url);
+          }
+      }
+
+      boost::optional<AwsStsEndpoint> resolveStsEndpoint(const std::string& region,
+          const std::string& configuredHost) {
+          if (!configuredHost.empty()) {
+              return parseWorkloadIdentityHost(configuredHost);
+          }
+          return defaultStsEndpoint(region);
+      }
+
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName) {
         // use .cn if the region name starts with "cn-"
         return (regionName.find("cn-") == 0) ? "amazonaws.com.cn" : "amazonaws.com";
       }
 
-      namespace {
-        // Bound the GetWebIdentityToken response body we materialize into
-        // memory. Real STS responses for this API are ~1-5 KiB (a JWT plus
-        // XML wrapping). The cap is defense in depth so a misbehaving
-        // intermediary returning a runaway body can't OOM the process.
-        constexpr size_t MAX_STS_RESPONSE_BODY_BYTES = 64 * 1024;
-
-        // Connect / request timeouts for the STS GetWebIdentityToken HTTP
-        // call. Mirrors the values used by SnowflakeS3Client for AWS HTTP
-        // clients so users get a uniform, bounded failure mode when STS is
-        // unreachable or the network blackholes.
-        constexpr long STS_CONNECT_TIMEOUT_MS = 30000;
-        constexpr long STS_REQUEST_TIMEOUT_MS = 40000;
-
-        // Truncate a string for safe error logging. STS error responses are not
-        // sensitive themselves, but bodies of unexpected non-error responses
-        // might contain unexpected data; truncate as defense in depth.
-        std::string truncateForLog(const std::string &s, size_t max = 256) {
-          if (s.size() <= max) return s;
-          return s.substr(0, max) + "...(truncated)";
-        }
-
-        // Read up to maxBytes from a response body stream into a string.
-        // Pairs with MAX_STS_RESPONSE_BODY_BYTES to bound peak memory.
-        std::string readBoundedResponseBody(std::istream &stream, size_t maxBytes) {
-          std::string buf;
-          buf.resize(maxBytes);
-          stream.read(&buf[0], static_cast<std::streamsize>(maxBytes));
-          buf.resize(static_cast<size_t>(stream.gcount()));
-          return buf;
-        }
-      }
 
       class SdkWrapper : public ISdkWrapper {
       public:
@@ -132,12 +231,25 @@ namespace Snowflake {
         // call through the same DI seam they use for getWebIdentityToken.
         boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials &currentCreds,
-            const std::string &roleArn) override {
+            const std::string &roleArn,
+            const std::string &region,
+            const std::string &configuredHost) override {
           auto awsSdk = initAwsSdk();
 
           CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
 
-          const Aws::STS::STSClient stsClient(currentCreds);
+          const auto endpointOpt = resolveStsEndpoint(region, configuredHost);
+          if (!endpointOpt) {
+            CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
+            return boost::none;
+          }
+
+          Aws::STS::STSClientConfiguration clientConfig;
+          clientConfig.region = region;
+          if (!configuredHost.empty()) {
+            clientConfig.endpointOverride = endpointOpt->baseUrl;
+          }
+          const Aws::STS::STSClient stsClient(currentCreds, nullptr, clientConfig);
 
           Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
           assumeRoleRequest.SetRoleArn(roleArn.c_str());
@@ -172,8 +284,13 @@ namespace Snowflake {
         ) override {
           auto awsSdk = initAwsSdk();
 
-          const std::string host = configuredHost.empty() ? "sts." + region + "." + getDomainSuffixForRegionalUrl(region) : configuredHost;
-          const std::string url = "https://" + host + "/";
+          const auto endpointOpt = resolveStsEndpoint(region, configuredHost);
+          if (!endpointOpt) {
+            CXX_LOG_ERROR("Failed to resolve STS endpoint for region %s", region.c_str());
+            return boost::none;
+          }
+          const AwsStsEndpoint &endpoint = endpointOpt.get();
+          const std::string url = endpoint.baseUrl;
 
           // Query-protocol form body. URL-encode user-supplied parameters.
           const std::string body =
@@ -185,7 +302,7 @@ namespace Snowflake {
               Aws::String(url),
               Aws::Http::HttpMethod::HTTP_POST,
               Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
-          request->SetHeaderValue("Host", host);
+          request->SetHeaderValue("Host", endpoint.authority);
           request->SetContentType("application/x-www-form-urlencoded");
 
           auto bodyStream = Aws::MakeShared<Aws::StringStream>("getWebIdentityToken");
