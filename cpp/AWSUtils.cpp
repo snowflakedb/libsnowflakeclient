@@ -66,6 +66,17 @@ namespace Snowflake {
       }
 
       namespace {
+      AwsStsEndpoint endpointFromUrl(const SFURL& url) {
+          std::string authority = url.host();
+          if (!url.port().empty()) {
+              authority += ":" + url.port();
+          }
+
+          std::string baseUrl = url.scheme() + "://" + authority + url.path();
+          Util::trimTrailingSlashes(baseUrl);
+          return AwsStsEndpoint{ authority, baseUrl };
+      }
+
       boost::optional<AwsStsEndpoint> defaultStsEndpoint(const std::string& region) {
           using Origin = Aws::Endpoint::EndpointParameter::ParameterOrigin;
 
@@ -83,25 +94,23 @@ namespace Snowflake {
               return boost::none;
           }
 
-          const Aws::Http::URI& uri = outcome.GetResult().GetURI();
-          const std::string scheme = Aws::Http::SchemeMapper::ToString(uri.GetScheme());
-
-          std::string authority = uri.GetAuthority().c_str();
-          const uint16_t defaultPort = (uri.GetScheme() == Aws::Http::Scheme::HTTPS) ? 443 : 80;
-          if (!authority.empty() && uri.GetPort() != defaultPort) {
-              authority += ":" + std::to_string(uri.GetPort());
-          }
-
-          if (authority.empty()) {
-              CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" has no host: \"%s\"",
-                  region.c_str(), outcome.GetResult().GetURL().c_str());
+          const std::string resolvedUrl = outcome.GetResult().GetURL().c_str();
+          SFURL url;
+          try {
+              url = SFURL::parse(resolvedUrl);
+          } catch (const SFURLParseError&) {
+              CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" is malformed: \"%s\"",
+                  region.c_str(), resolvedUrl.c_str());
               return boost::none;
           }
 
-          std::string baseUrl = scheme + "://" + authority + uri.GetURLEncodedPath().c_str();
-          Util::trimTrailingSlashes(baseUrl);
+          if (url.host().empty()) {
+              CXX_LOG_ERROR("resolved STS endpoint for region \"%s\" has no host: \"%s\"",
+                  region.c_str(), resolvedUrl.c_str());
+              return boost::none;
+          }
 
-          return AwsStsEndpoint{ authority, baseUrl };
+          return endpointFromUrl(url);
       }
 
       boost::optional<AwsStsEndpoint> parseWorkloadIdentityHost(const std::string& rawHost) {
@@ -138,14 +147,7 @@ namespace Snowflake {
               return boost::none;
           }
 
-          std::string authority = url.host();
-          if (!url.port().empty()) {
-              authority += ":" + url.port();
-          }
-
-          std::string baseUrl = url.scheme() + "://" + authority + url.path();
-          Util::trimTrailingSlashes(baseUrl);
-          return AwsStsEndpoint{ authority, baseUrl };
+          return endpointFromUrl(url);
       }
       }
 
