@@ -395,7 +395,7 @@ const StsEndpointCase STS_ENDPOINT_CASES[] = {
   {"with query", "https://sts.custom.example.com?Action=Foo", "us-custom-1", "", "", true},
   {"no hostname", "https:///sts", "us-custom-2", "", "", true},
   {"fragment", "https://sts.custom.example.com#frag", "us-custom-2", "", "", true},
-  {"user info", "https://user:pass@sts.custom.example.com", "us-custom-2", "", "", true}, // pragma: allowlist secret
+  {"user info", "https://user:pass@sts.custom.example.com", "us-custom-2", "", "", true},
 };
 
 void test_unit_aws_sts_endpoint_for(void **) {
