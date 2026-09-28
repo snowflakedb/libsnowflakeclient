@@ -34,8 +34,7 @@ void verify_negotiated_version(SF_CONNECT * sf, const std::string& expected)
   std::string negotiated = desc ? desc->getNegotiatedSSLVersion() : std::string();
   // clean up to avoid being reused for the next test case
   desc->reset(true);
-  // The negotiated version is decided by server/proxy and could be 1.3 regardless client set to 1.2
-  assert_true((negotiated == expected) || negotiated == std::string("TLSv1.3"));
+  assert_true(expected.find(negotiated) != std::string::npos);
 }
 
 /*
@@ -51,6 +50,16 @@ void test_tls_version_core(const std::string& expected, bool native)
   /* init */
   SF_STATUS status;
   SF_CONNECT *sf;
+
+  /*
+   * Disable OCSP/Verify peer when manual testing with TLS terminating proxy
+  sf_bool value = SF_BOOLEAN_FALSE;
+  status = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
+  assert_int_equal(SF_STATUS_SUCCESS, status);
+  value = SF_BOOLEAN_TRUE;
+  status = snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &value);
+  assert_int_equal(SF_STATUS_SUCCESS, status);
+   */
 
   sf = setup_snowflake_connection();
 
@@ -171,20 +180,22 @@ void test_tls_version_core(const std::string& expected, bool native)
 void tls_version_unset_cpp(void **unused)
 {
   SF_UNUSED(unused);
-  test_tls_version_core("TLSv1.2", false);
+  // Without setting max the negotiated version could be 1.3
+  test_tls_version_core("TLSv1.2, TLSv1.3", false);
 }
 
 void tls_version_unset_native(void **unused)
 {
   SF_UNUSED(unused);
-  test_tls_version_core("TLSv1.2", true);
+  // Without setting max the negotiated version could be 1.3
+  test_tls_version_core("TLSv1.2, TLSv1.3", true);
 }
 
 void tls_version_v12_cpp(void **unused)
 {
   SF_UNUSED(unused);
   int32 tlsVersion = (int32)(CURL_SSLVERSION_TLSv1_2 | CURL_SSLVERSION_MAX_TLSv1_2);
-  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &tlsVersion);
+  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &tlsVersion);
   assert_int_equal(SF_STATUS_SUCCESS, ret);
   test_tls_version_core("TLSv1.2", false);
 }
@@ -193,7 +204,7 @@ void tls_version_v12_native(void **unused)
 {
   SF_UNUSED(unused);
   int32 tlsVersion = (int32)(CURL_SSLVERSION_TLSv1_2 | CURL_SSLVERSION_MAX_TLSv1_2);
-  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &tlsVersion);
+  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &tlsVersion);
   assert_int_equal(SF_STATUS_SUCCESS, ret);
   test_tls_version_core("TLSv1.2", true);
 }
@@ -201,8 +212,8 @@ void tls_version_v12_native(void **unused)
 void tls_version_v13_cpp(void **unused)
 {
   SF_UNUSED(unused);
-  int32 tlsVersion = (int32)CURL_SSLVERSION_TLSv1_3;
-  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &tlsVersion);
+  int32 tlsVersion = (int32)(CURL_SSLVERSION_TLSv1_3 | CURL_SSLVERSION_MAX_TLSv1_3);
+  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &tlsVersion);
   assert_int_equal(SF_STATUS_SUCCESS, ret);
   test_tls_version_core("TLSv1.3", false);
 }
@@ -210,14 +221,15 @@ void tls_version_v13_cpp(void **unused)
 void tls_version_v13_native(void **unused)
 {
   SF_UNUSED(unused);
-  int32 tlsVersion = (int32)CURL_SSLVERSION_TLSv1_3;
-  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &tlsVersion);
+  int32 tlsVersion = (int32)(CURL_SSLVERSION_TLSv1_3 | CURL_SSLVERSION_MAX_TLSv1_3);
+  SF_STATUS ret = snowflake_global_set_attribute(SF_GLOBAL_SSL_VERSION, &tlsVersion);
   assert_int_equal(SF_STATUS_SUCCESS, ret);
   test_tls_version_core("TLSv1.3", true);
 }
 
 int main(void) {
     initialize_test(SF_BOOLEAN_TRUE);
+
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(tls_version_unset_cpp),
       cmocka_unit_test(tls_version_unset_native),
