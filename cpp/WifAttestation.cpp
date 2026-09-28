@@ -5,6 +5,7 @@
 #include "AwsAttestation.hpp"
 #include "OIDCAttestation.hpp"
 #include "logger/SFLogger.hpp"
+#include "constants.h"
 #include "jwt/Jwt.hpp"
 #include "error.h"
 #include <boost/url.hpp>
@@ -135,6 +136,8 @@ namespace Snowflake {
         }
 
         awsUseOutboundToken = (conn->wif_aws_use_outbound_token == SF_BOOLEAN_TRUE);
+
+        tlsVersion = SSL_VERSION;
 
         return SF_STATUS_SUCCESS;
     }
@@ -280,6 +283,7 @@ namespace Snowflake {
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
       if (config.httpClient == NULL)
         config.httpClient = IHttpClient::getInstance();
+      config.httpClient->setTlsVersion(config.tlsVersion);
       if (config.awsSdkWrapper == NULL)
         config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
 

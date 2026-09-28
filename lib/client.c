@@ -33,7 +33,7 @@
 // Define internal constants
 sf_bool DISABLE_VERIFY_PEER;
 char *CA_BUNDLE_FILE;
-int32 SSL_VERSION;
+int32 SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
 sf_bool DEBUG;
 sf_bool SF_OCSP_CHECK;
 char *SF_HEADER_USER_AGENT = NULL;

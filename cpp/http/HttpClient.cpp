@@ -16,7 +16,8 @@ namespace Snowflake {
 
     class SimpleHttpClient : public IHttpClient {
     public:
-      explicit SimpleHttpClient(const HttpClientConfig& cfg) : config(cfg), m_curl(NULL) {}
+      explicit SimpleHttpClient(const HttpClientConfig& cfg) :
+        config(cfg), m_tlsVersion(SSL_VERSION), m_curl(NULL) {}
       boost::optional<HttpResponse> run(HttpRequest req) override {
         CURL *curl = curl_easy_init();
         m_curl = curl;
@@ -42,7 +43,7 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, SimpleHttpClient::writeheader);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*) &response);
-        curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, m_tlsVersion);
 
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
@@ -75,6 +76,11 @@ namespace Snowflake {
         curl_easy_cleanup(curl);
         m_curl = NULL;
         return responseOpt;
+      }
+
+      void setTlsVersion(long tlsVersion) override
+      {
+        m_tlsVersion = tlsVersion;
       }
 
       std::string getNegotiatedTLSVersion() override
@@ -138,6 +144,7 @@ namespace Snowflake {
       }
 
       HttpClientConfig config;
+      long m_tlsVersion;
       // for collecting negotiated TLS version
       CURL* m_curl;
       std::string m_negotiatedTLSVersion;
