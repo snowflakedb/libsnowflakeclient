@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <unistd.h>
+#include <curl/curl.h>
 #include "../utils/test_setup.h"
 #include "../utils/TestSetup.hpp"
 
@@ -207,6 +208,40 @@ namespace Snowflake::Client {
     // Response should be large (>1KB)
     assert_true(response->buffer.size() > 1024);
   }
+
+  void test_http_client_tls_version(void **) {
+    WiremockRunner::resetMapping();
+    WiremockRunner::initMappingFromFile("get_request.json");
+    auto url = boost::urls::url("https://" + std::string(wiremockHost) + ":" + std::string(wiremockPort) + "/api/resource");
+    url.params().append({"param1", "value1"});
+    url.params().append({"param2", "value2"});
+
+    HttpRequest request;
+    request.method = HttpRequest::Method::GET;
+    request.url = url;
+
+    std::unique_ptr<IHttpClient> client(IHttpClient::createSimple(DEFAULT_CONFIG));
+    // tls version unset (default as 1.2 without setting max, negotiated could be 1.2 or 1.3
+    boost::optional<HttpResponse> response = client->run(request);
+    assert_true(response.has_value());
+    assert_int_equal(response->code, 200);
+    assert_true((client->getNegotiatedTLSVersion() == std::string("TLSv1.2")) ||
+                (client->getNegotiatedTLSVersion() == std::string("TLSv1.3")));
+
+    // tls version min/max 1.2
+    client->setTlsVersion(CURL_SSLVERSION_TLSv1_2 | CURL_SSLVERSION_MAX_TLSv1_2);
+    response = client->run(request);
+    assert_true(response.has_value());
+    assert_int_equal(response->code, 200);
+    assert_true(client->getNegotiatedTLSVersion() == std::string("TLSv1.2"));
+
+    // tls version min/max 1.3
+    client->setTlsVersion(CURL_SSLVERSION_TLSv1_3 | CURL_SSLVERSION_MAX_TLSv1_3);
+    response = client->run(request);
+    assert_true(response.has_value());
+    assert_int_equal(response->code, 200);
+    assert_true(client->getNegotiatedTLSVersion() == std::string("TLSv1.3"));
+  }
 }
 
 int main() {
@@ -223,6 +258,7 @@ int main() {
       cmocka_unit_test(test_http_client_error_responses),
       cmocka_unit_test(test_http_client_connection_failure),
       cmocka_unit_test(test_http_client_large_response),
+      cmocka_unit_test(test_http_client_tls_version),
     };
 
   const int ret = cmocka_run_group_tests(tests, setup_wiremock, teardown_wiremock);
