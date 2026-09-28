@@ -449,6 +449,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
     _snowflake_check_connection_parameters(sf);
 
     MockAuthWebServer* webSever = new MockAuthWebServer();

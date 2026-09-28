@@ -486,7 +486,9 @@ static void * chunk_downloader_thread(void *downloader) {
             non_json_resp = chunk_downloader->callback_create_resp();
         }
         if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
-                            chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode, chunk_downloader->fail_open,
+                            chunk_ptr, non_json_resp, &err,
+                            chunk_downloader->insecure_mode,
+                            chunk_downloader->fail_open,
                             &chunk_downloader->crl_config,
                             chunk_downloader->proxy,
                             chunk_downloader->no_proxy, chunk_downloader->retry_timeout, chunk_downloader->retry_max_count)) {

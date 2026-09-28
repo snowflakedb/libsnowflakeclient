@@ -945,13 +945,36 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         host_without_top_domain[0] = '\0';
     }
 
-    //check privatelink
-    if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
+    // check OCSP cache server URL and unused OCSP cache knobs
+    sf_bool ocsp_on = _sf_ocsp_enabled(sf);
+    if (!ocsp_on)
+    {
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED"))
+        {
+            log_warn(
+                "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED is ignored because OCSP is off. "
+                "Opt in with SF_GLOBAL_OCSP_CHECK=true, SF_CON_OCSP_FAIL_OPEN=false, or SF_DISABLE_OCSP_CHECKS=false.");
+        }
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"))
+        {
+            log_warn(
+                "SF_OCSP_RESPONSE_CACHE_SERVER_URL is ignored because OCSP is off. "
+                "Opt in with SF_GLOBAL_OCSP_CHECK=true, SF_CON_OCSP_FAIL_OPEN=false, or SF_DISABLE_OCSP_CHECKS=false.");
+        }
+        if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
+        {
+            log_warn(
+                "Skipping privatelink SF_OCSP_RESPONSE_CACHE_SERVER_URL rewrite because OCSP is off. "
+                "Opt in with SF_GLOBAL_OCSP_CHECK=true, SF_CON_OCSP_FAIL_OPEN=false, or SF_DISABLE_OCSP_CHECKS=false.");
+        }
+    }
+    //check privatelink 
+    else if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
     {
         char url_buf[4096];
         sf_snprintf(url_buf, sizeof(url_buf), sizeof(url_buf)-1, "http://ocsp.%s/%s",
            sf->host, "ocsp_response_cache.json");
-        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL")) 
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"))
         {
             log_warn(
                 "sf", "Connection", "connect",
@@ -960,7 +983,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         }
         log_debug(
             "sf", "Connection", "connect",
-            "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
+            "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s", 
             url_buf);
         sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", url_buf);
     }
@@ -1009,6 +1032,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("protocol: %s", sf->protocol);
     log_debug("autocommit: %s", sf->autocommit ? "true": "false");
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
+    log_debug("ocsp_enabled: %s", ocsp_on ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
     log_debug("crl_check: %s", sf->crl_config.check ? "true" : "false");
     log_debug("crl_advisory: %s", sf->crl_config.advisory ? "true" : "false");
@@ -1037,6 +1061,56 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 }
 
 
+sf_bool STDCALL _sf_ocsp_should_check(sf_bool insecure_mode,
+                                      sf_bool fail_open,
+                                      sf_bool global_check) {
+    if (insecure_mode) {
+        return SF_BOOLEAN_FALSE;
+    }
+    /* SF_DISABLE_OCSP_CHECKS turns fail-open off but cannot disable fail-closed.
+     * Unset/invalid leaves the existing default-off / opt-in behavior in place. */
+    const char *env = getenv("SF_DISABLE_OCSP_CHECKS");
+    sf_bool env_set = SF_BOOLEAN_FALSE;
+    sf_bool env_disable = SF_BOOLEAN_FALSE;
+    if (env && env[0] &&
+        (strcasecmp(env, "true") == 0 || strcasecmp(env, "1") == 0 ||
+         strcasecmp(env, "t") == 0)) {
+        env_set = SF_BOOLEAN_TRUE;
+        env_disable = SF_BOOLEAN_TRUE;
+    } else if (env && env[0] &&
+               (strcasecmp(env, "false") == 0 || strcasecmp(env, "0") == 0 ||
+                strcasecmp(env, "f") == 0)) {
+        env_set = SF_BOOLEAN_TRUE;
+        env_disable = SF_BOOLEAN_FALSE;
+    }
+
+    if (fail_open == SF_BOOLEAN_FALSE) {
+        if (env_set && env_disable) {
+            log_info("SF_DISABLE_OCSP_CHECKS is set, but OCSP fail-closed mode is active; the environment variable will be ignored");
+        }
+        return SF_BOOLEAN_TRUE;
+    }
+    if (env_set && env_disable) {
+        return SF_BOOLEAN_FALSE;
+    }
+    if (global_check) {
+        return SF_BOOLEAN_TRUE;
+    }
+    if (env_set && !env_disable) {
+        return SF_BOOLEAN_TRUE;
+    }
+    return SF_BOOLEAN_FALSE;
+}
+
+sf_bool STDCALL _sf_ocsp_enabled(const SF_CONNECT *sf) {
+    if (!sf) {
+        return SF_BOOLEAN_FALSE;
+    }
+    return _sf_ocsp_should_check(sf->insecure_mode, sf->ocsp_fail_open,
+                                 SF_OCSP_CHECK);
+}
+
+
 SF_STATUS STDCALL snowflake_global_init(
     const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks) {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -1047,7 +1121,7 @@ SF_STATUS STDCALL snowflake_global_init(
     SF_HEADER_USER_AGENT = NULL;
     SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
     DEBUG = SF_BOOLEAN_FALSE;
-    SF_OCSP_CHECK = SF_BOOLEAN_TRUE;
+    SF_OCSP_CHECK = SF_BOOLEAN_FALSE;
 
     _snowflake_memory_hooks_setup(hooks);
     sf_memory_init();
@@ -1879,8 +1953,8 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_OCSP_FAIL_OPEN:
-          sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
-          break;
+            sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+            break;
         case SF_CON_CRL_CHECK:
           sf->crl_config.check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
