@@ -40,7 +40,7 @@ index 2ffd76cee..f556b1443 100644
  
    /**
 diff --git a/sdk/core/azure-core/src/http/curl/curl.cpp b/sdk/core/azure-core/src/http/curl/curl.cpp
-index b9180c119..510e88757 100644
+index b9180c119..239440fb2 100644
 --- a/sdk/core/azure-core/src/http/curl/curl.cpp
 +++ b/sdk/core/azure-core/src/http/curl/curl.cpp
 @@ -764,7 +764,7 @@ inline std::string CurlSession::GetHTTPMessagePreBody(Azure::Core::Http::Request
@@ -70,19 +70,21 @@ index b9180c119..510e88757 100644
    if (options.Proxy)
    {
      if (!SetLibcurlOption(m_handle, CURLOPT_PROXY, options.Proxy->c_str(), &result))
-@@ -2645,6 +2656,12 @@ CurlConnection::CurlConnection(
+@@ -2645,7 +2656,13 @@ CurlConnection::CurlConnection(
    }
  
    //   Make libcurl to support only TLS v1.2 or later
+-  if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2, &result))
 +  long tlsVersion = CURL_SSLVERSION_TLSv1_2;
 +  if (options.tlsVersion > 0)
 +  {
 +    tlsVersion = options.tlsVersion;
 +  }
 +  Log::Write(Logger::Level::Informational, "TLS Version: " + std::to_string(tlsVersion));
-   if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2, &result))
++  if (!SetLibcurlOption(m_handle, CURLOPT_SSLVERSION, tlsVersion, &result))
    {
      throw Azure::Core::Http::TransportException(
+         _detail::DefaultFailedToGetNewConnectionTemplate + hostDisplayName
 diff --git a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp b/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
 index 60ccb558f..a89aa6aa8 100644
 --- a/sdk/core/azure-core/src/http/curl/curl_connection_private.hpp
