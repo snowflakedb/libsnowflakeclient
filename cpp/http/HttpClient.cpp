@@ -86,7 +86,10 @@ namespace Snowflake {
 
       void setTlsVersion(long tlsVersion) override
       {
-        m_tlsVersion = tlsVersion;
+        if (tlsVersion > 0)
+        {
+          m_tlsVersion = tlsVersion;
+        }
       }
 
       std::string getNegotiatedTLSVersion() override

@@ -34,7 +34,7 @@ void verify_negotiated_version(SF_CONNECT * sf, const std::string& expected)
   std::string negotiated = desc ? desc->getNegotiatedSSLVersion() : std::string();
   // clean up to avoid being reused for the next test case
   desc->reset(true);
-  assert_true(expected.find(negotiated) != std::string::npos);
+  assert_true((!negotiated.empty()) && (expected.find(negotiated) != std::string::npos));
 }
 
 /*
@@ -52,7 +52,9 @@ void test_tls_version_core(const std::string& expected, bool native)
   SF_CONNECT *sf;
 
   /*
-   * Disable OCSP/Verify peer when manual testing with TLS terminating proxy
+   * Disable OCSP/Verify peer when manual testing with TLS terminating proxy.
+   * When doing so, set/unset NO_PROXY with snowflakecomputing.com and test with
+   * S3/Azure/GCP accounts to cover both GS/stage routes.
   sf_bool value = SF_BOOLEAN_FALSE;
   status = snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
   assert_int_equal(SF_STATUS_SUCCESS, status);
@@ -228,7 +230,7 @@ void tls_version_v13_native(void **unused)
 }
 
 int main(void) {
-    initialize_test(SF_BOOLEAN_TRUE);
+    initialize_test(SF_BOOLEAN_FALSE);
 
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(tls_version_unset_cpp),
