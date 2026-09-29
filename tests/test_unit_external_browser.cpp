@@ -3,6 +3,8 @@
 #include <iostream>
 #include <thread>
 #include <cstring>
+#include <atomic>
+#include <memory>
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
 #include "../lib/authenticator.h"
@@ -21,7 +23,7 @@
 #endif
 
 #define MOCK_GET_RESPONSE "GET /?token=Snowflake-token-12345 HTTP/1.1"
-#define MOCK_POST_RESPONSE "POST token=Snowflake-token-12345"
+#define MOCK_POST_RESPONSE "POST / HTTP/1.1\r\nOrigin: https://wronghost.com\r\nContent-Type: application/json\r\n\r\n{\"token\":\"Snowflake-token-12345\",\"consent\":true}"
 
 #define REF_PORT 12345
 #define REF_SSO_URL "https://sso.com/"
@@ -78,6 +80,38 @@ public:
     inline int getTimeout()
     {
         return m_timeout;
+    }
+};
+
+class OriginTestAuthWebServer : public AuthWebServer
+{
+public:
+    bool allows(const std::string& method, const std::string& request)
+    {
+        return requestOriginAllowed(method, request);
+    }
+
+    bool matches(const std::string& origin) const
+    {
+        return originMatchesExpected(origin);
+    }
+
+    static bool header(
+        const std::string& request,
+        const std::string& name,
+        std::string& value)
+    {
+        return extractHeader(request, name, value);
+    }
+
+    static bool isPreflight(const std::string& request)
+    {
+        return isCorsPostPreflight(request);
+    }
+
+    const std::string& currentOrigin() const
+    {
+        return m_origin;
     }
 };
 
@@ -261,6 +295,60 @@ void createMockClient(int port, const char* response) {
 #endif
 }
 
+void createMockClients(
+    int port,
+    std::vector<std::string> responses,
+    int initialDelayMs,
+    int requestDelayMs,
+    std::shared_ptr<std::atomic<bool>> preflightAnswered)
+{
+#ifdef _WIN32
+    Sleep(initialDelayMs);
+#else
+    std::this_thread::sleep_for(std::chrono::milliseconds(initialDelayMs));
+#endif
+    for (const std::string& response : responses)
+    {
+        int mockClient = socket(AF_INET, SOCK_STREAM, 0);
+        struct sockaddr_in serverAddress = {};
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_port = htons(port);
+        inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
+        if (connect(mockClient, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
+        {
+#ifndef _WIN32
+            close(mockClient);
+#else
+            closesocket(mockClient);
+#endif
+            return;
+        }
+        send(mockClient, response.c_str(), response.size(), 0);
+        if (preflightAnswered && response.find("OPTIONS ") == 0)
+        {
+            char preflightResponse[2048] = {};
+            int received = (int)recv(
+                mockClient,
+                preflightResponse,
+                sizeof(preflightResponse),
+                0);
+            if (received > 0 &&
+                std::string(preflightResponse, (unsigned long)received).find(
+                    "Access-Control-Allow-Origin: https://wronghost.com") !=
+                    std::string::npos)
+            {
+                preflightAnswered->store(true);
+            }
+        }
+#ifndef _WIN32
+        close(mockClient);
+#else
+        closesocket(mockClient);
+#endif
+        std::this_thread::sleep_for(std::chrono::milliseconds(requestDelayMs));
+    }
+}
+
 class MockExternalBrowser : public AuthenticatorExternalBrowser
 {
 public:
@@ -276,12 +364,39 @@ public:
     inline void startWebBrowser(std::string ssoUrl)
     {
         SF_UNUSED(ssoUrl);
-        std::thread mockServerThread(createMockClient, getPort(), m_response.c_str());
-        mockServerThread.detach();
+        if (m_responses.empty())
+        {
+            std::thread(createMockClient, getPort(), m_response.c_str()).detach();
+        }
+        else
+        {
+            std::thread(
+                createMockClients,
+                getPort(),
+                m_responses,
+                m_initial_delay_ms,
+                m_request_delay_ms,
+                m_preflight_answered).detach();
+        }
     }
 
     std::string m_response;
+    std::vector<std::string> m_responses;
+    int m_initial_delay_ms = 2000;
+    int m_request_delay_ms = 100;
+    std::shared_ptr<std::atomic<bool>> m_preflight_answered;
 };
+
+SF_CONNECT* createExternalBrowserConnection()
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    return sf;
+}
 
 void test_auth_web_server_success(void**) 
 {
@@ -313,6 +428,12 @@ void test_auth_web_server_success(void**)
     assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "Snowflake-token-12345");
     assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+
+    auth->m_response = "GET /?token=null-origin-token HTTP/1.1\r\nOrigin: null\r\n\r\n";
+    auth->authenticate();
+    dataMap.clear();
+    auth->updateDataMap(dataMap);
+    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "null-origin-token");
     
     delete auth;
     snowflake_term(sf);
@@ -328,35 +449,281 @@ void test_auth_web_server_fail(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
-    auth->m_response = "wrong request";
-    auth->authenticate();
-    assert_string_equal(sf->error.msg, "sf::AuthenticatorExternalBrowser::WebServer::Not HTTP request");
-    delete auth;
-
-    auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "GET /?token=Snowflake-token-12345 HTTP/1.3";
     auth->authenticate();
     assert_string_equal(sf->error.msg, "sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request");
     delete auth;
 
-    auth = new MockExternalBrowser(sf, nullptr);
-    auth->m_response = "GET /!token=Snowflake-token-12345 HTTP/1.1";
-    auth->authenticate();
-    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondGetRequest:No token parameter is found");
-    delete auth;
+    snowflake_term(sf);
+}
 
-    auth = new MockExternalBrowser(sf, nullptr);
-    auth->m_response = "OPTIONS ";
-    auth->authenticate();
-    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header");
-    delete auth;
+void test_auth_web_server_origin_matching(void**)
+{
+    OriginTestAuthWebServer server;
+    server.setExpectedOrigin(SFURL::parse("https://Account.snowflakecomputing.com:443"));
 
-    auth = new MockExternalBrowser(sf, nullptr);
-    auth->m_response = "OPTIONS / api / data HTTP / 1.1 \n Host: api.example.com \n Origin : https ://client.example.com \nAccess-Control-Request-Method : GET";
-    auth->authenticate();
-    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested");
-    delete auth;
+    assert_true(server.matches("https://account.snowflakecomputing.com"));
+    assert_true(server.matches("HTTPS://ACCOUNT.SNOWFLAKECOMPUTING.COM:443"));
+    assert_false(server.matches("http://account.snowflakecomputing.com"));
+    assert_false(server.matches("https://other.snowflakecomputing.com"));
+    assert_false(server.matches("https://account.snowflakecomputing.com:8443"));
+    assert_false(server.matches("https://account.snowflakecomputing.com.example.com"));
 
+    server.setExpectedOrigin(SFURL::parse("http://account.snowflakecomputing.com:80"));
+    assert_true(server.matches("http://account.snowflakecomputing.com"));
+}
+
+void test_auth_web_server_origin_serialization(void**)
+{
+    OriginTestAuthWebServer server;
+    server.setExpectedOrigin(SFURL::parse("https://account.snowflakecomputing.com:443"));
+
+    // Origin serialization carries the scheme, host and port only.
+    assert_true(server.matches("https://account.snowflakecomputing.com/"));
+    assert_false(server.matches("https://user@account.snowflakecomputing.com"));
+    assert_false(server.matches("https://account.snowflakecomputing.com@other.example.com"));
+    assert_false(server.matches("https://account.snowflakecomputing.com/callback"));
+    assert_false(server.matches("https://account.snowflakecomputing.com?token=value"));
+    assert_false(server.matches("https://account.snowflakecomputing.com/?token=value"));
+    assert_false(server.matches("https://account.snowflakecomputing.com#fragment"));
+    assert_false(server.matches("https://account.snowflakecomputing.com:443/x?y#z"));
+
+    assert_false(server.matches("ftp://account.snowflakecomputing.com"));
+    assert_false(server.matches("file://account.snowflakecomputing.com"));
+    assert_false(server.matches("account.snowflakecomputing.com"));
+    assert_false(server.matches(""));
+    assert_false(server.matches("https://"));
+    assert_false(server.matches("https://account.snowflakecomputing.com:"));
+    assert_false(server.matches("https://account.snowflakecomputing.com:44a"));
+}
+
+void test_auth_web_server_origin_headers(void**)
+{
+    OriginTestAuthWebServer server;
+    server.setExpectedOrigin(SFURL::parse("https://account.snowflakecomputing.com"));
+
+    std::string origin;
+    std::string crlfRequest =
+        "POST / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\n"
+        "token=value\r\nOrigin: https://account.snowflakecomputing.com";
+    assert_false(OriginTestAuthWebServer::header(crlfRequest, "Origin", origin));
+    assert_false(server.allows("POST", crlfRequest));
+
+    std::string lfRequest =
+        "POST / HTTP/1.1\nContent-Type: text/plain\n\n"
+        "token=value\nOrigin: https://account.snowflakecomputing.com";
+    assert_false(OriginTestAuthWebServer::header(lfRequest, "Origin", origin));
+    assert_false(server.allows("POST", lfRequest));
+
+    assert_true(server.allows("GET", "GET /?token=value HTTP/1.1\r\n\r\n"));
+    assert_true(server.allows(
+        "GET",
+        "GET /?token=value HTTP/1.1\r\nOrigin: null\r\n\r\n"));
+    assert_false(server.allows(
+        "GET",
+        "GET /?token=value HTTP/1.1\r\nOrigin: https://other.example.com\r\n\r\n"));
+    assert_false(server.allows("HEAD", "HEAD / HTTP/1.1\r\n\r\n"));
+    assert_false(server.allows(
+        "PATCH",
+        "PATCH / HTTP/1.1\r\nOrigin: https://account.snowflakecomputing.com\r\n\r\n"));
+}
+
+void test_auth_web_server_preflight(void**)
+{
+    OriginTestAuthWebServer server;
+    server.setExpectedOrigin(SFURL::parse("https://account.snowflakecomputing.com"));
+    std::string request =
+        "OPTIONS / HTTP/1.1\r\n"
+        "Origin: https://account.snowflakecomputing.com\r\n"
+        "Access-Control-Request-Method: post\r\n"
+        "Access-Control-Request-Headers: content-type\r\n\r\n";
+    assert_true(server.allows("OPTIONS", request));
+    assert_true(OriginTestAuthWebServer::isPreflight(request));
+
+    std::string foreignOrigin = request;
+    size_t origin = foreignOrigin.find("account.snowflakecomputing.com");
+    foreignOrigin.replace(origin, strlen("account.snowflakecomputing.com"), "other.example.com");
+    assert_false(server.allows("OPTIONS", foreignOrigin));
+
+    std::string getMethod = request;
+    size_t method = getMethod.find("post");
+    getMethod.replace(method, strlen("post"), "GET");
+    assert_false(OriginTestAuthWebServer::isPreflight(getMethod));
+
+    std::string extraHeader = request;
+    size_t header = extraHeader.find("content-type");
+    extraHeader.replace(header, strlen("content-type"), "content-type, x-custom");
+    assert_false(OriginTestAuthWebServer::isPreflight(extraHeader));
+
+    std::string emptyTokens = request;
+    header = emptyTokens.find("content-type");
+    emptyTokens.replace(header, strlen("content-type"), ", content-type, ,");
+    assert_true(OriginTestAuthWebServer::isPreflight(emptyTokens));
+
+    std::string omittedHeaders =
+        "OPTIONS / HTTP/1.1\r\n"
+        "Origin: https://account.snowflakecomputing.com\r\n"
+        "Access-Control-Request-Method: POST\r\n\r\n";
+    assert_true(OriginTestAuthWebServer::isPreflight(omittedHeaders));
+}
+
+void test_auth_web_server_waits_for_valid_callback(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_responses = {
+        "OPTIONS / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Access-Control-Request-Method: post\r\n"
+        "Access-Control-Request-Headers: content-type\r\n\r\n",
+        "POST / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\n"
+        "token=body-origin-token\r\nOrigin: https://wronghost.com",
+        "GET /?token=foreign-origin-token HTTP/1.1\r\n"
+        "Origin: https://other.example.com\r\n\r\n",
+        "GET /?token=valid-token HTTP/1.1\r\n\r\n"
+    };
+    auth->authenticate();
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "valid-token");
+
+    delete auth;
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_preflight_without_requested_headers(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_preflight_answered.reset(new std::atomic<bool>(false));
+    auth->m_responses = {
+        "OPTIONS / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Access-Control-Request-Method: POST\r\n\r\n",
+        "POST / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Content-Type: application/json\r\n\r\n"
+        "{\"token\":\"omitted-headers-token\",\"consent\":true}"
+    };
+    auth->authenticate();
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+    assert_string_equal(
+        dataMap["TOKEN"].get<std::string>().c_str(),
+        "omitted-headers-token");
+    assert_true(auth->m_preflight_answered->load());
+
+    delete auth;
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_foreign_post_then_valid_callback(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_responses = {
+        "POST / HTTP/1.1\r\n"
+        "Origin: https://other.example.com\r\n"
+        "Content-Type: application/json\r\n\r\n"
+        "{\"token\":\"foreign-token\",\"consent\":true}",
+        "POST / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Content-Type: application/json\r\n\r\n"
+        "{\"token\":\"valid-post-token\",\"consent\":true}"
+    };
+    auth->authenticate();
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+    assert_string_equal(
+        dataMap["TOKEN"].get<std::string>().c_str(),
+        "valid-post-token");
+
+    delete auth;
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_preflight_origin_not_reused(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+    OriginTestAuthWebServer* server = new OriginTestAuthWebServer();
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, server);
+    auth->m_responses = {
+        "OPTIONS / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Access-Control-Request-Method: POST\r\n"
+        "Access-Control-Request-Headers: Content-Type\r\n\r\n",
+        "GET /?token=originless-get-token HTTP/1.1\r\n\r\n"
+    };
+    auth->authenticate();
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+    assert_string_equal(
+        dataMap["TOKEN"].get<std::string>().c_str(),
+        "originless-get-token");
+    assert_true(server->currentOrigin().empty());
+
+    delete auth;
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_keeps_listening_for_non_token_requests(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_responses = {
+        "HEAD / HTTP/1.1\r\n\r\n",
+        "PATCH / HTTP/1.1\r\nOrigin: https://wronghost.com\r\n\r\n",
+        "DELETE / HTTP/1.1\r\n\r\n",
+        "GET /favicon.ico HTTP/1.1\r\n\r\n",
+        "GET / HTTP/1.1\r\n\r\n",
+        "POST / HTTP/1.1\r\n"
+        "Origin: https://wronghost.com\r\n"
+        "Content-Type: application/json\r\n\r\n{}",
+        "GET /?token=kept-listening-token HTTP/1.1\r\n\r\n"
+    };
+    auth->authenticate();
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+    assert_string_equal(
+        dataMap["TOKEN"].get<std::string>().c_str(),
+        "kept-listening-token");
+
+    delete auth;
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_uses_overall_timeout(void**)
+{
+    SF_CONNECT* sf = createExternalBrowserConnection();
+    int64 timeout = 1;
+    snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &timeout);
+
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_initial_delay_ms = 100;
+    auth->m_request_delay_ms = 600;
+    auth->m_responses = {
+        "GET /?token=first HTTP/1.1\r\n"
+        "Origin: https://other.example.com\r\n\r\n",
+        "GET /?token=second HTTP/1.1\r\n"
+        "Origin: https://other.example.com\r\n\r\n"
+    };
+
+    std::chrono::steady_clock::time_point started = std::chrono::steady_clock::now();
+    auth->authenticate();
+    int64 elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - started).count();
+
+    assert_true(elapsedMs >= 800);
+    assert_true(elapsedMs < 1600);
+    assert_non_null(strstr(sf->error.msg, "Auth browser timed out"));
+
+    delete auth;
     snowflake_term(sf);
 }
 
@@ -567,6 +934,16 @@ int main(void) {
     cmocka_unit_test(test_external_browser_authenticate),
     cmocka_unit_test(test_auth_web_server_success),
     cmocka_unit_test(test_auth_web_server_fail),
+    cmocka_unit_test(test_auth_web_server_origin_matching),
+    cmocka_unit_test(test_auth_web_server_origin_serialization),
+    cmocka_unit_test(test_auth_web_server_origin_headers),
+    cmocka_unit_test(test_auth_web_server_preflight),
+    cmocka_unit_test(test_auth_web_server_waits_for_valid_callback),
+    cmocka_unit_test(test_auth_web_server_preflight_without_requested_headers),
+    cmocka_unit_test(test_auth_web_server_foreign_post_then_valid_callback),
+    cmocka_unit_test(test_auth_web_server_preflight_origin_not_reused),
+    cmocka_unit_test(test_auth_web_server_keeps_listening_for_non_token_requests),
+    cmocka_unit_test(test_auth_web_server_uses_overall_timeout),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
     cmocka_unit_test(test_sso_token_cache),
