@@ -210,6 +210,11 @@ namespace Snowflake::Client {
   }
 
   void test_http_client_tls_version(void **) {
+    SF_STATUS status;
+    sf_bool value = SF_BOOLEAN_TRUE;
+    status = snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &value);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
     WiremockRunner::resetMapping();
     WiremockRunner::initMappingFromFile("get_request.json");
     auto url = boost::urls::url("https://" + std::string(wiremockHost) + ":" + std::string(wiremockPort) + "/api/resource");

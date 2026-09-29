@@ -44,6 +44,12 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, SimpleHttpClient::writeheader);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*) &response);
         curl_easy_setopt(curl, CURLOPT_SSLVERSION, m_tlsVersion);
+        // capture negotiated SSL version for diagnostics
+        curl_easy_setopt(m_curl, CURLOPT_PREREQFUNCTION, prereqCallback);
+        curl_easy_setopt(m_curl, CURLOPT_PREREQDATA, (void*)this);
+        if (DISABLE_VERIFY_PEER) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        }
 
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
