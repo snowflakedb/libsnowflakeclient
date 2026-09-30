@@ -32,9 +32,15 @@ void verify_negotiated_version(SF_CONNECT * sf, const std::string& expected)
   // assume this would resuse the curl instance from the latest request
   ClientCurlDescPool::getInstance().getSubPool(url).newCurlDesc(desc);
   std::string negotiated = desc ? desc->getNegotiatedSSLVersion() : std::string();
-  // clean up to avoid being reused for the next test case
-  desc->reset(true);
   assert_true((!negotiated.empty()) && (expected.find(negotiated) != std::string::npos));
+
+  // ensure the verified version has been cleared and won't impact following steps
+  desc->reset(true);
+  desc.release();
+  ClientCurlDescPool::getInstance().getSubPool(url).newCurlDesc(desc);
+  assert_non_null(desc.get());
+  negotiated = desc->getNegotiatedSSLVersion();
+  assert_true(negotiated.empty());
 }
 
 /*
