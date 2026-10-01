@@ -1,7 +1,7 @@
 Submodule crt/aws-crt-cpp contains modified content
 Submodule crt/aws-c-common contains modified content
 diff --git a/crt/aws-crt-cpp/crt/aws-c-common/source/json.c b/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
-index 2f1630ea..f0eb0141 100644
+index 2f1630e..f0eb014 100644
 --- a/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
 +++ b/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
 @@ -385,6 +385,7 @@ void aws_json_module_init(struct aws_allocator *allocator) {
@@ -13,7 +13,7 @@ index 2f1630ea..f0eb0141 100644
      }
  }
 diff --git a/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c b/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
-index 6606c05b..7f4ad6fd 100644
+index 6606c05..7f4ad6f 100644
 --- a/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
 +++ b/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
 @@ -89,6 +89,12 @@ static DWORD WINAPI thread_wrapper_fn(LPVOID arg) {
@@ -29,6 +29,30 @@ index 6606c05b..7f4ad6fd 100644
          aws_mem_release(allocator, arg);
      }
  
+diff --git a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h b/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
+index 203022fa225..3d6eb476283 100644
+--- a/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
++++ b/src/aws-cpp-sdk-core/include/aws/core/client/ClientConfiguration.h
+@@ -301,6 +301,7 @@ namespace Aws
+              * You probably shouldn't use this flag in a production scenario.
+              */
+             bool verifySSL = true;
++            long tlsVersion = 0;
+             /**
+              * If your Certificate Authority path is different from the default, you can tell
+              * clients that aren't using the default trust store where to find your CA trust store.
+diff --git a/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h b/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
+index 087ed8d2c6f..207f06afeed 100644
+--- a/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
++++ b/src/aws-cpp-sdk-core/include/aws/core/http/curl/CurlHttpClient.h
+@@ -65,6 +65,7 @@ private:
+     unsigned m_proxyPort = 0;
+     Aws::String m_nonProxyHosts;
+     bool m_verifySSL = true;
++    long m_tlsVersion = 0;
+     Aws::String m_caPath;
+     Aws::String m_caFile;
+     Aws::String m_proxyCaPath;
 diff --git a/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp b/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp
 index 8b1524b337d..db14a0c1182 100644
 --- a/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp
@@ -51,3 +75,37 @@ index 8b1524b337d..db14a0c1182 100644
          input->seekg(0, input->beg);
  
          AWS_LOGSTREAM_TRACE(AWS_REQUEST_COMPRESSION_LOG_TAG, "Uncompressing request of " << streamSize << " bytes.");
+diff --git a/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp b/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
+index 657193f2e11..72fa9359d0b 100644
+--- a/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
++++ b/src/aws-cpp-sdk-core/source/http/curl/CurlHttpClient.cpp
+@@ -608,7 +608,7 @@ CurlHttpClient::CurlHttpClient(const ClientConfiguration& clientConfig) :
+     m_proxySSLCertPath(clientConfig.proxySSLCertPath), m_proxySSLCertType(clientConfig.proxySSLCertType),
+     m_proxySSLKeyPath(clientConfig.proxySSLKeyPath), m_proxySSLKeyType(clientConfig.proxySSLKeyType),
+     m_proxyKeyPasswd(clientConfig.proxySSLKeyPassword),
+-    m_proxyPort(clientConfig.proxyPort), m_verifySSL(clientConfig.verifySSL), m_caPath(clientConfig.caPath),
++    m_proxyPort(clientConfig.proxyPort), m_verifySSL(clientConfig.verifySSL), m_tlsVersion(clientConfig.tlsVersion), m_caPath(clientConfig.caPath),
+     m_caFile(clientConfig.caFile), m_proxyCaPath(clientConfig.proxyCaPath), m_proxyCaFile(clientConfig.proxyCaFile),
+     m_disableExpectHeader(clientConfig.disableExpectHeader),
+     m_enableHttpClientTrace(clientConfig.enableHttpClientTrace || FORCE_ENABLE_CURL_LOGGING),
+@@ -737,13 +737,13 @@ std::shared_ptr<HttpResponse> CurlHttpClient::MakeRequest(const std::shared_ptr<
+             curl_easy_setopt(connectionHandle, CURLOPT_SSL_VERIFYPEER, 1L);
+             curl_easy_setopt(connectionHandle, CURLOPT_SSL_VERIFYHOST, 2L);
+ 
+-#if defined(ENFORCE_TLS_V1_3) && LIBCURL_VERSION_NUM >= 0x073400 // 7.52.0
+-            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_3);
+-#elif defined(ENFORCE_TLS_V1_2) && LIBCURL_VERSION_NUM >= 0x072200 // 7.34.0
+-            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+-#else
+-            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+-#endif
++            long tlsVersion = CURL_SSLVERSION_TLSv1_2;
++            if (m_tlsVersion > 0)
++            {
++                tlsVersion = m_tlsVersion;
++            }
++            curl_easy_setopt(connectionHandle, CURLOPT_SSLVERSION, tlsVersion);
++            AWS_LOGSTREAM_INFO(CURL_HTTP_CLIENT_TAG, "TLS version: " << tlsVersion);
+         }
+         else
+         {

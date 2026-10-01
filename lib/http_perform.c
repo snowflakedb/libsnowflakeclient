@@ -773,6 +773,13 @@ sf_bool STDCALL http_perform(CURL *curl,
                   msg,
                   SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
+            else if (res == CURLE_SSL_CONNECT_ERROR)
+            {
+              log_error(msg);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                  msg,
+                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
             // otherwise retry with backoff
             else {
               if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&

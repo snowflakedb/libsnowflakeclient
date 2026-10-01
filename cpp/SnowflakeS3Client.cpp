@@ -155,6 +155,11 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                           nonProxyHosts.data(), nonProxyHosts.size());
   }
 
+  if ((transferConfig != nullptr) && (transferConfig->tlsVersion > 0))
+  {
+    clientConfiguration.tlsVersion = transferConfig->tlsVersion;
+  }
+
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
 
   Aws::Auth::AWSCredentials credentials(

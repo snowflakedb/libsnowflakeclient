@@ -1,6 +1,8 @@
 
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
+#include "constants.h"
+#include "openssl/ssl.h"
 #include <curl/curl.h>
 
 namespace Snowflake {
@@ -14,9 +16,11 @@ namespace Snowflake {
 
     class SimpleHttpClient : public IHttpClient {
     public:
-      explicit SimpleHttpClient(const HttpClientConfig& cfg) : config(cfg) {}
+      explicit SimpleHttpClient(const HttpClientConfig& cfg) :
+        config(cfg), m_tlsVersion(SSL_VERSION), m_curl(NULL) {}
       boost::optional<HttpResponse> run(HttpRequest req) override {
         CURL *curl = curl_easy_init();
+        m_curl = curl;
         HttpResponse response;
         boost::optional<HttpResponse> responseOpt = boost::none;
 
@@ -39,6 +43,13 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, SimpleHttpClient::writeheader);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*) &response);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, m_tlsVersion);
+        // capture negotiated SSL version for diagnostics
+        curl_easy_setopt(m_curl, CURLOPT_PREREQFUNCTION, prereqCallback);
+        curl_easy_setopt(m_curl, CURLOPT_PREREQDATA, (void*)this);
+        if (DISABLE_VERIFY_PEER) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        }
 
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
@@ -69,7 +80,21 @@ namespace Snowflake {
           curl_slist_free_all(header_list);
         }
         curl_easy_cleanup(curl);
+        m_curl = NULL;
         return responseOpt;
+      }
+
+      void setTlsVersion(long tlsVersion) override
+      {
+        if (tlsVersion > 0)
+        {
+          m_tlsVersion = tlsVersion;
+        }
+      }
+
+      std::string getNegotiatedTLSVersion() override
+      {
+        return m_negotiatedTLSVersion;
       }
 
     private:
@@ -85,7 +110,54 @@ namespace Snowflake {
         return size * nmemb;
       }
 
+      void updateNegotiatedTLSVersion()
+      {
+          m_negotiatedTLSVersion = "";
+          if (!m_curl)
+          {
+              return;
+          }
+          const struct curl_tlssessioninfo* info = nullptr;
+          CURLcode info_res = curl_easy_getinfo(m_curl, CURLINFO_TLS_SSL_PTR, &info);
+
+          if ((info_res != CURLE_OK) || !info ||
+              (info->backend != CURLSSLBACKEND_OPENSSL) ||
+              !info->internals)
+          {
+              CXX_LOG_DEBUG("SimpleHttpClient::updateNegotiatedTLSVersion: negotiated TLS version info not available %d, %p",
+                  info_res, info);
+              return;
+          }
+          // Cast internals to OpenSSL's SSL structure
+          SSL* ssl_con = static_cast<SSL*>(info->internals);
+          const char* ssl_version = SSL_get_version(ssl_con);
+          if (!ssl_version)
+          {
+              return;
+          }
+
+          m_negotiatedTLSVersion = ssl_version;
+          CXX_LOG_DEBUG("SimpleHttpClient::updateNegotiatedTLSVersion: negotiated TLS version %s",
+              m_negotiatedTLSVersion.c_str());
+      }
+
+      static int prereqCallback(void* clientp,
+                                char*, char*, int, int)
+      {
+        SimpleHttpClient* client = (SimpleHttpClient*)clientp;
+        if (client)
+        {
+            client->updateNegotiatedTLSVersion();
+        }
+        return CURL_PREREQFUNC_OK;
+      }
+
       HttpClientConfig config;
+      long m_tlsVersion;
+      // for collecting negotiated TLS version
+      CURL* m_curl;
+      std::string m_negotiatedTLSVersion;
+
     };
 
     IHttpClient *IHttpClient::createSimple(const HttpClientConfig& cfg) {

@@ -112,6 +112,11 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       }
     }
 
+    if (transferConfig && (transferConfig->tlsVersion > 0))
+    {
+      curl_options.tlsVersion = transferConfig->tlsVersion;
+    }
+
     options.Transport.Transport = std::make_shared<Azure::Core::Http::CurlTransport>(curl_options);
     m_blobServiceClient = std::make_shared<BlobServiceClient>(endpoint + sas_key, options);
 
