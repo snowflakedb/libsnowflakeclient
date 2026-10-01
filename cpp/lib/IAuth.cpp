@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include <regex>
 #include <chrono>
 #include <algorithm>
@@ -343,6 +344,12 @@ namespace Client
 
             // 5. Validate post_back_url matches Snowflake URL
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
+            if (post_back_url.empty())
+            {
+                CXX_LOG_ERROR("sf::IAuthenticatorOKTA::authenticate::Missing or malformed SAML post-back URL in IdP response.");
+                m_errMsg = "SFSamlResponseVerificationFailed.";
+                return;
+            }
             std::string server_url = m_idp->getServerURLSync().toString();
 
             if ((!m_disableSamlUrlCheck) &&
@@ -362,18 +369,36 @@ namespace Client
 
         std::string IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse(std::string html)
         {
-            std::size_t form_start = html.find("<form");
-            std::size_t post_back_start = html.find("action=\"", form_start);
-            post_back_start += 8;
-            std::size_t post_back_end = html.find("\"", post_back_start);
+            const std::size_t form_start = html.find("<form");
+            if (form_start == std::string::npos)
+            {
+                CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::No form element in IdP response.");
+                return {};
+            }
+
+            const std::size_t action_pos = html.find("action=\"", form_start);
+            if (action_pos == std::string::npos)
+            {
+                CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::No action attribute in IdP response.");
+                return {};
+            }
+
+            const std::size_t post_back_start = action_pos + 8;
+            const std::size_t post_back_end = html.find("\"", post_back_start);
+            if (post_back_end == std::string::npos || post_back_end <= post_back_start)
+            {
+                CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Malformed action attribute in IdP response.");
+                return {};
+            }
 
             std::string post_back_url = html.substr(post_back_start,
                 post_back_end - post_back_start);
             CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
-            char unescaped_url[200];
-            decode_html_entities_utf8(unescaped_url, post_back_url.c_str());
-            CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
-            return std::string(unescaped_url);
+            std::vector<char> unescaped_buf(post_back_url.size() + 1);
+            decode_html_entities_utf8(unescaped_buf.data(), unescaped_buf.size(),
+                post_back_url.c_str());
+            CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_buf.data());
+            return std::string(unescaped_buf.data());
         }
 
         /**
