@@ -1,4 +1,5 @@
 #include "utils/test_setup.h"
+#include "client_int.h"
 
 void setCacheFile(char *cache_file)
 {
@@ -41,6 +42,8 @@ void test_fail_open_is_default_mode(void **unused) {
     SF_STATUS ret = snowflake_get_attribute(sf, SF_CON_OCSP_FAIL_OPEN, (void**)&ocsp_fail_open);
     assert_int_equal(ret, SF_STATUS_SUCCESS);
     assert_int_equal(*ocsp_fail_open, SF_BOOLEAN_TRUE);
+    assert_int_equal(sf->ocsp_fail_open, SF_BOOLEAN_TRUE);
+    assert_int_equal(_sf_ocsp_enabled(sf), SF_BOOLEAN_FALSE);
     snowflake_term(sf);
 }
 
@@ -53,7 +56,9 @@ void test_fail_open_revoked(void **unused) {
     sf_setenv("SF_TEST_OCSP_CERT_STATUS_REVOKED", "true");
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
     SF_CONNECT *sf = setup_snowflake_connection();
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_TRUE);
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT *sferr = snowflake_error(sf);
@@ -97,7 +102,9 @@ void test_fail_open_timeout(void** unused) {
     sf_setenv("SF_TEST_OCSP_URL", "http://httpbin.org/delay/10");
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
     SF_CONNECT* sf = setup_snowflake_connection();
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_TRUE);
     SF_STATUS ret = snowflake_connect(sf);
     if (ret != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
