@@ -255,7 +255,8 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
-    // turn on FAIL_OPEN to around certificate issue with GCP
+    // fail-open preference only; enable OCSP via the process-wide check
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     status = snowflake_connect(sf);
@@ -450,7 +451,8 @@ void test_array_binding_supported_false_update(void** unused) {
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
-	// turn on FAIL_OPEN to around certificate issue with GCP
+    // fail-open preference only; enable OCSP via the process-wide check
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     status = snowflake_connect(sf);

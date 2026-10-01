@@ -308,6 +308,15 @@ namespace Snowflake
       return entity ? entity[1] : NULL;
     }
 
+    static size_t utf8_encoded_len(unsigned long cp)
+    {
+      if (cp <= 0x007Ful) return 1;
+      if (cp <= 0x07FFul) return 2;
+      if (cp <= 0xFFFFul) return 3;
+      if (cp <= 0x10FFFFul) return 4;
+      return 0;
+    }
+
     static size_t putc_utf8(unsigned long cp, char* buffer)
     {
       unsigned char* bytes = (unsigned char*)buffer;
@@ -346,7 +355,7 @@ namespace Snowflake
     }
 
     static bool parse_entity(
-      const char* current, char** to, const char** from)
+      const char* current, char** to, const char** from, char* dest_end)
     {
       const char* end = strchr(current, ';');
       if (!end) return 0;
@@ -365,6 +374,9 @@ namespace Snowflake
         errno = errno_save;
         if (fail) return 0;
 
+        size_t n = utf8_encoded_len(cp);
+        if (n == 0 || *to + n > dest_end) return 0;
+
         *to += putc_utf8(cp, *to);
         *from = end + 1;
 
@@ -376,7 +388,9 @@ namespace Snowflake
         if (!entity) return 0;
 
         size_t len = strlen(entity);
-        sf_memcpy(*to, len, entity, len);
+        if (*to + len > dest_end) return 0;
+
+        sf_memcpy(*to, (size_t)(dest_end - *to), entity, len);
 
         *to += len;
         *from = end + 1;
@@ -385,31 +399,47 @@ namespace Snowflake
       }
     }
 
-
-
-    size_t decode_html_entities_utf8(char* dest, const char* src)
+    static size_t bounded_copy(char** to, char* dest_end,
+      const char* from, size_t n)
     {
+      size_t remaining = (size_t)(dest_end - *to);
+      size_t copy = n < remaining ? n : remaining;
+      memmove(*to, from, copy);
+      *to += copy;
+      return copy;
+    }
+
+    size_t decode_html_entities_utf8(char* dest, size_t dest_size, const char* src)
+    {
+      if (!dest || dest_size == 0) return 0;
       if (!src) src = dest;
 
+      char* dest_end = dest + dest_size - 1;
       char* to = dest;
       const char* from = src;
 
       for (const char* current; (current = strchr(from, '&'));)
       {
-        memmove(to, from, (size_t)(current - from));
-        to += current - from;
+        size_t span = (size_t)(current - from);
+        if (bounded_copy(&to, dest_end, from, span) < span)
+        {
+          *to = 0;
+          return (size_t)(to - dest);
+        }
 
-        if (parse_entity(current, &to, &from))
+        if (parse_entity(current, &to, &from, dest_end))
           continue;
 
         from = current;
+        if (to >= dest_end)
+        {
+          *to = 0;
+          return (size_t)(to - dest);
+        }
         *to++ = *from++;
       }
 
-      size_t remaining = strlen(from);
-
-      memmove(to, from, remaining);
-      to += remaining;
+      bounded_copy(&to, dest_end, from, strlen(from));
       *to = 0;
 
       return (size_t)(to - dest);

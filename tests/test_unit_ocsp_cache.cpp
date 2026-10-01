@@ -137,6 +137,8 @@ void test_corrupted_cache(void **unused)
 
   // connection should success with corrupted cache
   SF_CONNECT* sf = setup_snowflake_connection();
+  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
+  snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_TRUE);
   SF_STATUS status = snowflake_connect(sf);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   snowflake_term(sf);
