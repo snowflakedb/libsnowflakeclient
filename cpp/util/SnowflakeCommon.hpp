@@ -35,6 +35,10 @@ void parseHttpRespHeaders(std::string const& headerString,
  */
 bool isUnsafeDownloadFileName(std::string const& fileName);
 
+std::string trimWhitespace(const std::string& s);
+
+void trimTrailingSlashes(std::string& s);
+
 } // namespace Util
 } // namespace Client
 } // namespace Snowflake
