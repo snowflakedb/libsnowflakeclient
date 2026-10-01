@@ -271,6 +271,26 @@ sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT* sfstmt);
 char* STDCALL
 _snowflake_stage_bind_upload(SF_STMT* sfstmt);
 
+/**
+ * Decide whether OCSP should run from the same inputs used by http_perform.
+ * insecure_mode is authoritative. SF_DISABLE_OCSP_CHECKS=true disables
+ * fail-open but is ignored under fail-closed. Otherwise enable if
+ * global_check is true or SF_DISABLE_OCSP_CHECKS=false.
+ */
+sf_bool STDCALL _sf_ocsp_should_check(sf_bool insecure_mode,
+                                      sf_bool fail_open,
+                                      sf_bool global_check);
+
+/**
+ * True when OCSP should run for this connection.
+ * Delegates to _sf_ocsp_should_check with sf flags and SF_OCSP_CHECK.
+ *
+ * @param sf SNOWFLAKE connection context.
+ *
+ * @return SF_BOOLEAN_TRUE if OCSP should run, otherwise SF_BOOLEAN_FALSE.
+ */
+sf_bool STDCALL _sf_ocsp_enabled(const SF_CONNECT *sf);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
