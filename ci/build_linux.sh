@@ -22,6 +22,9 @@ else
     sudo rm -rf /usr/share/dotnet
     sudo rm -rf /opt/ghc
     sudo rm -rf "/usr/local/share/boost"
+    # Preinstalled on ubuntu-latest; this repo does not build Android.
+    sudo rm -rf /usr/local/lib/android
+    df -h /
 fi
 
 BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$DOCKER_MARK]}"

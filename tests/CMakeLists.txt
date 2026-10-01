@@ -45,6 +45,7 @@ SET(TESTS_C
         test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open
+        test_unit_ocsp_defaults
         test_unit_privatelink
         test_multiple_statements
         test_async

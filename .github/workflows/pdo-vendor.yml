@@ -127,7 +127,7 @@ jobs:
           BUILD_TYPE: ${{ env.BUILD_TYPE }}
           BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
         run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android
           BUILD_CMD=(./ci/build/build.sh)
           if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
             BUILD_CMD+=(-s)

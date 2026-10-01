@@ -129,6 +129,38 @@ Proxy can be disabled by setting the proxy parameter to an empty string, or bypa
     snowflake_set_attribute(sf, SF_CON_PROXY, "");
     snowflake_set_attribute(sf, SF_CON_NO_PROXY, "*");
 
+OCSP
+----------------------------------------------------------------------
+
+OCSP certificate revocation checking is **off by default**. Opt in if you
+need it.
+
+**Enable OCSP (any of these):**
+
+- Process-wide: ``snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE)``.
+  Uses fail-open unless the connection already set fail-closed.
+- Per connection, fail-closed: ``snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_FALSE)``
+  or DSN ``OCSPFAILOPEN=false``. This is an opt-in even when the process-wide
+  check is off.
+- Environment: ``SF_DISABLE_OCSP_CHECKS=false`` opts in with fail-open.
+
+The stored default ``ocsp_fail_open=true`` is **not** an opt-in.
+``snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_TRUE)``
+only records the fail-open preference; it does not turn OCSP on by itself.
+Pass ``NULL`` to restore the stored default (OCSP still off unless another
+opt-in is set). ``SF_DISABLE_OCSP_CHECKS=true`` disables fail-open,
+including when ``SF_CON_OCSP_FAIL_OPEN=true``. Fail-closed
+(``SF_CON_OCSP_FAIL_OPEN=false``) stays on; the environment variable is
+ignored and a message is logged.
+
+``SF_CON_INSECURE_MODE=true`` still skips OCSP even after opt-in,
+including fail-closed.
+
+When OCSP is off, ``SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED`` and
+``SF_OCSP_RESPONSE_CACHE_SERVER_URL`` are ignored and a warning is logged.
+Privately linked hosts skip the automatic
+``SF_OCSP_RESPONSE_CACHE_SERVER_URL`` rewrite until OCSP is opted in.
+
 Run Tests
 ----------------------------------------------------------------------
 
@@ -143,7 +175,6 @@ Linux and OSX
 
 Windows
 ^^^^^^^^^^
-
 Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
@@ -154,7 +185,7 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
 
    .\scripts\run_tests.bat
 
-	
+  
 Code Coverage (Linux)
 ----------------------------------------------------------------------
 
@@ -197,4 +228,3 @@ Note
 ===============
 
 This driver currently does not support GCP regional endpoints. Please ensure that any workloads using through this driver do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
-
