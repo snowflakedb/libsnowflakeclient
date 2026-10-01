@@ -617,13 +617,9 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
-        sf_bool ocsp_check;
-        if (insecure_mode) {
-            ocsp_check = SF_BOOLEAN_FALSE;
-        } else {
-            ocsp_check = SF_OCSP_CHECK;
-        }
+        sf_bool ocsp_check = _sf_ocsp_should_check(insecure_mode, fail_open,
+                                                   SF_OCSP_CHECK);
+        
         res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, (long)ocsp_check);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP check enable/disable [%s]",
@@ -932,6 +928,8 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
                                     SF_ERROR_STRUCT *error,
                                     sf_bool insecure_mode,
                                     sf_bool fail_open) {
+    SF_UNUSED(insecure_mode);
+    SF_UNUSED(fail_open);
     char *resp;
     const char *request_type_str = request_type == POST_REQUEST_TYPE ? "POST" : "GET";
 
