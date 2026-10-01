@@ -8,32 +8,40 @@
  */
 void test_private_link_core(void** unused)
 {
+    SF_UNUSED(unused);
     char* original_env = getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->authenticator = SF_AUTHENTICATOR_DEFAULT;
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "testaccount");
+    snowflake_set_attribute(sf, SF_CON_USER, "testuser");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "testpassword");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_DEFAULT);
 
     _snowflake_check_connection_parameters(sf);
     assert_int_equal(NULL, getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
     sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
 
-    sf->host = "account.privateLINK.snowflakecomputING.com";
+    snowflake_set_attribute(sf, SF_CON_HOST, "account.privateLINK.snowflakecomputING.com");
+    _snowflake_check_connection_parameters(sf);
+    assert_int_equal(NULL, getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
+    sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
+
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
+    snowflake_set_attribute(sf, SF_CON_HOST, "account.privateLINK.snowflakecomputING.com");
     _snowflake_check_connection_parameters(sf);
     assert_string_equal("http://ocsp.account.privateLINK.snowflakecomputING.com/ocsp_response_cache.json", getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
     sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
 
-    sf->host = "account.snowflakecomputing.com";
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_FALSE);
+    snowflake_set_attribute(sf, SF_CON_HOST, "account.snowflakecomputing.com");
     _snowflake_check_connection_parameters(sf);
     assert_int_equal(NULL, getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
     sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
 
-    sf->host = "account.privatelink.snowflakecomputing.cn";
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_TRUE);
+    snowflake_set_attribute(sf, SF_CON_HOST, "account.privatelink.snowflakecomputing.cn");
     _snowflake_check_connection_parameters(sf);
     assert_string_equal("http://ocsp.account.privatelink.snowflakecomputing.cn/ocsp_response_cache.json", getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
     sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
-
 
     if (original_env) {
         sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", original_env);
@@ -41,6 +49,7 @@ void test_private_link_core(void** unused)
     else {
         sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
     }
+    snowflake_term(sf);
 }
 
 int main(void)

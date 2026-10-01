@@ -1,5 +1,7 @@
 #include <string>
+#include <cstring>
 #include "snowflake/SFURL.hpp"
+#include "snowflake/entities.hpp"
 #include "../lib/connection.h"
 #include "../lib/authenticator.h"
 #include "../cpp/lib/Authenticator.hpp"
@@ -47,7 +49,7 @@ bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::s
     SF_UNUSED(isRetry);
     SF_UNUSED(resp);
 
-    rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
+    rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/\">";
     if (isCurlGetRequestFailed) {
         m_errMsg = "SFConnectionFailed:curlGetCall.";
     }
@@ -237,7 +239,7 @@ void test_okta_authenticator_succeed(void**)
 
     jsonObject_t data;
     okta.updateDataMap(data);
-    assert_string_equal(data["RAW_SAML_RESPONSE"].get<std::string>().c_str(), "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/");
+    assert_string_equal(data["RAW_SAML_RESPONSE"].get<std::string>().c_str(), "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/\">");
 
     data.clear();
     MockOkta2 okta2 = MockOkta2(sf);
@@ -295,6 +297,106 @@ void test_okta_authenticator_fail(void**)
     snowflake_term(sf);
 }
 
+void test_extract_post_back_url_long(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+
+    MockOkta okta = MockOkta(sf);
+    std::string long_path(250, 'a');
+    std::string url = "https://host.com/" + long_path;
+    std::string html = "<form action=\"" + url + "\">";
+    std::string result = okta.extractPostBackUrlFromSamlResponse(html);
+    assert_string_equal(result.c_str(), url.c_str());
+    assert_true(result.size() > 200);
+
+    snowflake_term(sf);
+}
+
+void test_extract_post_back_url_entities(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+
+    MockOkta okta = MockOkta(sf);
+    std::string html = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed\">";
+    std::string result = okta.extractPostBackUrlFromSamlResponse(html);
+    assert_string_equal(result.c_str(), "https://host.com/fed");
+
+    snowflake_term(sf);
+}
+
+void test_extract_post_back_url_well_formed(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+
+    MockOkta okta = MockOkta(sf);
+    assert_string_equal(
+        okta.extractPostBackUrlFromSamlResponse("<form action=\"https://host.com/path\">").c_str(),
+        "https://host.com/path");
+
+    snowflake_term(sf);
+}
+
+void test_extract_post_back_url_malformed(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+
+    MockOkta okta = MockOkta(sf);
+    std::string long_body(300, 'x');
+    assert_string_equal(okta.extractPostBackUrlFromSamlResponse(long_body).c_str(), "");
+    assert_string_equal(okta.extractPostBackUrlFromSamlResponse("<html>no form here</html>").c_str(), "");
+    assert_string_equal(okta.extractPostBackUrlFromSamlResponse("<form></form>").c_str(), "");
+    assert_string_equal(okta.extractPostBackUrlFromSamlResponse("<form action=\"").c_str(), "");
+    assert_string_equal(
+        okta.extractPostBackUrlFromSamlResponse("<form action=\"https://host.com/path>").c_str(),
+        "");
+
+    snowflake_term(sf);
+}
+
+void test_decode_html_entities_dest_size(void**)
+{
+    const char* src = "https://host.com/abcdefghijklmnopqrstuvwxyz";
+    char buf[17];
+    memset(buf, 0x5A, sizeof(buf));
+
+    size_t n = decode_html_entities_utf8(buf, 16, src);
+    assert_int_equal(n, 15);
+    assert_int_equal(buf[15], '\0');
+    assert_int_equal((unsigned char)buf[16], 0x5A);
+    assert_true(strncmp(buf, src, 15) == 0);
+
+    assert_int_equal(decode_html_entities_utf8(buf, 0, src), 0);
+    assert_int_equal(decode_html_entities_utf8(NULL, 16, src), 0);
+}
+
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
@@ -303,6 +405,11 @@ int main(void) {
     cmocka_unit_test(test_okta_initializie_and_terminatie),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
+    cmocka_unit_test(test_extract_post_back_url_long),
+    cmocka_unit_test(test_extract_post_back_url_entities),
+    cmocka_unit_test(test_extract_post_back_url_well_formed),
+    cmocka_unit_test(test_extract_post_back_url_malformed),
+    cmocka_unit_test(test_decode_html_entities_dest_size),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

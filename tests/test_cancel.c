@@ -432,9 +432,6 @@ void test_array_binding() {
 
   /* Connect with all parameters set */
   SF_CONNECT *sf = setup_snowflake_connection();
-  // turn on FAIL_OPEN to around certificate issue with GCP
-  sf_bool value = SF_BOOLEAN_TRUE;
-  snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
   status = snowflake_connect(sf);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
