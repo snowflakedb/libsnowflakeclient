@@ -997,6 +997,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         alloc_buffer_and_copy(&sf->port, "443");
     }
 
+    log_debug("SSL version: %d", SSL_VERSION);
     log_debug("Application name: %s", sf->application_name);
     log_debug("Application version: %s", sf->application_version);
     log_debug("authenticator: %s", sf->authenticator);
