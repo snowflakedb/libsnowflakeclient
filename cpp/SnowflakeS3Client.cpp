@@ -253,11 +253,27 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
     dataStream->read(reinterpret_cast<char *>(bodyBuffer.data()), contentLength);
   }
 
+  putObjectRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
+
+#if defined(_DEBUG) || defined(TEST_DEBUG)
+  // for testing retry with debug build, fail the first attempt with a body
+  // that undershoots a deliberately-wrong Content-Length, then fall through
+  // to the real attempt below using a second, independent streambuf over
+  // the same bodyBuffer, to confirm it still replays correctly.
+  {
+    auto failStreamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
+        "", bodyBuffer.data(), contentLength);
+    auto failBody = Aws::MakeShared<Aws::IOStream>("", failStreamBuf.get());
+    putObjectRequest.SetContentLength(contentLength + 10);
+    putObjectRequest.SetBody(failBody);
+    s3Client->PutObject(putObjectRequest);
+  }
+#endif
+
   auto streamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
       "", bodyBuffer.data(), contentLength);
   auto body = Aws::MakeShared<Aws::IOStream>("", streamBuf.get());
 
-  putObjectRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   putObjectRequest.SetContentLength(contentLength);
   putObjectRequest.SetBody(body);
 
