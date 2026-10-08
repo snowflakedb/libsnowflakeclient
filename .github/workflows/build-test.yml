@@ -150,9 +150,7 @@ jobs:
                   -FilePath $installer `
                   -ArgumentList $arguments `
                   -Wait `
-                  -PassThru `
-                  -RedirectStandardOutput $stdoutPath `
-                  -RedirectStandardError $stderrPath
+                  -PassThru
                 $exitCode = $process.ExitCode
                 Write-Host "Visual Studio Installer exit code: $exitCode"
                 # 0 = success; 3010 = success, reboot required
