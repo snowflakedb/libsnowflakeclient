@@ -38,6 +38,8 @@ sf_bool parse_int64(const char* value, int64* out);
 */
 sf_bool parse_int8(const char* value, int8* out);
 
+const char* sslversion_to_str(long sslversion);
+
 #ifdef __cplusplus
 }
 #endif

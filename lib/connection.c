@@ -311,7 +311,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
                           elapsed_time, retried_count, is_renew,
                           renew_injection, sf->proxy, sf->no_proxy,
-                          sf->include_retry_reason, is_new_strategy_url) ||
+                          sf->include_retry_reason, is_new_strategy_url, sf->tls_ciphers) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -440,7 +440,7 @@ sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* he
         sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
         &elapsed_time, &retried_count, NULL,
         SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-        sf->include_retry_reason, is_new_retry_strategy_url(url)) &&
+        sf->include_retry_reason, is_new_retry_strategy_url(url), sf->tls_ciphers) &&
         *json;
 
     free_curl_desc(curl_desc);
@@ -474,7 +474,8 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           &sf->crl_config,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count, elapsed_time, retried_count, NULL,
-                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
+                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                          sf->tls_ciphers) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -550,7 +551,7 @@ sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* hea
             sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
             &elapsed_time, &retried_count, NULL,
             SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-            sf->include_retry_reason, is_new_retry_strategy_url(url));
+            sf->include_retry_reason, is_new_retry_strategy_url(url), sf->tls_ciphers);
     }
     else
     {
@@ -561,7 +562,7 @@ sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* hea
             sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
             &elapsed_time, &retried_count, NULL,
             SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-            sf->include_retry_reason, is_new_retry_strategy_url(url));
+            sf->include_retry_reason, is_new_retry_strategy_url(url), sf->tls_ciphers);
     }
     free_curl_desc(curl_desc);
     if (sf->error.error_code != SF_STATUS_SUCCESS || ret != SF_BOOLEAN_TRUE)
@@ -1838,6 +1839,10 @@ void handle_single_param(SF_CONNECT* sf, const char* key,const char* value)
         {
             snowflake_set_attribute(sf, SF_CON_LOG_QUERY_PARAMETERS, &v);
         }
+    }
+    else if (strcasecmp(key, "TLS_CIPHERS") == 0)
+    {
+        snowflake_set_attribute(sf, SF_CON_TLS_CIPHERS, value);
     }
     else
     {

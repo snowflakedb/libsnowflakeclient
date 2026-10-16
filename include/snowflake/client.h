@@ -302,6 +302,18 @@ typedef enum SF_STATUS {
 #define SF_QCC_CONTEXT_VALUE_KEY   "base64Data"
 
 /**
+ * TLS 1.3 cipher suites (RFC 8446) accepted by SF_CON_TLS_CIPHERS.
+ * Use snowflake_tls13_ciphers_to_str() to build the attribute value.
+ */
+typedef enum SF_TLS13_CIPHER {
+    SF_TLS13_AES_256_GCM_SHA384,
+    SF_TLS13_AES_128_GCM_SHA256,
+    SF_TLS13_CHACHA20_POLY1305_SHA256,
+    SF_TLS13_AES_128_CCM_SHA256,
+    SF_TLS13_AES_128_CCM_8_SHA256,
+} SF_TLS13_CIPHER;
+
+/**
  * Attributes for Snowflake database session context.
  */
 typedef enum SF_ATTRIBUTE {
@@ -410,6 +422,8 @@ typedef enum SF_ATTRIBUTE {
     * presigned-URL credential format.
     */
     SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN,
+    
+    SF_CON_TLS_CIPHERS,
 } SF_ATTRIBUTE;
 
 /**
@@ -633,6 +647,9 @@ typedef struct SF_CONNECT {
 
     char* wif_host;
     sf_bool wif_aws_use_outbound_token;
+
+    // TLS ciphers to use for the connection, if specified
+    char* tls_ciphers;
 } SF_CONNECT;
 
 /**
@@ -915,6 +932,24 @@ SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
  * @return char* DSN string if success, NULL otherwise.
  */
 char* STDCALL snowflake_load_toml_as_dsn();
+
+/**
+ * Build a ':'-separated TLS 1.3 cipher list for SF_CON_TLS_CIPHERS.
+ *
+ * @param ciphers array of cipher suites.
+ * @param count number of entries in ciphers.
+ *
+ * @return newly allocated string to be released with snowflake_free(),
+ *         or NULL if ciphers is NULL, count is 0 or an entry is out of range.
+ */
+char* STDCALL snowflake_tls13_ciphers_to_str(const SF_TLS13_CIPHER *ciphers, size_t count);
+
+/**
+ * Free memory allocated and returned by this library.
+ *
+ * @param ptr pointer to free. NULL is ignored.
+ */
+void STDCALL snowflake_free(void *ptr);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.

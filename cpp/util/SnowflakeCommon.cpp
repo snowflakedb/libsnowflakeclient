@@ -27,11 +27,6 @@ using namespace Snowflake::Client;
 
 static bool exception_on_memory_error = false;
 
-/**
- * Validate partner application name.
- * No cross-platform regex lib in C so we use C++ one.
- * @param application partner application name
- */
 extern "C" {
 
 sf_bool validate_application(const char* application)
@@ -50,6 +45,63 @@ sf_bool validate_application(const char* application)
   }
 
   return SF_BOOLEAN_FALSE;
+}
+
+sf_bool validate_tls_ciphers(const char* cipher)
+{
+    std::vector<std::string> KNOWN_TLS13_CIPHERS = {
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_AES_128_GCM_SHA256",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_128_CCM_SHA256",
+    "TLS_AES_128_CCM_8_SHA256",
+    };
+
+    if (cipher == nullptr || strlen(cipher) == 0)
+    {
+        log_debug("tls_ciphers is not set. Check the SNOWFLAKE_TLS_CIPHERS environment variable.");
+
+    }
+
+    std::string cipherStr(cipher);
+    std::vector<std::string> ciphers = Snowflake::Client::Util::split(cipherStr, ":");
+
+    for (size_t i = 0; i < ciphers.size(); i++)
+    {
+        const std::string& c = ciphers[i];
+        if (c.empty())
+        {
+            log_error("TLS cipher list has an empty entry at position %zu. "
+                      "Check for leading, trailing or repeated ':' in '%s'", i + 1, cipher);
+            return SF_BOOLEAN_FALSE;
+        }
+    }
+
+    if (ciphers.size() > KNOWN_TLS13_CIPHERS.size())
+    {
+        log_error("Too many TLS 1.3 ciphers specified. Maximum allowed is %zu", KNOWN_TLS13_CIPHERS.size());
+        return SF_BOOLEAN_FALSE;
+    }
+
+    for (const auto& c : ciphers)
+    {
+        bool found = false;
+        for (const auto& knownCipher : KNOWN_TLS13_CIPHERS)
+        {
+            if (c == knownCipher)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            log_error("Unknown TLS 1.3 cipher specified: %s", c.c_str());
+            return SF_BOOLEAN_FALSE;
+        }
+    }
+
+    return SF_BOOLEAN_TRUE;
 }
 
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
@@ -380,4 +432,18 @@ void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerStri
       headers[key] = value;
     }
   }
+}
+
+std::vector<std::string> Snowflake::Client::Util::split(std::string s, const std::string& delimiter) {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens.push_back(s);
+
+    return tokens;
 }

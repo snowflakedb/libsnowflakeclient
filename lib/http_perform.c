@@ -369,7 +369,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              const char *proxy,
                              const char *no_proxy,
                              sf_bool include_retry_reason,
-                             sf_bool is_new_strategy_request) {
+                             sf_bool is_new_strategy_request,
+                             const char *tls_ciphers) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -610,7 +611,39 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
+        long ssl_version = (long)SSL_VERSION;
+        if (tls_ciphers) {
+        
+
+            long ssl_version_max = ssl_version & 0xFFFF0000L;
+            if (ssl_version_max != CURL_SSLVERSION_MAX_NONE &&
+                ssl_version_max != CURL_SSLVERSION_MAX_DEFAULT &&
+                ssl_version_max < CURL_SSLVERSION_MAX_TLSv1_3) {
+                log_error("TLS ciphers require TLS v1.3, but the maximum TLS version is limited below v1.3 (%s)",
+                          sslversion_to_str(ssl_version_max >> 16));
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                                    "TLS ciphers require TLS v1.3, but the maximum TLS version is limited below v1.3",
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                break;
+            }
+            if ((ssl_version & 0xFFFFL) != CURL_SSLVERSION_TLSv1_3) {
+                log_debug("TLS ciphers are configured, raising minimum TLS version from %s to CURL_SSLVERSION_TLSv1_3",
+                          sslversion_to_str(ssl_version));
+            }
+            ssl_version = CURL_SSLVERSION_TLSv1_3 | ssl_version_max;
+
+            res = curl_easy_setopt(curl, CURLOPT_TLS13_CIPHERS, tls_ciphers);
+            if (res != CURLE_OK) {
+                log_error("Unable to set TLS 1.3 ciphers [%s]",
+                    curl_easy_strerror(res));
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                    "Unable to set TLS 1.3 ciphers",
+                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                break;
+            }
+        }
+
+        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, ssl_version);
         if (res != CURLE_OK) {
             log_error("Unable to set SSL Version [%s]",
                       curl_easy_strerror(res));
@@ -635,61 +668,11 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_config->check);
         if (res != CURLE_OK) {
-          log_error("Unable to set CRL CHECK [%s]",
-                    curl_easy_strerror(res));
-          break;
+            log_error("Unable to set CRL CHECK [%s]",
+                curl_easy_strerror(res));
+            break;
         }
 
-        if (crl_config->check)
-        {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_config->advisory);
-          if (res != CURLE_OK)
-          {
-            log_error("Unable to set CRL advisory mode [%s]",
-                      curl_easy_strerror(res));
-            break;
-          }
-
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_config->allow_no_crl);
-          if (res != CURLE_OK)
-          {
-            log_error("Unable to set CRL allow null crl [%s]",
-                      curl_easy_strerror(res));
-            break;
-          }
-
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_config->disk_caching);
-          if (res != CURLE_OK)
-          {
-            log_error("Unable to set CRL disk caching [%s]",
-                      curl_easy_strerror(res));
-            break;
-          }
-
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_config->memory_caching);
-          if (res != CURLE_OK)
-          {
-            log_error("Unable to set CRL memory caching [%s]",
-                      curl_easy_strerror(res));
-            break;
-          }
-
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, (long)crl_config->download_timeout);
-          if (res != CURLE_OK)
-          {
-              log_error("Unable to set CRL download timeout [%s]",
-                        curl_easy_strerror(res));
-              break;
-          }
-
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, (long)crl_config->download_max_size);
-          if (res != CURLE_OK)
-          {
-              log_warn("Unable to set CRL download max size [%s], using default",
-                       curl_easy_strerror(res));
-              res = CURLE_OK;
-          }
-        }
 
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {

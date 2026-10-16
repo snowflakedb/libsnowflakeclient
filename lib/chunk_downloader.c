@@ -207,7 +207,8 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                const SF_CRL_CONFIG *crl_config,
                                const char *proxy,
                                const char *no_proxy,
-                               int64 retry_timeout, int8 retry_max_count) {
+                               int64 retry_timeout, int8 retry_max_count,
+                               const char *tls_ciphers) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy);
     CURL *curl = get_curl_from_desc(curl_desc);
@@ -218,7 +219,8 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                       SF_BOOLEAN_TRUE, error, insecure_mode, fail_open,
                       crl_config,
                       0, 0, retry_max_count, NULL, NULL, NULL,
-                      SF_BOOLEAN_FALSE, proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
+                      SF_BOOLEAN_FALSE, proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                      tls_ciphers)) {
         // Error set in perform function
         goto cleanup;
     }
@@ -244,13 +246,14 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    const char *proxy,
                                                    const char *no_proxy,
                                                    int64 retry_timeout,
-                                                   int8 retry_max_count) {
+                                                   int8 retry_max_count,
+                                                   const char *tls_ciphers) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
     int i;
     int pthread_ret;
-    size_t qrmk_len = 1, proxy_len = 1, no_proxy_len = 1;
+    size_t qrmk_len = 1, proxy_len = 1, no_proxy_len = 1, tls_ciphers_len = 1;
     // We need thread_count, fetch_slots, chunks, and either qrmk or chunk_headers
     if (thread_count <= 0 ||
             fetch_slots <= 0 ||
@@ -282,6 +285,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->callback_create_resp = callback_create_resp;
     chunk_downloader->proxy = NULL;
     chunk_downloader->no_proxy = NULL;
+    chunk_downloader->tls_ciphers = NULL;
     chunk_downloader->retry_timeout = retry_timeout;
     chunk_downloader->retry_max_count = retry_max_count;
 
@@ -309,6 +313,16 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
         chunk_downloader->no_proxy = (char *)SF_CALLOC(1, no_proxy_len);
         sf_strncpy(chunk_downloader->no_proxy, no_proxy_len, no_proxy, no_proxy_len);
       }
+    }
+
+    if (tls_ciphers)
+    {
+      tls_ciphers_len += strlen(tls_ciphers);
+      chunk_downloader->tls_ciphers = (char *)SF_CALLOC(1, tls_ciphers_len);
+      if (!chunk_downloader->tls_ciphers) {
+        goto cleanup;
+      }
+      sf_strncpy(chunk_downloader->tls_ciphers, tls_ciphers_len, tls_ciphers, tls_ciphers_len);
     }
 
     // Initialize mutexes and conditional variables
@@ -352,6 +366,7 @@ cleanup:
         SF_FREE(chunk_downloader->qrmk);
         SF_FREE(chunk_downloader->proxy);
         SF_FREE(chunk_downloader->no_proxy);
+        SF_FREE(chunk_downloader->tls_ciphers);
         sf_header_destroy(chunk_downloader->chunk_headers);
         SF_FREE(chunk_downloader->queue);
         SF_FREE(chunk_downloader->threads);
@@ -431,6 +446,7 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
     SF_FREE(chunk_downloader->qrmk);
     SF_FREE(chunk_downloader->proxy);
     SF_FREE(chunk_downloader->no_proxy);
+    SF_FREE(chunk_downloader->tls_ciphers);
     sf_header_destroy(chunk_downloader->chunk_headers);
     _critical_section_term(&chunk_downloader->queue_lock);
     _cond_term(&chunk_downloader->producer_cond);
@@ -491,7 +507,8 @@ static void * chunk_downloader_thread(void *downloader) {
                             chunk_downloader->fail_open,
                             &chunk_downloader->crl_config,
                             chunk_downloader->proxy,
-                            chunk_downloader->no_proxy, chunk_downloader->retry_timeout, chunk_downloader->retry_max_count)) {
+                            chunk_downloader->no_proxy, chunk_downloader->retry_timeout, chunk_downloader->retry_max_count,
+                            chunk_downloader->tls_ciphers)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {
                 copy_snowflake_error(chunk_downloader->sf_error, &err);
