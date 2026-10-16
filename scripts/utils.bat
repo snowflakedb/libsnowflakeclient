@@ -7,34 +7,24 @@ goto :EOF
 
 :setup_visual_studio
     if /I "%~1"=="VS17" (
-        if not "%VisualStudioVersion%"=="17.0" (
-            echo === setting up the Visual Studio 17 environments
+        if not "%ToolSetVersion%"=="v143" (
+            echo === setting up the Visual Studio 17 environments with default toolset
             call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch%
+            set "ToolSetVersion=v143"
         )
-        goto :EOF
     )
     if /I "%~1"=="VS16" (
-        if not "%VisualStudioVersion%"=="16.0" (
-            echo === setting up the Visual Studio 16 environments
-            if "%VCINSTALLDIR%" == "" (
-                echo === ERROR: VCINSTALLDIR is not set for VS16
-                goto :error
-            )
-            call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch%
+        if not "%ToolSetVersion%"=="v142" (
+            echo === setting up the Visual Studio 17 environments with VS16 toolset
+            call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch% -vcvars_ver=14.2
+            set "ToolSetVersion=v142"
         )
-        goto :EOF
     )
-    if /I "%~1"=="VS15" (
-        if not "%VisualStudioVersion%"=="15.0" (
-            echo === setting up the Visual Studio 15 environments
-            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %arch%
-        )
-        goto :EOF
-    )
-    if not defined VisualStudioVersion (
+    if not defined ToolSetVersion (
         echo === ERROR: no VisualStudioVersion is set. %~1
         goto :error
     )
+    set "CMAKE_GENERATOR_TOOLSET=%ToolSetVersion%"
     goto :EOF
 
 :get_zip_file_name
@@ -53,7 +43,7 @@ goto :EOF
         goto :error
     )
     if "%vsdir%"=="" (
-        echo Set vsdir [vs14, vs15]
+        echo Set vsdir [vs16, vs17]
         goto :error
     )
     if "%build_type%"=="" (
