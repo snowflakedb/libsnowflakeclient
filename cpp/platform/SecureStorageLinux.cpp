@@ -14,7 +14,7 @@
 
 #include "../linux/CacheFile.hpp"
 #include "../logger/SFLogger.hpp"
-#include "../platform/FileLock.hpp"
+#include "snowflake/FileLock.hpp"
 
 
 namespace Snowflake {
