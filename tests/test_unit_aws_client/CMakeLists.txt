@@ -1,6 +1,7 @@
 project(test_usr_pwd_mfa)
 
 configure_file(fail_first_upload_attempt.json . COPYONLY)
+configure_file(fail_first_single_upload_attempt.json . COPYONLY)
 
 add_executable(test_unit_aws_client
     ../wiremock/wiremock.cpp
