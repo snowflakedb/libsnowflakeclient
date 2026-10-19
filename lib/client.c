@@ -31,11 +31,11 @@
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
 // Define internal constants
-sf_bool DISABLE_VERIFY_PEER;
-char *CA_BUNDLE_FILE;
-int32 SSL_VERSION;
-sf_bool DEBUG;
-sf_bool SF_OCSP_CHECK;
+sf_bool DISABLE_VERIFY_PEER = 0;
+char *CA_BUNDLE_FILE = NULL;
+int32 SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
+sf_bool DEBUG = 0;
+sf_bool SF_OCSP_CHECK = 1;
 char *SF_HEADER_USER_AGENT = NULL;
 
 static char* CLIENT_CONFIG_FILE = NULL;
@@ -997,6 +997,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         alloc_buffer_and_copy(&sf->port, "443");
     }
 
+    log_debug("SSL version: %d", SSL_VERSION);
     log_debug("Application name: %s", sf->application_name);
     log_debug("Application version: %s", sf->application_version);
     log_debug("authenticator: %s", sf->authenticator);

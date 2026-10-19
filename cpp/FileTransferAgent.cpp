@@ -19,6 +19,7 @@
 #include "error.h"
 #include "snowflake/platform.h"
 #include "snowflake/SF_CRTFunctionSafe.h"
+#include "constants.h"
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
@@ -981,6 +982,7 @@ extern "C" {
     transConfig.proxy = NULL; // use the one from statement
     transConfig.tempDir = sfconn->put_temp_dir;
     transConfig.useS3regionalUrl = sfconn->use_s3_regional_url;
+    transConfig.tlsVersion = (long)SSL_VERSION;
     string command(sfstmt->sql_text);
 
     FileTransferAgent agent(&stmtPutGet, &transConfig);
