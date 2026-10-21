@@ -1,0 +1,39 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "retry single upload",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "First attempt failed",
+      "request": {
+        "urlPathPattern": "/.*",
+        "method": "PUT"
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/xml"
+        },
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error>\n  <Code>InternalError</Code>\n  <Message>We encountered an internal error. Please try again.</Message>\n</Error>"
+      }
+    },
+    {
+      "scenarioName": "retry single upload",
+      "requiredScenarioState": "First attempt failed",
+      "request": {
+        "urlPathPattern": "/.*",
+        "method": "PUT",
+        "bodyPatterns": [
+          {
+            "matches": ".{10000000,}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "ETag": "\"abc123etag\""
+        }
+      }
+    }
+  ]
+}

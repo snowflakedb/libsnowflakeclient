@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 
 
@@ -155,6 +156,11 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                           nonProxyHosts.data(), nonProxyHosts.size());
   }
 
+  if ((transferConfig != nullptr) && (transferConfig->tlsVersion > 0))
+  {
+    clientConfiguration.tlsVersion = transferConfig->tlsVersion;
+  }
+
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
 
   Aws::Auth::AWSCredentials credentials(
@@ -239,11 +245,27 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
   putObjectRequest.SetBucket(bucket);
   putObjectRequest.SetKey(key);
 
+  // dataStream->rdbuf() (e.g. CipherStreamBuf) is not seekable. The AWS SDK
+  // rewinds the body with seekg(0) before resending on an internal retry; on
+  // a non-seekable stream that's a silent no-op, so the retry resends a
+  // truncated body and S3 returns 400 IncompleteBody (SNOW-4219220).
+  // Materialize into a seekable buffer up front, like uploadParts() already
+  // does below for the multipart path.
+  size_t contentLength = (size_t) fileMetadata->encryptionMetadata.cipherStreamSize;
+  std::vector<unsigned char> bodyBuffer(contentLength);
+  if (contentLength > 0)
+  {
+    dataStream->read(reinterpret_cast<char *>(bodyBuffer.data()), contentLength);
+  }
+
   putObjectRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
-  putObjectRequest.SetContentLength(
-    fileMetadata->encryptionMetadata.cipherStreamSize);
-  putObjectRequest.SetBody(
-    Aws::MakeShared<Aws::IOStream>("", dataStream->rdbuf()));
+
+  auto streamBuf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
+      "", bodyBuffer.data(), contentLength);
+  auto body = Aws::MakeShared<Aws::IOStream>("", streamBuf.get());
+
+  putObjectRequest.SetContentLength(contentLength);
+  putObjectRequest.SetBody(body);
 
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
