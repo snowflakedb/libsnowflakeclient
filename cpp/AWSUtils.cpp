@@ -7,21 +7,18 @@
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/sts/STSClient.h>
+#include <aws/sts/STSEndpointProvider.h>
 #include <aws/sts/model/AssumeRoleRequest.h>
-#include <aws/sts/model/GetCallerIdentityRequest.h>
+#include <aws/sts/model/GetWebIdentityTokenRequest.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/core/auth/signer/AWSAuthV4Signer.h>
 #include <aws/core/client/ClientConfiguration.h>
-#include <aws/core/http/HttpClient.h>
-#include <aws/core/http/HttpClientFactory.h>
-#include <aws/core/http/HttpRequest.h>
-#include <aws/core/http/HttpResponse.h>
-#include <aws/core/utils/StringUtils.h>
+#include <aws/core/http/Scheme.h>
+#include <aws/core/http/URI.h>
 #include <aws/core/utils/UUID.h>
 #include <aws/core/utils/memory/AWSMemory.h>
-#include <aws/core/utils/memory/stl/AWSStringStream.h>
-#include <aws/core/utils/stream/ResponseStream.h>
-#include <aws/core/utils/xml/XmlSerializer.h>
+#include <boost/url.hpp>
+#include <cctype>
+#include <cstdlib>
 
 namespace Snowflake {
   namespace Client {
@@ -68,36 +65,194 @@ namespace Snowflake {
       }
 
       namespace {
-        // Bound the GetWebIdentityToken response body we materialize into
-        // memory. Real STS responses for this API are ~1-5 KiB (a JWT plus
-        // XML wrapping). The cap is defense in depth so a misbehaving
-        // intermediary returning a runaway body can't OOM the process.
-        constexpr size_t MAX_STS_RESPONSE_BODY_BYTES = 64 * 1024;
-
-        // Connect / request timeouts for the STS GetWebIdentityToken HTTP
-        // call. Mirrors the values used by SnowflakeS3Client for AWS HTTP
-        // clients so users get a uniform, bounded failure mode when STS is
-        // unreachable or the network blackholes.
+        // Connect / request timeouts for STS calls. Mirrors the values used
+        // by SnowflakeS3Client so users get a uniform, bounded failure mode
+        // when STS is unreachable or the network blackholes.
         constexpr long STS_CONNECT_TIMEOUT_MS = 30000;
         constexpr long STS_REQUEST_TIMEOUT_MS = 40000;
 
-        // Truncate a string for safe error logging. STS error responses are not
-        // sensitive themselves, but bodies of unexpected non-error responses
-        // might contain unexpected data; truncate as defense in depth.
-        std::string truncateForLog(const std::string &s, size_t max = 256) {
-          if (s.size() <= max) return s;
-          return s.substr(0, max) + "...(truncated)";
+        std::string trimCopy(const std::string &value) {
+          const auto begin = value.find_first_not_of(" \t\r\n\f\v");
+          if (begin == std::string::npos) {
+            return "";
+          }
+          const auto end = value.find_last_not_of(" \t\r\n\f\v");
+          return value.substr(begin, end - begin + 1);
         }
 
-        // Read up to maxBytes from a response body stream into a string.
-        // Pairs with MAX_STS_RESPONSE_BODY_BYTES to bound peak memory.
-        std::string readBoundedResponseBody(std::istream &stream, size_t maxBytes) {
-          std::string buf;
-          buf.resize(maxBytes);
-          stream.read(&buf[0], static_cast<std::streamsize>(maxBytes));
-          buf.resize(static_cast<size_t>(stream.gcount()));
-          return buf;
+        void stripTrailingSlashes(std::string &value) {
+          while (!value.empty() && value.back() == '/') {
+            value.pop_back();
+          }
         }
+
+        std::string quote(const std::string &value) {
+          return "\"" + value + "\"";
+        }
+
+        // Accepts a bare host or an http(s) URL. Mirrors gosnowflake's
+        // parseWorkloadIdentityHost, including rejection of user info, query,
+        // and fragment.
+        boost::optional<AwsStsEndpoint> parseConfiguredStsEndpoint(
+            const std::string &raw,
+            std::string &error) {
+          std::string host = trimCopy(raw);
+          if (host.empty()) {
+            error = "wif_host is empty";
+            return boost::none;
+          }
+          if (host.find("://") == std::string::npos) {
+            host = "https://" + host;
+          }
+
+          const auto parsed = boost::urls::parse_uri(host);
+          if (!parsed) {
+            error = "wif_host " + quote(host) + " is malformed";
+            return boost::none;
+          }
+          const std::string scheme(parsed->scheme());
+          if (scheme != "https" && scheme != "http") {
+            error = "wif_host " + quote(host) +
+                    " must use https or http, got scheme " + quote(scheme);
+            return boost::none;
+          }
+          if (parsed->host().empty()) {
+            error = "wif_host " + quote(host) + " does not contain a hostname";
+            return boost::none;
+          }
+          if (parsed->has_userinfo() || !parsed->query().empty() ||
+              !parsed->fragment().empty()) {
+            error = "wif_host " + quote(host) +
+                    " must not contain user info, a query or a fragment";
+            return boost::none;
+          }
+
+          std::string authority(parsed->host());
+          if (parsed->has_port()) {
+            authority += ":";
+            authority += std::string(parsed->port());
+          }
+          std::string baseUrl = scheme + "://" + authority + std::string(parsed->path());
+          stripTrailingSlashes(baseUrl);
+
+          AwsStsEndpoint endpoint;
+          endpoint.authority = std::move(authority);
+          endpoint.baseUrl = std::move(baseUrl);
+          endpoint.overridden = true;
+          return endpoint;
+        }
+
+        std::string authorityWithPort(const Aws::Http::URI &uri) {
+          std::string authority(uri.GetAuthority().c_str());
+          const auto scheme = uri.GetScheme();
+          const uint16_t port = uri.GetPort();
+          const bool defaultPort =
+              port == 0 ||
+              (scheme == Aws::Http::Scheme::HTTPS &&
+               port == Aws::Http::HTTPS_DEFAULT_PORT) ||
+              (scheme == Aws::Http::Scheme::HTTP &&
+               port == Aws::Http::HTTP_DEFAULT_PORT);
+          if (!authority.empty() && !defaultPort) {
+            authority += ":" + std::to_string(port);
+          }
+          return authority;
+        }
+
+        bool envFlagEnabled(const char *name) {
+          const char *value = std::getenv(name);
+          if (value == nullptr || value[0] == '\0') {
+            return false;
+          }
+          std::string normalized(value);
+          for (char &ch : normalized) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+          }
+          return normalized == "true" || normalized == "1";
+        }
+
+        // ClientConfiguration in aws-sdk-cpp 1.11 leaves useFIPS and
+        // useDualStack false, so the ambient endpoint env vars have to be
+        // applied here. An override clears them: they are endpoint-selection
+        // inputs, and leaving them on makes the SDK reject the custom host.
+        Aws::Client::ClientConfiguration stsClientConfiguration(
+            const std::string &region,
+            const AwsStsEndpoint &endpoint) {
+          Aws::Client::ClientConfiguration clientConfig("", true);
+          clientConfig.region = region.c_str();
+          clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
+          clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
+          if (endpoint.overridden) {
+            clientConfig.endpointOverride = endpoint.baseUrl.c_str();
+            clientConfig.useFIPS = false;
+            clientConfig.useDualStack = false;
+            if (endpoint.baseUrl.compare(0, 7, "http://") == 0) {
+              clientConfig.scheme = Aws::Http::Scheme::HTTP;
+            }
+            if (std::getenv("AWS_USE_FIPS_ENDPOINT") != nullptr ||
+                std::getenv("AWS_USE_DUALSTACK_ENDPOINT") != nullptr) {
+              CXX_LOG_WARN(
+                  "wif_host is set; clearing FIPS/dualstack preferences to allow custom STS endpoint resolution");
+            }
+          } else {
+            clientConfig.useFIPS = envFlagEnabled("AWS_USE_FIPS_ENDPOINT");
+            clientConfig.useDualStack = envFlagEnabled("AWS_USE_DUALSTACK_ENDPOINT");
+          }
+          return clientConfig;
+        }
+      }
+
+      boost::optional<AwsStsEndpoint> resolveAwsStsEndpoint(
+          const std::string &configuredHost,
+          const std::string &region,
+          std::string &error) {
+        if (!configuredHost.empty()) {
+          return parseConfiguredStsEndpoint(configuredHost, error);
+        }
+
+        // Partition DNS suffixes are not derivable from the region name.
+        // ISO and the European Sovereign Cloud do not use amazonaws.com.
+        // This is a local evaluation of the SDK endpoint rules: no network
+        // and no credentials. FIPS, dual-stack, and the legacy global
+        // endpoint stay off so the signed GetCallerIdentity URL is the plain
+        // regional host. SDK-driven calls resolve their own endpoints.
+        auto awsSdk = initAwsSdk();
+        (void)awsSdk;
+
+        Aws::STS::Endpoint::STSEndpointProvider provider;
+        provider.AccessBuiltInParameters().SetStringParameter("Region", region.c_str());
+        provider.AccessBuiltInParameters().SetBooleanParameter("UseFIPS", false);
+        provider.AccessBuiltInParameters().SetBooleanParameter("UseDualStack", false);
+        provider.AccessClientContextParameters().SetBooleanParameter(
+            "UseGlobalEndpoint", false);
+
+        const auto outcome = provider.ResolveEndpoint({});
+        if (!outcome.IsSuccess()) {
+          error = "could not resolve an STS endpoint for region " + quote(region) +
+                  ": " + outcome.GetError().GetMessage().c_str();
+          return boost::none;
+        }
+
+        const auto &uri = outcome.GetResult().GetURI();
+        std::string authority = authorityWithPort(uri);
+        if (authority.empty()) {
+          error = "resolved STS endpoint for region " + quote(region) + " has no host";
+          return boost::none;
+        }
+
+        std::string baseUrl =
+            std::string(Aws::Http::SchemeMapper::ToString(uri.GetScheme())) +
+            "://" + authority;
+        const std::string path(uri.GetPath().c_str());
+        if (!path.empty() && path != "/") {
+          baseUrl += path;
+        }
+        stripTrailingSlashes(baseUrl);
+
+        AwsStsEndpoint endpoint;
+        endpoint.authority = std::move(authority);
+        endpoint.baseUrl = std::move(baseUrl);
+        endpoint.overridden = false;
+        return endpoint;
       }
 
       class SdkWrapper : public ISdkWrapper {
@@ -132,12 +287,16 @@ namespace Snowflake {
         // call through the same DI seam they use for getWebIdentityToken.
         boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials &currentCreds,
-            const std::string &roleArn) override {
+            const std::string &roleArn,
+            const std::string &region,
+            const AwsStsEndpoint &endpoint) override {
           auto awsSdk = initAwsSdk();
 
           CXX_LOG_DEBUG("Assuming AWS role: %s", roleArn.c_str());
 
-          const Aws::STS::STSClient stsClient(currentCreds);
+          const Aws::Client::ClientConfiguration clientConfig =
+              stsClientConfiguration(region, endpoint);
+          const Aws::STS::STSClient stsClient(currentCreds, clientConfig);
 
           Aws::STS::Model::AssumeRoleRequest assumeRoleRequest;
           assumeRoleRequest.SetRoleArn(roleArn.c_str());
@@ -168,100 +327,27 @@ namespace Snowflake {
             const std::string &region,
             const std::string &audience,
             const std::string &signingAlgorithm,
-            const std::string &configuredHost
+            const AwsStsEndpoint &endpoint
         ) override {
           auto awsSdk = initAwsSdk();
 
-          const std::string host = configuredHost.empty() ? "sts." + region + "." + getDomainSuffixForRegionalUrl(region) : configuredHost;
-          const std::string url = "https://" + host + "/";
+          const Aws::Client::ClientConfiguration clientConfig =
+              stsClientConfiguration(region, endpoint);
+          const Aws::STS::STSClient stsClient(creds, clientConfig);
 
-          // Query-protocol form body. URL-encode user-supplied parameters.
-          const std::string body =
-              "Action=GetWebIdentityToken&Version=2011-06-15"
-              "&Audience.member.1=" + Aws::Utils::StringUtils::URLEncode(audience.c_str()) +
-              "&SigningAlgorithm=" + Aws::Utils::StringUtils::URLEncode(signingAlgorithm.c_str());
+          Aws::STS::Model::GetWebIdentityTokenRequest request;
+          request.AddAudience(audience.c_str());
+          request.SetSigningAlgorithm(signingAlgorithm.c_str());
 
-          auto request = Aws::Http::CreateHttpRequest(
-              Aws::String(url),
-              Aws::Http::HttpMethod::HTTP_POST,
-              Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
-          request->SetHeaderValue("Host", host);
-          request->SetContentType("application/x-www-form-urlencoded");
-
-          auto bodyStream = Aws::MakeShared<Aws::StringStream>("getWebIdentityToken");
-          *bodyStream << body;
-          request->AddContentBody(bodyStream);
-          request->SetContentLength(std::to_string(body.size()).c_str());
-
-          auto credProvider = Aws::MakeShared<Aws::Auth::SimpleAWSCredentialsProvider>(
-              "getWebIdentityToken", creds);
-          // Default RequestDependent policy with a raw HttpRequest signs the
-          // body (signBody=true in the SignRequest(request) overload), giving
-          // us full SigV4 with payload SHA256.
-          Aws::Client::AWSAuthV4Signer signer(credProvider, "sts", region);
-          if (!signer.SignRequest(*request)) {
-            CXX_LOG_ERROR("Failed to sign STS GetWebIdentityToken request");
-            return boost::none;
-          }
-
-          Aws::Client::ClientConfiguration clientConfig;
-          clientConfig.region = region;
-          clientConfig.connectTimeoutMs = STS_CONNECT_TIMEOUT_MS;
-          clientConfig.requestTimeoutMs = STS_REQUEST_TIMEOUT_MS;
-          auto httpClient = Aws::Http::CreateHttpClient(clientConfig);
-          auto response = httpClient->MakeRequest(request);
-          if (!response) {
-            CXX_LOG_ERROR("STS GetWebIdentityToken: no HTTP response");
-            return boost::none;
-          }
-
-          const auto status = response->GetResponseCode();
-          // Read the body once, bounded, so we can both log it on failure
-          // and parse it on success without risk of unbounded materialization.
-          const std::string responseBody = readBoundedResponseBody(
-              response->GetResponseBody(), MAX_STS_RESPONSE_BODY_BYTES);
-
-          if (status != Aws::Http::HttpResponseCode::OK) {
+          const auto outcome = stsClient.GetWebIdentityToken(request);
+          if (!outcome.IsSuccess()) {
             CXX_LOG_ERROR(
-                "STS GetWebIdentityToken failed: HTTP %d, body: %s",
-                static_cast<int>(status),
-                truncateForLog(responseBody).c_str());
+                "STS GetWebIdentityToken failed: %s",
+                outcome.GetError().GetMessage().c_str());
             return boost::none;
           }
 
-          auto doc = Aws::Utils::Xml::XmlDocument::CreateFromXmlString(
-              Aws::String(responseBody.begin(), responseBody.end()));
-          if (!doc.WasParseSuccessful()) {
-            CXX_LOG_ERROR(
-                "STS GetWebIdentityToken: XML parse failed: %s",
-                doc.GetErrorMessage().c_str());
-            return boost::none;
-          }
-
-          // Expected shape:
-          //   <GetWebIdentityTokenResponse>
-          //     <GetWebIdentityTokenResult>
-          //       <WebIdentityToken>...</WebIdentityToken>
-          //       <Expiration>...</Expiration>
-          //     </GetWebIdentityTokenResult>
-          //     <ResponseMetadata>...</ResponseMetadata>
-          //   </GetWebIdentityTokenResponse>
-          auto root = doc.GetRootElement();
-          if (root.IsNull()) {
-            CXX_LOG_ERROR("STS GetWebIdentityToken: empty XML root");
-            return boost::none;
-          }
-          auto result = root.FirstChild("GetWebIdentityTokenResult");
-          if (result.IsNull()) {
-            CXX_LOG_ERROR("STS GetWebIdentityToken: missing GetWebIdentityTokenResult element");
-            return boost::none;
-          }
-          auto tokenNode = result.FirstChild("WebIdentityToken");
-          if (tokenNode.IsNull()) {
-            CXX_LOG_ERROR("STS GetWebIdentityToken: missing WebIdentityToken element");
-            return boost::none;
-          }
-          const Aws::String token = tokenNode.GetText();
+          const Aws::String token = outcome.GetResult().GetWebIdentityToken();
           if (token.empty()) {
             CXX_LOG_ERROR("STS GetWebIdentityToken: empty WebIdentityToken element");
             return boost::none;

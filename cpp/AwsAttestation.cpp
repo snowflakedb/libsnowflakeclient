@@ -15,6 +15,18 @@ namespace Snowflake::Client {
     // when validating the inbound JWT.
     constexpr const char* SNOWFLAKE_WIF_AUDIENCE = "snowflakecomputing.com";
     constexpr const char* AWS_WIF_SIGNING_ALGORITHM = "ES384";
+
+    // SigV4 signs an empty path as "/". The credential URL is replayed as
+    // stored, so a path-less endpoint must keep that slash before the query.
+    // A baseUrl that already has a path keeps it and only adds the query.
+    std::string getCallerIdentityUrl(const AwsUtils::AwsStsEndpoint &endpoint) {
+      const std::string prefix = "://" + endpoint.authority;
+      const auto marker = endpoint.baseUrl.find(prefix);
+      const bool hasPath = marker != std::string::npos &&
+          marker + prefix.size() < endpoint.baseUrl.size();
+      return endpoint.baseUrl + (hasPath ? "?" : "/?") +
+          "Action=GetCallerIdentity&Version=2011-06-15";
+    }
   }
 
   // STS rejects x-amz-content-sha256 on empty-body requests ("unacceptable headers"),
@@ -50,7 +62,9 @@ namespace Snowflake::Client {
   boost::optional<Aws::Auth::AWSCredentials> assumeAwsRoleChain(
     AwsUtils::ISdkWrapper &sdkWrapper,
     const Aws::Auth::AWSCredentials &initialCreds,
-    const std::vector<std::string> &roleArnChain) {
+    const std::vector<std::string> &roleArnChain,
+    const std::string &region,
+    const AwsUtils::AwsStsEndpoint &endpoint) {
 
     if (roleArnChain.empty()) {
       CXX_LOG_ERROR("Role ARN chain is empty");
@@ -60,7 +74,7 @@ namespace Snowflake::Client {
     Aws::Auth::AWSCredentials currentCreds = initialCreds;
 
     for (const auto &roleArn: roleArnChain) {
-      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn);
+      auto assumedCredsOpt = sdkWrapper.assumeRole(currentCreds, roleArn, region, endpoint);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role in chain: %s", roleArn.c_str());
         return boost::none;
@@ -86,6 +100,15 @@ namespace Snowflake::Client {
     }
     const std::string &region = regionOpt.get();
 
+    std::string endpointError;
+    auto endpointOpt = AwsUtils::resolveAwsStsEndpoint(
+        config.getWifHost(), region, endpointError);
+    if (!endpointOpt) {
+      CXX_LOG_ERROR("Failed to resolve AWS STS endpoint: %s", endpointError.c_str());
+      return boost::none;
+    }
+    const AwsUtils::AwsStsEndpoint endpoint = endpointOpt.get();
+
     if (config.workloadIdentityImpersonationPath &&
         !config.workloadIdentityImpersonationPath.get().empty()) {
 
@@ -100,7 +123,8 @@ namespace Snowflake::Client {
 
       CXX_LOG_DEBUG("Role ARN chain size: %zu", roleArnChain.size());
 
-      auto assumedCredsOpt = assumeAwsRoleChain(*config.awsSdkWrapper, creds, roleArnChain);
+      auto assumedCredsOpt = assumeAwsRoleChain(
+          *config.awsSdkWrapper, creds, roleArnChain, region, endpoint);
       if (!assumedCredsOpt) {
         CXX_LOG_ERROR("Failed to assume role chain");
         return boost::none;
@@ -114,7 +138,7 @@ namespace Snowflake::Client {
           "Requesting AWS WIF JWT (STS:GetWebIdentityToken) in region %s",
           region.c_str());
       auto jwtOpt = config.awsSdkWrapper->getWebIdentityToken(
-          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, config.getWifHostForAws());
+          creds, region, SNOWFLAKE_WIF_AUDIENCE, AWS_WIF_SIGNING_ALGORITHM, endpoint);
       if (!jwtOpt) {
         CXX_LOG_ERROR("Failed to obtain AWS WIF JWT token");
         return boost::none;
@@ -124,9 +148,8 @@ namespace Snowflake::Client {
       return Attestation::makeAws(jwt);
     }
 
-    const std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
-    const std::string host = std::string("sts") + "." + region + "." + domain;
-    const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
+    const std::string url = getCallerIdentityUrl(endpoint);
+    const std::string &host = endpoint.authority;
 
     auto request = Aws::Http::CreateHttpRequest(
       Aws::String(url),
@@ -146,7 +169,8 @@ namespace Snowflake::Client {
     }
 
     picojson::object obj;
-    obj["url"] = picojson::value(request->GetURIString());
+    // GetURIString() drops a root "/" path, so store the URL that was signed.
+    obj["url"] = picojson::value(url);
     obj["method"] = picojson::value(Aws::Http::HttpMethodMapper::GetNameForHttpMethod(request->GetMethod()));
     picojson::object headers;
     for (const auto &h: request->GetHeaders()) {

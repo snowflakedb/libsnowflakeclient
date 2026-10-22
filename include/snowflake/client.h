@@ -395,11 +395,10 @@ typedef enum SF_ATTRIBUTE {
     /**
     * Overrides the STS/IAM endpoint used for Workload Identity Federation.
     * May be given as either a bare hostname (e.g. "sts.us-gov-east-1.amazonaws.com")
-    * or a full base URL (e.g. "https://iamcredentials.privategoogleapis.com/v1") --
-    * the value is normalized internally to whatever format the configured
-    * provider requires:
-    *   - AWS: requires a bare host. If a full URL is given, the host is
-    *          extracted automatically.
+    * or a full base URL (e.g. "https://iamcredentials.privategoogleapis.com/v1").
+    *   - AWS: applied to GetCallerIdentity, GetWebIdentityToken, and
+    *          AssumeRole. A bare host is treated as https. When omitted, the
+    *          AWS SDK partition rules select the regional STS endpoint.
     *   - GCP: requires a full base URL. If a bare host is given, "/v1" is
     *          appended automatically; a full URL is used as-is.
     */
