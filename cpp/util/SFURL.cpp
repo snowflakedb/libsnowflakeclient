@@ -311,11 +311,11 @@ void SFURL::parseAuthority(SFURL &sfurl, size_t &i)
           pre = i + 1;  // skip the @
           s = HOST;
         }
-        else if (c == ':' || c == '/' || c == '?')
+        else if (c == ':' || c == '/' || c == '#' || c == '?')
         {
           sfurl.m_host = sfurl.m_cacheURL.substr(pre, i - pre);
 
-          if (c == '/' || c == '?')
+          if (c == '/' || c == '#' || c == '?')
           {
             return;
           }

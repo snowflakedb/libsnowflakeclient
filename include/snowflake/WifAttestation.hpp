@@ -96,8 +96,6 @@ namespace Client {
       return wifHost.value_or("");
     }
 
-    std::string getWifHostForAws() const;
-
     std::string getWifHostForGcp() const;
   };
 

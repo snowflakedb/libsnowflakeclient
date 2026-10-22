@@ -9,6 +9,12 @@
 namespace Snowflake {
   namespace Client {
     namespace AwsUtils {
+
+      struct AwsStsEndpoint {
+        std::string authority;
+        std::string baseUrl;
+      };
+
       /*
        * Shared initialization of aws sdk to avoid multiple initialization.
        * To initialize aws sdk, call initAwsSdk() and hold the returned shared_ptr as long as you use AWS SDK.
@@ -19,6 +25,9 @@ namespace Snowflake {
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName);
 
+      boost::optional<AwsStsEndpoint> resolveStsEndpoint(const std::string& region,
+          const std::string& configuredHost);
+
       class ISdkWrapper {
       public:
         virtual boost::optional<std::string> getEC2Region() = 0;
@@ -28,7 +37,9 @@ namespace Snowflake {
         // failure. Used by the WIF role-assumption (impersonation) chain.
         virtual boost::optional<Aws::Auth::AWSCredentials> assumeRole(
             const Aws::Auth::AWSCredentials& currentCreds,
-            const std::string& roleArn) = 0;
+            const std::string& roleArn,
+            const std::string& region,
+            const std::string& configuredHost) = 0;
         // Calls AWS STS GetWebIdentityToken for outbound identity federation
         // (SNOW-2919437). Returns the signed JWT on success, or boost::none on
         // any failure (HTTP error, signing failure, malformed response).
