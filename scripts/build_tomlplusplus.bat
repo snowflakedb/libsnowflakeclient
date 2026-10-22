@@ -22,6 +22,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set DEPS_DIR=%scriptdir%..\deps
+rem deps/tomlplusplus keeps only include/, LICENSE and README.md from upstream toml++ v3.4.0
 set TOMLPLUSPLUS_SOURCE_DIR=%DEPS_DIR%\tomlplusplus
 set TOMLPLUSPLUS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\tomlplusplus
 

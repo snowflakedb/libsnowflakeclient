@@ -10,6 +10,7 @@ source "$DIR/utils.sh"
 
 [[ -n "$GET_VERSION" ]] && echo $TOMLPLUSPLUS_VERSION && exit 0
 
+# deps/tomlplusplus keeps only include/, LICENSE and README.md from upstream toml++ v3.4.0
 SOURCE_DIR="$DIR/../deps/tomlplusplus"
 INSTALL_DIR="$DEPENDENCY_DIR/tomlplusplus"
 
