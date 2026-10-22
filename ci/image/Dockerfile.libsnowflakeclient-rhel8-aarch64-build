@@ -15,7 +15,7 @@ RUN pip install awscli
 RUN cd /tmp && wget https://sourceware.org/pub/valgrind/valgrind-3.23.0.tar.bz2 && tar xvf valgrind-3.23.0.tar.bz2 && cd valgrind-3.23.0 && ./configure && make && make install
 
 #cppunit
-RUN cd /tmp && git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
+RUN cd /tmp && git clone https://anongit.freedesktop.org/git/libreoffice/cppunit &&\
     cd cppunit &&\
     git checkout tags/cppunit-1.15.1 -b v1.15.1 &&\
     ./autogen.sh &&\
@@ -36,4 +36,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN mkdir -p /home/user
 RUN chmod 777 /home/user
 WORKDIR /home/user
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
