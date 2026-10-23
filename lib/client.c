@@ -82,6 +82,8 @@ static const char* const query_status_names[] = {
  */
 sf_bool validate_application(const char *application);
 
+sf_bool validate_tls_ciphers(const char* cipher);
+
 /**
  * Helper function to get SF_QUERY_STATUS given the string representation
  * @param query_status the string representation of the query status
@@ -881,6 +883,33 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     }
 
+    if (sf->tls_ciphers == NULL)
+    {
+        char ciphers_buf[MAX_PATH + 1];
+        char *ciphers = sf_getenv_s("SNOWFLAKE_TLS_CIPHERS", ciphers_buf, sizeof(ciphers_buf));
+
+        if (ciphers && strlen(ciphers) > 0)
+        {
+            alloc_buffer_and_copy(&sf->tls_ciphers, ciphers);
+        }
+    }
+
+    if (sf->tls_ciphers != NULL)
+    {
+        sf_bool is_valid = validate_tls_ciphers(sf->tls_ciphers);
+
+        if (!is_valid)
+        {
+            log_error(ERR_MSG_TLS_CIPHER_PARAMETER_INVALID);
+            SET_SNOWFLAKE_ERROR(
+                &sf->error,
+                SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                ERR_MSG_TLS_CIPHER_PARAMETER_INVALID,
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_GENERAL;
+        }
+    }
+
     // split account and region if connected by a dot.
     char* dot_ptr = strchr(sf->account, (int)'.');
     if (dot_ptr) {
@@ -1057,6 +1086,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
     log_debug("get_maxretries: %d", sf->get_maxretries);
     log_debug("get_threshold: %d", sf->get_threshold);
+    log_debug("tls_ciphers: %s", sf->tls_ciphers ? sf->tls_ciphers : "(default)");
 
     return SF_STATUS_SUCCESS;
 }
@@ -1389,6 +1419,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         
         sf->log_query_text = SF_BOOLEAN_FALSE;
         sf->log_query_parameters = SF_BOOLEAN_FALSE;
+        sf->tls_ciphers = NULL;
     }
 
     return sf;
@@ -1474,6 +1505,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->wif_host);
     SF_FREE(sf->programmatic_access_token);
     SF_FREE(sf->workload_identity_impersonation_path);
+    SF_FREE(sf->tls_ciphers);
     SF_FREE(sf);
 
     stopwatch_stop(&stopwatch);
@@ -2132,6 +2164,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
             sf->wif_aws_use_outbound_token = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_TLS_CIPHERS:
+            alloc_buffer_and_copy(&sf->tls_ciphers, value);
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2395,6 +2430,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_WIF_AWS_USE_OUTBOUND_TOKEN:
             *value = &sf->wif_aws_use_outbound_token;
             break;
+        case SF_CON_TLS_CIPHERS:
+            *value = sf->tls_ciphers;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2556,7 +2594,8 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             sfstmt->connection->proxy,
             sfstmt->connection->no_proxy,
             get_retry_timeout(sfstmt->connection),
-            sfstmt->connection->retry_count);
+            sfstmt->connection->retry_count,
+            sfstmt->connection->tls_ciphers);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
           // Unable to create chunk downloader.

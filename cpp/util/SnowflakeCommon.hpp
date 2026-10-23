@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <type_traits>
 #include "snowflake/client.h"
+#include <vector>
 
 /* CPP only utilities */
 namespace Snowflake
@@ -21,6 +22,8 @@ void replaceStrAll(std::string& stringToReplace,
 
 void parseHttpRespHeaders(std::string const& headerString,
                           std::map<std::string, std::string>& headers);
+
+std::vector<std::string> split(std::string s, const std::string& delimiter);
 
 /**
  * Decide whether a GET download file name is safe to use as a local

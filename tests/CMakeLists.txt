@@ -47,6 +47,7 @@ SET(TESTS_C
         test_ocsp_fail_open
         test_unit_ocsp_defaults
         test_unit_privatelink
+        test_unit_tls_ciphers
         test_multiple_statements
         test_async
         test_cancel

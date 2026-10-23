@@ -71,6 +71,8 @@ struct SF_CHUNK_DOWNLOADER {
     char *proxy;
     char *no_proxy;
 
+    char *tls_ciphers;
+
     // retry settings
     int64 retry_timeout;
     int8 retry_max_count;
@@ -89,7 +91,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    const char *proxy,
                                                    const char *no_proxy,
                                                    int64 retry_timeout,
-                                                   int8 retry_max_count);
+                                                   int8 retry_max_count,
+                                                   const char *tls_ciphers);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);

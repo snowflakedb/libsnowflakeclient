@@ -5,6 +5,7 @@
 #endif
 #include <stdint.h>
 #include <errno.h>
+#include <curl/curl.h>
 
 sf_bool ends_with(char* str, char* suffix)
 {
@@ -73,4 +74,19 @@ sf_bool parse_int8(const char* value, int8* out)
 
     *out = (int8)parsed;
     return SF_BOOLEAN_TRUE;
+}
+
+const char* sslversion_to_str(long sslversion)
+{
+    switch (sslversion & 0xFFFF) {
+    case CURL_SSLVERSION_DEFAULT: return "CURL_SSLVERSION_DEFAULT";
+    case CURL_SSLVERSION_TLSv1:   return "CURL_SSLVERSION_TLSv1";
+    case CURL_SSLVERSION_SSLv2:   return "CURL_SSLVERSION_SSLv2";
+    case CURL_SSLVERSION_SSLv3:   return "CURL_SSLVERSION_SSLv3";
+    case CURL_SSLVERSION_TLSv1_0: return "CURL_SSLVERSION_TLSv1_0";
+    case CURL_SSLVERSION_TLSv1_1: return "CURL_SSLVERSION_TLSv1_1";
+    case CURL_SSLVERSION_TLSv1_2: return "CURL_SSLVERSION_TLSv1_2";
+    case CURL_SSLVERSION_TLSv1_3: return "CURL_SSLVERSION_TLSv1_3";
+    default:                      return "UNKNOWN";
+    }
 }
