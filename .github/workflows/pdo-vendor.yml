@@ -236,31 +236,43 @@ jobs:
             ci/build_linux.sh \
             ci/build_mac.sh \
             ci/build_win.bat
-      - name: Install Visual Studio 2019 Build Tools
-        # windows-2019 (VS16) runners are retired; install VS2019 BT on windows-2022.
+      - name: Install v142 Spectre-mitigated libraries
+        # windows-2019 (VS16) runners are retired; install VS2019 libs in VS2022.
         shell: pwsh
         run: |
-          $installer = "$env:TEMP\vs_buildtools.exe"
-          Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vs_buildtools.exe" -OutFile $installer
-          $installPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools"
-          # Single ArgumentList string so the path with spaces is not split.
-          $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
-            "--quiet --wait --norestart --nocache " +
-            "--installPath `"$installPath`" " +
-            "--add Microsoft.VisualStudio.Workload.VCTools " +
-            "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
-            "--add Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre " +
-            "--includeRecommended"
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          if (-not (Test-Path $installer)) {
+            $installer = "${env:ProgramFiles}\Microsoft Visual Studio\Installer\setup.exe"
+          }
+          if (-not (Test-Path $installer)) {
+            throw "Visual Studio Installer was not found"
+          }
+          $installPath = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
+          if (-not (Test-Path $installPath)) {
+            throw "Visual Studio installation was not found: $installPath"
+          }
+          $arguments = @(
+            'modify'
+            '--quiet'
+            '--norestart'
+            "--installPath `"$installPath`""
+            '--add'
+            'Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64.Spectre'
+            '--includeRecommended'
           )
-          if ($p.ExitCode -notin 0, 3010) {
-            throw "VS2019 Build Tools install failed with exit code $($p.ExitCode)"
+          Write-Host "Running Visual Studio Installer:"
+          Write-Host "$installer $($arguments -join ' ')"
+          $process = Start-Process `
+            -FilePath $installer `
+            -ArgumentList $arguments `
+            -Wait `
+            -PassThru
+          $exitCode = $process.ExitCode
+          Write-Host "Visual Studio Installer exit code: $exitCode"
+          # 0 = success; 3010 = success, reboot required
+          if ($exitCode -ne 0 -and $exitCode -ne 3010) {
+            throw "VS Installer failed with exit code: $exitCode"
           }
-          $vcvars = Join-Path $installPath "VC\Auxiliary\Build\vcvarsall.bat"
-          if (-not (Test-Path $vcvars)) {
-            & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
-            throw "VS2019 vcvarsall.bat not found at $vcvars"
-          }
-          Write-Host "VS2019 Build Tools ready: $vcvars"
       - name: Install CMake
         shell: cmd
         run: |
