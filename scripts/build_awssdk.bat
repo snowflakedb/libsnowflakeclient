@@ -64,6 +64,7 @@ REM CPU extentsions might not be always available on all customer environments
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
+-T "%ToolSetVersion%" ^
 -DBUILD_ONLY=s3;sts ^
 -DFORCE_CURL=on ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
