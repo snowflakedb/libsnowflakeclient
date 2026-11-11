@@ -297,6 +297,16 @@ SF_STATUS snowflake_parse_dsn(SF_CONNECT* sf, const std::string& dsn)
     return SF_STATUS_SUCCESS;
 }
 
+sf_bool STDCALL _is_put_get_command(char *sql_text)
+{
+  boost::regex PUTGET_REGEX = boost::regex("^([ ]*\\/\\*.*\\*\\/[ ]*)*([ ]*)*(put|get)[ ]+", boost::regex::icase);
+  if (!sql_text || (strlen(sql_text) == 0))
+  {
+    return SF_BOOLEAN_FALSE;
+  }
+  return boost::regex_search(sql_text, PUTGET_REGEX) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+}
+
 }// extern "C"
 
 void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
