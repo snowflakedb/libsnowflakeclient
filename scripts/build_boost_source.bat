@@ -78,8 +78,6 @@ b2 ^
 
 
 if %ERRORLEVEL% NEQ 0 goto :error
-::remove cmake files including local build path information
-rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
 
 cd "%currdir%"
 
