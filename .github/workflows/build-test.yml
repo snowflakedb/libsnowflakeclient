@@ -236,7 +236,14 @@ jobs:
                   CLOUD_PROVIDER: AWS
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: linux-aws
+                path: "*.gcov"
             - name: Upload coverage reports to Codecov
+              if: ${{ github.repository_owner == 'snowflakedb' }}
               uses: codecov/codecov-action@v6
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
@@ -276,7 +283,14 @@ jobs:
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: linux-azure
+                path: "*.gcov"
             - name: Upload coverage reports to Codecov
+              if: ${{ github.repository_owner == 'snowflakedb' }}
               uses: codecov/codecov-action@v6
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
@@ -316,7 +330,14 @@ jobs:
                   CLOUD_PROVIDER: GCP
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: linux-gcp
+                path: "*.gcov"
             - name: Upload coverage reports to Codecov
+              if: ${{ github.repository_owner == 'snowflakedb' }}
               uses: codecov/codecov-action@v6
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
