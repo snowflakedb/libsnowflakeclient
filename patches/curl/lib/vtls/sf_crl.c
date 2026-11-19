@@ -25,22 +25,32 @@ typedef HANDLE SF_THREAD_HANDLE;
 #endif
 #else
 #include <pthread.h>
+#include <signal.h>
 #include <unistd.h>
 #include <dirent.h>
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
 typedef pthread_t SF_THREAD_HANDLE;
 #endif
 
+/* Created once and never destroyed, so a lock taken after term_crl() is valid. */
 static SF_MUTEX_HANDLE crl_response_cache_mutex;
+static int crl_response_cache_mutex_created = 0;
 static SF_THREAD_HANDLE crl_cleanup_thread;
 static volatile int crl_cleanup_stop = 0;
+/* The flags below are only accessed under crl_response_cache_mutex. */
 static int crl_cleanup_thread_started = 0;
+static int crl_cleanup_thread_attempted = 0;
 static int crl_cache_initialized = 0;
+#ifndef _WIN32
+/* Process that tried to start the cleanup thread. A forked child inherits the
+ * flags above, but not the thread. */
+static pid_t crl_cleanup_thread_pid = 0;
+static int crl_atfork_error = 0;
+#endif
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
 static int _mutex_lock(SF_MUTEX_HANDLE *lock);
 static int _mutex_unlock(SF_MUTEX_HANDLE *lock);
-static int _mutex_term(SF_MUTEX_HANDLE *lock);
 
 
 /* Mutex */
@@ -77,14 +87,6 @@ int _mutex_unlock(SF_MUTEX_HANDLE *lock) {
 #endif
 }
 
-int _mutex_term(SF_MUTEX_HANDLE *lock) {
-#ifdef _WIN32
-  return CloseHandle(*lock) == 0;
-#else
-  return pthread_mutex_destroy(lock);
-#endif
-}
-
 #ifdef _WIN32
 static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg);
 #endif
@@ -99,7 +101,21 @@ static int _thread_init(SF_THREAD_HANDLE *thread, LPTHREAD_START_ROUTINE proc, v
 #else
 static int _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg)
 {
-  return pthread_create(thread, NULL, proc, arg);
+  /* The thread inherits the caller's signal mask. Block everything, so signals
+   * sent to the process are never handled on it, except faults: a blocked
+   * fault kills the process without running its crash handlers. */
+  sigset_t all, old;
+  int ret;
+
+  sigfillset(&all);
+  sigdelset(&all, SIGSEGV);
+  sigdelset(&all, SIGBUS);
+  sigdelset(&all, SIGFPE);
+  sigdelset(&all, SIGILL);
+  pthread_sigmask(SIG_SETMASK, &all, &old);
+  ret = pthread_create(thread, NULL, proc, arg);
+  pthread_sigmask(SIG_SETMASK, &old, NULL);
+  return ret;
 }
 #endif
 
@@ -1005,12 +1021,14 @@ static void cleanup_disk_cache(void)
 
 SF_PUBLIC(void) cleanupCertCRLCache(void)
 {
-  if (!crl_cache_initialized)
+  if (!crl_response_cache_mutex_created)
     return;
 
   _mutex_lock(&crl_response_cache_mutex);
-  cleanup_memory_cache_locked();
-  cleanup_disk_cache();
+  if (crl_cache_initialized) {
+    cleanup_memory_cache_locked();
+    cleanup_disk_cache();
+  }
   _mutex_unlock(&crl_response_cache_mutex);
 }
 
@@ -1036,11 +1054,38 @@ static void *crl_cleanup_thread_proc(void *arg)
   return NULL;
 }
 
+/* Called under the lock. Not left to the fork handlers: a fork can skip them,
+ * and registering them can fail. */
+static void forget_inherited_cleanup_thread(void)
+{
+#ifndef _WIN32
+  if (crl_cleanup_thread_attempted && crl_cleanup_thread_pid != getpid()) {
+    crl_cleanup_thread_started = 0;
+    crl_cleanup_thread_attempted = 0;
+  }
+#endif
+}
+
 static void start_crl_cleanup_thread(void)
 {
-  long interval = parse_env_seconds(SF_CRL_CACHE_CLEANUP_INTERVAL_ENV,
-                                    SF_CRL_CACHE_CLEANUP_INTERVAL_DEFAULT);
-  if (interval <= 0 || crl_cleanup_thread_started)
+  long interval;
+
+  forget_inherited_cleanup_thread();
+  if (crl_cleanup_thread_attempted || !crl_cache_initialized)
+    return;
+  /* A disabled or failed start is not retried on later connections. */
+  crl_cleanup_thread_attempted = 1;
+#ifndef _WIN32
+  crl_cleanup_thread_pid = getpid();
+  /* Without the fork handlers, a fork while the thread holds the cache lock
+   * would leave the child unable to take it. */
+  if (crl_atfork_error)
+    return;
+#endif
+
+  interval = parse_env_seconds(SF_CRL_CACHE_CLEANUP_INTERVAL_ENV,
+                               SF_CRL_CACHE_CLEANUP_INTERVAL_DEFAULT);
+  if (interval <= 0)
     return;
 
   crl_cleanup_stop = 0;
@@ -1061,34 +1106,86 @@ static DWORD WINAPI crl_cleanup_thread_win(LPVOID arg)
 }
 #endif
 
-static void stop_crl_cleanup_thread(void)
-{
-  if (!crl_cleanup_thread_started)
-    return;
-
-  crl_cleanup_stop = 1;
-  _thread_join(crl_cleanup_thread);
-  crl_cleanup_thread_started = 0;
-}
-
 static void term_crl(void)
 {
-  if (!crl_cache_initialized)
+  int join_thread;
+
+  if (!crl_response_cache_mutex_created)
     return;
 
-  /* Join the cleanup thread before OpenSSL/libcurl teardown. */
-  stop_crl_cleanup_thread();
-
-  _mutex_term(&crl_response_cache_mutex);
+  /* Under the lock, so registerCRLCheck() cannot start a thread after the join. */
+  _mutex_lock(&crl_response_cache_mutex);
+  forget_inherited_cleanup_thread();
+  join_thread = crl_cache_initialized && crl_cleanup_thread_started;
   crl_cache_initialized = 0;
+  crl_cleanup_thread_started = 0;
+  crl_cleanup_thread_attempted = 0;
+  if (join_thread)
+    crl_cleanup_stop = 1;
+  _mutex_unlock(&crl_response_cache_mutex);
 
+  /* Join the cleanup thread before OpenSSL/libcurl teardown. */
+  if (join_thread)
+    _thread_join(crl_cleanup_thread);
+
+  _mutex_lock(&crl_response_cache_mutex);
   sctx_clear();
   ucrl_clear();
+  _mutex_unlock(&crl_response_cache_mutex);
 }
+
+#ifndef _WIN32
+/* A forked child must not inherit the cache mutex locked, or the cache
+ * half-updated, by another thread. glibc removes the handlers when the shared
+ * object containing this code is unloaded. On macOS they outlive dlclose(),
+ * but OpenSSL, unless built with no-pinshared, keeps the shared object it is
+ * linked into loaded. */
+static pthread_once_t crl_atfork_once = PTHREAD_ONCE_INIT;
+static int crl_atfork_locked = 0;
+
+static void crl_atfork_prepare(void)
+{
+  crl_atfork_locked = crl_response_cache_mutex_created &&
+                      pthread_mutex_lock(&crl_response_cache_mutex) == 0;
+}
+
+static void crl_atfork_unlock(void)
+{
+  if (crl_atfork_locked)
+    pthread_mutex_unlock(&crl_response_cache_mutex);
+}
+
+/* Also covers a child whose pid matches a dead process that started a thread. */
+static void crl_atfork_child(void)
+{
+  crl_cleanup_thread_started = 0;
+  crl_cleanup_thread_attempted = 0;
+  crl_atfork_unlock();
+}
+
+static void register_crl_atfork(void)
+{
+  crl_atfork_error =
+    pthread_atfork(crl_atfork_prepare, crl_atfork_unlock, crl_atfork_child);
+}
+#endif
 
 SF_PUBLIC(void) termCertCRL(void)
 {
   term_crl();
+}
+
+SF_PUBLIC(int) isCertCRLCleanupThreadRunning(void)
+{
+  int running;
+
+  if (!crl_response_cache_mutex_created)
+    return 0;
+  _mutex_lock(&crl_response_cache_mutex);
+  forget_inherited_cleanup_thread();
+  running = crl_cleanup_thread_started;
+  _mutex_unlock(&crl_response_cache_mutex);
+  return running;
 }
 
 SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
@@ -1102,6 +1199,12 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 {
   char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
+#ifndef _WIN32
+  if (crl_atfork_error)
+    infof(data, "CRL fork handlers not registered (error %d); the CRL cache "
+          "cleanup thread is disabled and a forked child may inherit the CRL "
+          "cache lock", crl_atfork_error);
+#endif
 
   get_cache_dir(data, cache_dir);
   if (*cache_dir)
@@ -1118,17 +1221,28 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 
   X509_STORE_set_flags(ctx, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL | X509_V_FLAG_X509_STRICT);
 
+  _mutex_lock(&crl_response_cache_mutex);
   /* register X509_STORE with given parameters */
   sctx_register(ctx, data,
                crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching,
                crl_download_timeout, crl_download_max_size);
+
+  /* Started on first use, not in initCertCRL(): a process that initializes
+   * curl and then forks (e.g. a PHP-FPM master) must not own the thread. */
+  start_crl_cleanup_thread();
+  _mutex_unlock(&crl_response_cache_mutex);
 }
 
 SF_PUBLIC(void) initCertCRL()
 {
-  /* must call only once. not thread safe */
-  _mutex_init(&crl_response_cache_mutex);
+  /* not thread safe; called from curl_global_init() */
+  if (!crl_response_cache_mutex_created)
+    crl_response_cache_mutex_created = _mutex_init(&crl_response_cache_mutex) == 0;
+  _mutex_lock(&crl_response_cache_mutex);
   crl_cache_initialized = 1;
-  start_crl_cleanup_thread();
+  _mutex_unlock(&crl_response_cache_mutex);
+#ifndef _WIN32
+  pthread_once(&crl_atfork_once, register_crl_atfork);
+#endif
   atexit(term_crl);
 }

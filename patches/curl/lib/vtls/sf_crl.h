@@ -35,4 +35,7 @@ SF_PUBLIC(void) termCertCRL(void);
 /* Remove expired/evicted in-memory CRLs and old on-disk cache files. */
 SF_PUBLIC(void) cleanupCertCRLCache(void);
 
+/* Test hook: non-zero while this process owns a CRL cache cleanup thread. */
+SF_PUBLIC(int) isCertCRLCleanupThreadRunning(void);
+
 #endif

@@ -102,6 +102,10 @@ if (LINUX)
     SET(TESTS_CXX ${TESTS_CXX} test_unit_secure_storage_linux)
 endif()
 
+if (UNIX)
+    SET(TESTS_CXX ${TESTS_CXX} test_crl_cleanup_thread test_crl_cleanup_thread_no_atfork)
+endif()
+
 SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
