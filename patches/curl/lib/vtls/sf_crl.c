@@ -247,6 +247,31 @@ static void sctx_unregister(const X509_STORE *ctx)
   }
 }
 
+/* The registry is shared by all handshakes and can be reallocated, so verify
+ * callbacks work on a copy of their entry taken under the lock. */
+static int sctx_get(const X509_STORE *ctx, struct store_ctx_entry *out)
+{
+  struct store_ctx_entry *entry;
+
+  _mutex_lock(&crl_response_cache_mutex);
+  entry = sctx_lookup(ctx);
+  if (entry)
+    *out = *entry;
+  _mutex_unlock(&crl_response_cache_mutex);
+  return entry != NULL;
+}
+
+static void sctx_set_crl_num(const X509_STORE *ctx, int crl_num)
+{
+  struct store_ctx_entry *entry;
+
+  _mutex_lock(&crl_response_cache_mutex);
+  entry = sctx_lookup(ctx);
+  if (entry)
+    entry->curr_crl_num = crl_num;
+  _mutex_unlock(&crl_response_cache_mutex);
+}
+
 static bool is_crl_newer(const X509_CRL *crl_old, const X509_CRL *crl_new)
 {
   if (!crl_new)
@@ -778,14 +803,14 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
   X509 *x;
   STACK_OF(X509_CRL) *crls = NULL;
   STACK_OF(DIST_POINT) *crldp;
-  struct store_ctx_entry *data;
+  const X509_STORE *store = X509_STORE_CTX_get0_store(ctx);
+  struct store_ctx_entry entry;
+  struct store_ctx_entry *data = &entry;
 
-  data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
-
-  if (!data)
+  if (!sctx_get(store, data))
     return NULL;
 
-  data->curr_crl_num = 0;
+  sctx_set_crl_num(store, 0);
 
   const char *no_crl = getenv("SF_TEST_CRL_NO_CRL");
   if (no_crl && strcasecmp(no_crl, "true") == 0) {
@@ -808,7 +833,7 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
     return NULL;
   }
 
-  data->curr_crl_num = sk_X509_CRL_num(crls);
+  sctx_set_crl_num(store, sk_X509_CRL_num(crls));
   return crls;
 }
 
@@ -816,15 +841,15 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
 {
   int err;
   X509 *err_cert;
-  struct store_ctx_entry *data;
+  struct store_ctx_entry entry;
+  struct store_ctx_entry *data = &entry;
 #define MAX_CERT_NAME_LEN 64
   char X509_cert_name[MAX_CERT_NAME_LEN + 1];
 
   if (ok)
     return ok;
 
-  data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
-  if (!data)
+  if (!sctx_get(X509_STORE_CTX_get0_store(ctx), data))
     return 0;
 
   err = X509_STORE_CTX_get_error(ctx);
