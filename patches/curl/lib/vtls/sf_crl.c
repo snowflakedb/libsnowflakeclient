@@ -956,11 +956,33 @@ static int should_remove_cached_crl_file(const char *file_path, time_t threshold
   return cmp <= 0;
 }
 
-static void cleanup_memory_cache_locked(void)
+struct crl_cleanup_settings {
+  long validity;
+  long removal_delay;
+  char cache_dir[PATH_MAX];
+};
+
+/* Used by the cleanup thread, which must not call getenv(): it is not safe
+ * while another thread modifies the environment. Each registerCRLCheck()
+ * reads the environment and updates them, under crl_response_cache_mutex. */
+static struct crl_cleanup_settings crl_cleanup_thread_settings;
+/* Written only while no cleanup thread is running. */
+static long crl_cleanup_thread_interval;
+
+static void read_cleanup_settings(const struct Curl_easy *data,
+                                  struct crl_cleanup_settings *settings)
+{
+  settings->validity = parse_env_seconds(SF_CRL_CACHE_VALIDITY_TIME_ENV,
+                                         SF_CRL_CACHE_VALIDITY_TIME_DEFAULT);
+  settings->removal_delay =
+    parse_env_seconds(SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_ENV,
+                      SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_DEFAULT);
+  get_cache_dir(data, settings->cache_dir);
+}
+
+static void cleanup_memory_cache_locked(long validity)
 {
   time_t now = time(NULL);
-  long validity = parse_env_seconds(SF_CRL_CACHE_VALIDITY_TIME_ENV,
-                                    SF_CRL_CACHE_VALIDITY_TIME_DEFAULT);
   size_t i = 0;
 
   while (i < ucrl_registry.size) {
@@ -974,15 +996,11 @@ static void cleanup_memory_cache_locked(void)
   }
 }
 
-static void cleanup_disk_cache(void)
+static void cleanup_disk_cache(long removal_delay, const char *cache_dir)
 {
-  char cache_dir[PATH_MAX] = "";
   time_t now = time(NULL);
-  long removal_delay = parse_env_seconds(SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_ENV,
-                                         SF_CRL_ON_DISK_CACHE_REMOVAL_DELAY_DEFAULT);
   time_t threshold = now - removal_delay;
 
-  get_cache_dir(NULL, cache_dir);
   if (!*cache_dir)
     return;
 
@@ -1044,27 +1062,34 @@ static void cleanup_disk_cache(void)
 #endif
 }
 
-SF_PUBLIC(void) cleanupCertCRLCache(void)
+static void cleanup_cache(const struct crl_cleanup_settings *settings)
 {
-  if (!crl_response_cache_mutex_created)
-    return;
-
   _mutex_lock(&crl_response_cache_mutex);
   if (crl_cache_initialized) {
-    cleanup_memory_cache_locked();
-    cleanup_disk_cache();
+    cleanup_memory_cache_locked(settings->validity);
+    cleanup_disk_cache(settings->removal_delay, settings->cache_dir);
   }
   _mutex_unlock(&crl_response_cache_mutex);
 }
 
+SF_PUBLIC(void) cleanupCertCRLCache(void)
+{
+  struct crl_cleanup_settings settings;
+
+  if (!crl_response_cache_mutex_created)
+    return;
+
+  read_cleanup_settings(NULL, &settings);
+  cleanup_cache(&settings);
+}
+
 static void *crl_cleanup_thread_proc(void *arg)
 {
-  const long interval = parse_env_seconds(SF_CRL_CACHE_CLEANUP_INTERVAL_ENV,
-                                          SF_CRL_CACHE_CLEANUP_INTERVAL_DEFAULT);
+  const long interval = crl_cleanup_thread_interval;
   long slept;
 
   (void)arg;
-  cleanupCertCRLCache();
+  cleanup_cache(&crl_cleanup_thread_settings);
 
   while (!crl_cleanup_stop && interval > 0) {
     slept = 0;
@@ -1073,7 +1098,7 @@ static void *crl_cleanup_thread_proc(void *arg)
       slept++;
     }
     if (!crl_cleanup_stop)
-      cleanupCertCRLCache();
+      cleanup_cache(&crl_cleanup_thread_settings);
   }
 
   return NULL;
@@ -1113,6 +1138,7 @@ static void start_crl_cleanup_thread(void)
   if (interval <= 0)
     return;
 
+  crl_cleanup_thread_interval = interval;
   crl_cleanup_stop = 0;
 #ifdef _WIN32
   crl_cleanup_thread_started =
@@ -1222,7 +1248,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  long crl_download_timeout,
                                  long crl_download_max_size)
 {
-  char cache_dir[PATH_MAX] = "";
+  struct crl_cleanup_settings settings;
   infof(data, "Registering SF CRL Validation...");
 #ifndef _WIN32
   if (crl_atfork_error)
@@ -1231,9 +1257,9 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
           "cache lock", crl_atfork_error);
 #endif
 
-  get_cache_dir(data, cache_dir);
-  if (*cache_dir)
-    infof(data, "CRL cache file directory: %s", cache_dir);
+  read_cleanup_settings(data, &settings);
+  if (*settings.cache_dir)
+    infof(data, "CRL cache file directory: %s", settings.cache_dir);
   else
     infof(data, "CRL cache file directory not exists!");
 
@@ -1251,6 +1277,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
   sctx_register(ctx, data,
                crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching,
                crl_download_timeout, crl_download_max_size);
+  crl_cleanup_thread_settings = settings;
 
   /* Started on first use, not in initCertCRL(): a process that initializes
    * curl and then forks (e.g. a PHP-FPM master) must not own the thread. */

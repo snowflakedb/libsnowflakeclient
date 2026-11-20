@@ -3,6 +3,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <thread>
 #include <vector>
@@ -36,9 +37,41 @@ void termCertCRL(void);
 int isCertCRLCleanupThreadRunning(void);
 }
 
+extern char **environ;
+
 namespace {
 
 std::string g_cache_dir;
+pthread_t g_main_thread;
+std::atomic<bool> g_main_thread_set(false);
+std::atomic<int> g_getenv_calls(0);
+std::atomic<bool> g_getenv_off_main_thread(false);
+
+} // namespace
+
+#ifdef __GLIBC__
+#define SF_GETENV_NOEXCEPT noexcept
+#else
+#define SF_GETENV_NOEXCEPT
+#endif
+
+// Replaces libc getenv() for the statically linked library code, so calls
+// from any thread other than the main one are recorded.
+extern "C" char *getenv(const char *name) SF_GETENV_NOEXCEPT {
+  ++g_getenv_calls;
+  if (g_main_thread_set.load() && !pthread_equal(pthread_self(), g_main_thread)) {
+    g_getenv_off_main_thread.store(true);
+  }
+  const size_t len = strlen(name);
+  for (char **ep = environ; ep && *ep; ++ep) {
+    if (strncmp(*ep, name, len) == 0 && (*ep)[len] == '=') {
+      return *ep + len + 1;
+    }
+  }
+  return nullptr;
+}
+
+namespace {
 
 // Valid until 2100, so cleanup parses it on every pass and keeps it on disk.
 const char kFreshCrlPem[] =
@@ -111,6 +144,26 @@ void test_fork_before_crl_use(void **unused) {
   })));
 }
 
+// The cleanup thread must not call getenv(): it is not safe while another
+// thread modifies the environment.
+void test_cleanup_thread_does_not_read_environment(void **unused) {
+  SF_UNUSED(unused);
+  // Cleanup removes cache-named files that do not parse as a CRL.
+  const std::string path = g_cache_dir + "/http___crl.example.com_junk";
+  FILE *f = fopen(path.c_str(), "w");
+  assert_non_null(f);
+  fclose(f);
+
+  const int calls_before = g_getenv_calls.load();
+  register_crl_check();
+  assert_true(g_getenv_calls.load() > calls_before);
+  for (int i = 0; i < 1000 && access(path.c_str(), F_OK) == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  assert_int_not_equal(access(path.c_str(), F_OK), 0);
+  assert_false(g_getenv_off_main_thread.load());
+}
+
 void test_fork_after_crl_use(void **unused) {
   SF_UNUSED(unused);
   register_crl_check();
@@ -150,6 +203,34 @@ void test_disabled_cleanup_not_retried(void **unused) {
     setenv("SF_CRL_CACHE_CLEANUP_INTERVAL", "3600", 1);
     register_crl_check();
     _exit(isCertCRLCleanupThreadRunning() ? 8 : 0);
+  })));
+}
+
+// The cleanup thread uses the settings read by the latest registration.
+void test_cleanup_thread_uses_latest_settings(void **unused) {
+  SF_UNUSED(unused);
+  assert_exited_cleanly(wait_child(spawn_child([] {
+    setenv("SF_CRL_CACHE_CLEANUP_INTERVAL", "1", 1);
+    register_crl_check();
+    char dir[] = "/tmp/crl_latest_XXXXXX";
+    if (!mkdtemp(dir)) {
+      _exit(11);
+    }
+    const std::string path = std::string(dir) + "/http___crl.example.com_junk";
+    FILE *f = fopen(path.c_str(), "w");
+    if (!f) {
+      _exit(12);
+    }
+    fclose(f);
+    setenv("SF_CRL_RESPONSE_CACHE_DIR", dir, 1);
+    register_crl_check();
+    for (int i = 0; i < 500 && access(path.c_str(), F_OK) == 0; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    const bool removed = access(path.c_str(), F_OK) != 0;
+    remove(path.c_str());
+    rmdir(dir);
+    _exit(removed ? 0 : 13);
   })));
 }
 
@@ -255,6 +336,9 @@ void test_fork_while_cache_locked(void **unused) {
 }
 
 int main() {
+  g_main_thread = pthread_self();
+  g_main_thread_set.store(true);
+
   char dir[] = "/tmp/crl_fork_XXXXXX";
   if (!mkdtemp(dir)) {
     perror("mkdtemp");
@@ -266,11 +350,14 @@ int main() {
   alarm(120);
 
   curl_global_init(CURL_GLOBAL_ALL);
-  // Order matters: the first test needs a process without a cleanup thread.
+  // Order matters: the first test needs a process without a cleanup thread,
+  // and the second must be the one that starts it.
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_fork_before_crl_use),
+      cmocka_unit_test(test_cleanup_thread_does_not_read_environment),
       cmocka_unit_test(test_fork_after_crl_use),
       cmocka_unit_test(test_disabled_cleanup_not_retried),
+      cmocka_unit_test(test_cleanup_thread_uses_latest_settings),
       cmocka_unit_test(test_cleanup_thread_blocks_signals),
       cmocka_unit_test(test_fork_while_cache_locked),
       cmocka_unit_test(test_fork_while_registering),
