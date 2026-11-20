@@ -63,6 +63,9 @@ if "%dynamic_runtime%"=="OFF" (
 	set sharedlibs=OFF
 )
 
+if "%vs_version%"=="VS18" (
+    set vc_version="Visual Studio 18 2026"
+)
 if "%vs_version%"=="VS17" (
     set vc_version="Visual Studio 17 2022"
 )

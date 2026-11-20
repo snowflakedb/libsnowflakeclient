@@ -214,6 +214,7 @@ PLATFORMS = {
         "aws_libdir": "lib",
         "required": _unix_required(AWS_DARWIN, "lib", with_uuid=False),
     },
+    "win64-vs18": _win_platform("vs18"),
     "win64-vs17": _win_platform("vs17"),
     "win64-vs16": _win_platform("vs16"),
 }

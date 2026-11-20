@@ -387,9 +387,87 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  windows-vs18-x64:
+    name: PDO-vendor-Win-vs18-x64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          fetch-depth: 0
+      - name: Keep PDO packager and CI wrappers from this workflow
+        if: env.BUILD_SHA != github.sha
+        shell: bash
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout "${{ github.sha }}" -- \
+            scripts/package_for_pdo.py \
+            scripts/package_for_pdo.sh \
+            scripts/package_for_pdo.bat \
+            scripts/_init.bat \
+            scripts/utils.bat \
+            scripts/build_arrow_source.bat \
+            scripts/build_boost_source.bat \
+            scripts/build_curl.bat \
+            ci/build_linux.sh \
+            ci/build_mac.sh \
+            ci/build_win.bat
+      - name: Install CMake
+        # The "Visual Studio 18 2026" generator requires CMake 4.2+.
+        shell: cmd
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0-windows-x86_64.zip" -o cmake.zip
+          tar -xf cmake.zip
+          echo %cd%\cmake-4.2.0-windows-x86_64\bin>> %GITHUB_PATH%
+          cmake --version
+      - name: Enable long paths
+        # Enable long-path support so the recursive aws-sdk-cpp clone, which
+        # has deeply nested submodule paths, can be checked out and built on
+        # Windows without hitting the 260-char path limit.
+        shell: cmd
+        run: |
+          git config --system core.longpaths true
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+      - name: Restore cached deps
+        uses: actions/cache/restore@v5
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS18-${{ env.BUILD_SHA }}
+          restore-keys: |
+            pdo-vendor-Release-x64-VS18-
+      - name: Build
+        shell: cmd
+        env:
+          PLATFORM: x64
+          BUILD_TYPE: ${{ env.BUILD_TYPE }}
+          VS_VERSION: VS18
+          BUILD_SOURCE_ONLY: ${{ env.BUILD_SOURCE_ONLY }}
+          PDO_VENDOR_BUILD: ${{ env.PDO_VENDOR_BUILD }}
+        run: ci\build_win.bat
+      - name: Cache deps
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: dep-cache
+          key: pdo-vendor-Release-x64-VS18-${{ env.BUILD_SHA }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ">=3.13.5"
+          architecture: "x64"
+      - name: Package for PDO
+        shell: cmd
+        run: python scripts\package_for_pdo.py package --platform win64-vs18 --output pdo-vendor
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pdo-vendor-win64-vs18
+          path: pdo-vendor
+          if-no-files-found: error
+          retention-days: 30
+
   merge:
     name: PDO-vendor-all
-    needs: [linux-x86, linux-aarch64, macos-arm64, windows-vs16-x64, windows-vs17-x64]
+    needs: [linux-x86, linux-aarch64, macos-arm64, windows-vs16-x64, windows-vs17-x64, windows-vs18-x64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -409,6 +487,7 @@ jobs:
               merged/pdo-vendor-darwin-arm64 \
               merged/pdo-vendor-win64-vs16 \
               merged/pdo-vendor-win64-vs17 \
+              merged/pdo-vendor-win64-vs18 \
             --output pdo-vendor
       - uses: actions/upload-artifact@v7
         with:

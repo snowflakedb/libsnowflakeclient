@@ -52,7 +52,7 @@ Linux and OSX
 
 Windows
 ^^^^^^^^^^
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17, VS18] and run the script.
 
 .. code-block:: bash
 
@@ -175,7 +175,7 @@ Linux and OSX
 
 Windows
 ^^^^^^^^^^
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17, VS18] and run the script.
 
 .. code-block:: bash
 

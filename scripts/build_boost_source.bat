@@ -64,6 +64,11 @@ if /I "%dynamic_runtime%"=="on" (
     set runtimelink=static
 )
 
+:: Boost 1.81's b2 only knows MSVC toolsets up to 14.3 (VS2022). For VS2026
+:: (toolset v145) let b2 pick up the cl.exe already on PATH from vcvarsall.
+set boost_toolset=msvc-14.3
+if /I "%vs_version%"=="VS18" set boost_toolset=msvc
+
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system,url
 if %ERRORLEVEL% NEQ 0 goto :error
 b2 ^
@@ -72,7 +77,7 @@ b2 ^
     --exec-prefix=%BOOST_INSTALL_DIR%^
     --layout=system^
     --with-system --with-filesystem --with-regex --with-url^
-    link=static runtime-link=%runtimelink% toolset=msvc-14.3 threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
+    link=static runtime-link=%runtimelink% toolset=%boost_toolset% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
     cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl"^
     install
 
