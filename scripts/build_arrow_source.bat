@@ -71,6 +71,7 @@ if defined PDO_VENDOR_BUILD (
 
 cmake ..\ ^
 -G "%cmake_generator%" -A "%cmake_architecture%" ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DCMAKE_INSTALL_PREFIX=%ARROW_INSTALL_DIR% ^

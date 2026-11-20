@@ -63,6 +63,7 @@ REM disable CPU extentsions to fix build error on Linux
 REM CPU extentsions might not be always available on all customer environments
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
 -A "%cmake_architecture%" ^
 -DBUILD_ONLY=s3;sts ^
 -DFORCE_CURL=on ^

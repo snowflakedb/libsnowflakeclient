@@ -142,6 +142,7 @@ echo === building curl
 cd "%currdir%\deps\%CURL_DIR%"
 cmake ^
 . -G %vc_version% ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
 -A %cmake_architecture% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^

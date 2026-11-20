@@ -46,6 +46,7 @@ rd /S /Q %cmake_dir%
 md %cmake_dir%
 cd %cmake_dir%
 cmake -G "%cmake_generator%" -A %cmake_architecture% ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
 -DUNIT_TESTING=ON ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
