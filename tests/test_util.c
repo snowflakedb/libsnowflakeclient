@@ -1,6 +1,7 @@
 #include <string.h>
 #include "utils/test_setup.h"
 #include "../lib/snowflake_util.h"
+#include "../lib/client_int.h"
 #include <stdint.h>
 
 void test_parse_bool(void** unused) {
@@ -46,12 +47,42 @@ void test_parse_int8(void** unused) {
     assert_false(parse_int8("-129", &out));
 }
 
+void test_is_put_get_command(void** unused) {
+    SF_UNUSED(unused);
+
+    /* Valid PUT and GET commands. */
+    assert_true(_is_put_get_command("put file:///tmp/file @stage "));
+    assert_true(_is_put_get_command("PUT file:///tmp/file @stage "));
+    assert_true(_is_put_get_command("get @stage file:///tmp "));
+    assert_true(_is_put_get_command("GET @stage file:///tmp "));
+
+    /* Leading spaces, block comments are supported. */
+    assert_true(_is_put_get_command("   put file:///tmp/file @stage "));
+    assert_true(_is_put_get_command("/* comment */ put file:///tmp/file @stage "));
+    assert_true(_is_put_get_command("/* comment */ /* another */ get @stage file:///tmp "));
+
+    /* New lines are supported */
+    assert_true(_is_put_get_command("put file:///tmp/file @stage\n"));
+    assert_true(_is_put_get_command("get \n file:///tmp/file \n @stage"));
+
+    /* Non-PUT/GET statements must not match. */
+    assert_false(_is_put_get_command("select * from put"));
+    assert_false(_is_put_get_command("insert into get values (1)"));
+
+    /* PUT/GET must be followed by whitespace. */
+    assert_false(_is_put_get_command("put_file:///tmp/file"));
+    assert_false(_is_put_get_command("get_stage"));
+    assert_false(_is_put_get_command("put"));
+    assert_false(_is_put_get_command("get"));
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_parse_bool),
       cmocka_unit_test(test_parse_int64),
       cmocka_unit_test(test_parse_int8),
+      cmocka_unit_test(test_is_put_get_command),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
