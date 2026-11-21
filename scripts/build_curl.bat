@@ -63,6 +63,9 @@ if "%dynamic_runtime%"=="OFF" (
 	set sharedlibs=OFF
 )
 
+if "%vs_version%"=="VS18" (
+    set vc_version="Visual Studio 18 2026"
+)
 if "%vs_version%"=="VS17" (
     set vc_version="Visual Studio 17 2022"
 )
@@ -142,6 +145,7 @@ echo === building curl
 cd "%currdir%\deps\%CURL_DIR%"
 cmake ^
 . -G %vc_version% ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
 -A %cmake_architecture% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DBUILD_SHARED_LIBS=%sharedlibs% ^

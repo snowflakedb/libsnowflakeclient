@@ -62,6 +62,16 @@ if "%target_name%"=="" (
 
 set cmake_generator=
 set vsdir=
+:: VS18 (Visual Studio 2026) requires CMake 4.2 or newer for this generator.
+if /I "%vs_version%"=="VS18" (
+    set cmake_generator=Visual Studio 18 2026
+    set vsdir=vs18
+)
+if /I "%vs_version%"=="VS18" if "%VCINSTALLDIR%" == "" call :find_vs18
+if /I "%vs_version%"=="VS18" if "%VCINSTALLDIR%" == "" (
+    echo Set environment variable VCINSTALLDIR to specify Visual Studio 2026 install path.
+    goto :error
+)
 if /I "%vs_version%"=="VS17" (
     set cmake_generator=Visual Studio 17 2022
     set vsdir=vs17
@@ -96,7 +106,7 @@ if /I "%vs_version%"=="VS15" (
     set vsdir=vs15
 )
 if "%cmake_generator%"=="" (
-    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15]
+    echo Specify the VS_VERSION to the Visual Studio Version [VS18, VS17, VS16, VS15]
     goto :error
 )
 
@@ -137,4 +147,23 @@ if exist "%PF86%\Microsoft Visual Studio\2019\BuildTools\VC" (
 )
 set "VCINSTALLDIR="
 for /f "usebackq delims=" %%i in (`"%PF86%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version "[16.0,17.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
+goto :EOF
+
+:: Look up VS2026 outside a parenthesized block for the same reason as above.
+:: VS2026 installs under "Microsoft Visual Studio\18\<edition>" (major version,
+:: not the year as earlier releases did).
+:find_vs18
+set "PF86=%ProgramFiles(x86)%"
+for %%e in (Enterprise Professional Community BuildTools) do (
+    if exist "%ProgramFiles%\Microsoft Visual Studio\18\%%e\VC" (
+        set "VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\18\%%e\VC"
+        goto :EOF
+    )
+)
+if exist "%PF86%\Microsoft Visual Studio\18\BuildTools\VC" (
+    set "VCINSTALLDIR=%PF86%\Microsoft Visual Studio\18\BuildTools\VC"
+    goto :EOF
+)
+set "VCINSTALLDIR="
+for /f "usebackq delims=" %%i in (`"%PF86%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version "[18.0,19.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2^>nul`) do set "VCINSTALLDIR=%%i\VC"
 goto :EOF

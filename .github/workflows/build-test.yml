@@ -156,6 +156,76 @@ jobs:
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci\test_win.bat
+    build-test-win-vs2026:
+        name: Build-Test-Win-vs2026
+        runs-on: windows-2025-vs2026
+        strategy:
+            fail-fast: false
+            matrix:
+                platform: [ 'x64', 'x86' ]
+                build_type: [ 'Debug', 'Release' ]
+                vs_version: [ 'VS18' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+        steps:
+            - uses: actions/checkout@v5
+            - name: Install CMake
+              # The "Visual Studio 18 2026" generator requires CMake 4.2+.
+              shell: cmd
+              run: |
+                curl -L "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0-windows-x86_64.zip" -o cmake.zip
+                tar -xf cmake.zip
+                echo %cd%\cmake-4.2.0-windows-x86_64\bin>> %GITHUB_PATH%
+                cmake --version
+            - name: Enable long paths
+              # Enable long-path support so the recursive aws-sdk-cpp clone, which
+              # has deeply nested submodule paths, can be checked out and built on
+              # Windows without hitting the 260-char path limit.
+              shell: cmd
+              run: |
+                git config --system core.longpaths true
+                reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v5
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.event.pull_request.base.sha }}-Win-dep-cache
+              if: github.event_name == 'pull_request'
+            - name: Build
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: ci\build_win.bat
+            - name: Cache deps
+              id: cache-save-deps
+              uses: actions/cache/save@v5
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
+              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
+            - uses: actions/setup-python@v6
+              with:
+                # 3.14 stays above the 3.13.4 Windows installer bug (python/cpython#135151)
+                # and is the newest CPython with a snowflake-connector-python wheel.
+                python-version: '3.14'
+                architecture: 'x64'
+            - name: Prepare AWS sandbox credentials
+              if: matrix.cloud_provider == 'AWS' && github.repository == 'zll600/libsnowflakeclient' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+              uses: ./.github/actions/prepare-aws-sandbox
+              with:
+                parameters: ${{ secrets.LIBSFCLIENT_AWS_PARAMETERS_JSON }}
+                private-key: ${{ secrets.LIBSFCLIENT_AWS_PRIVATE_KEY }}
+            - name: Test
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci\test_win.bat
     build-test-mac:
         name: Build-Test-Mac
         runs-on: macos-14

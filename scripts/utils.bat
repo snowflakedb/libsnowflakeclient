@@ -6,6 +6,17 @@ call %*
 goto :EOF
 
 :setup_visual_studio
+    if /I "%~1"=="VS18" (
+        if not "%VisualStudioVersion%"=="18.0" (
+            echo === setting up the Visual Studio 18 environments
+            if "%VCINSTALLDIR%" == "" (
+                echo === ERROR: VCINSTALLDIR is not set for VS18
+                goto :error
+            )
+            call "%VCINSTALLDIR%\Auxiliary\Build\vcvarsall.bat" %arch%
+        )
+        goto :EOF
+    )
     if /I "%~1"=="VS17" (
         if not "%VisualStudioVersion%"=="17.0" (
             echo === setting up the Visual Studio 17 environments
