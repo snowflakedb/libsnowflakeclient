@@ -22,10 +22,17 @@ ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
+rm -rf $ARROW_SOURCE_DIR
+git clone --single-branch --branch apache-arrow-$ARROW_SRC_VERSION --recursive https://github.com/apache/arrow $ARROW_SOURCE_DIR
+pushd $ARROW_SOURCE_DIR
+  git submodule update --init --recursive
+popd
+
 ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread -DBOOST_FILESYSTEM_VERSION=3"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
+    arrow_configure_opts+=("-DBUILD_WARNING_LEVEL=PRODUCTION") 
     ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build-debug
     if [[ "$PLATFORM" == "darwin" ]]; then
         ARROW_CXXFLAGS="$ARROW_CXXFLAGS -Wno-error=unused-const-variable -Wno-error=unneeded-internal-declaration -Wno-error=deprecated-declarations"
@@ -55,12 +62,28 @@ arrow_configure_opts+=(
     "-DARROW_HDFS=OFF"
     "-DARROW_SIMD_LEVEL=NONE"
     "-DARROW_WITH_BACKTRACE=OFF"
+	"-DARROW_MIMALLOC=OFF"
+    "-DARROW_JEMALLOC=ON"
     "-DARROW_JEMALLOC_USE_SHARED=OFF"
     "-DARROW_BUILD_TESTS=OFF"
-    "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
+	"-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
     "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
     "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
+    "-DARROW_RUNTIME_SIMD_LEVEL=NONE" 
 )
+
+# jemalloc bakes the page size in at compile time: a binary built for a smaller
+# page size aborts on a larger-page host, so build for the largest target.
+if [[ "$PLATFORM" == "darwin" ]]; then
+    if [[ "$ARCH" == "universal" ]]; then
+        # must cover Apple Silicon (16k) even when built on an Intel runner
+        arrow_configure_opts+=("-DARROW_JEMALLOC_LG_PAGE=14")
+    fi
+    # single-arch mac: host detection is already correct
+elif [[ "$PLATFORM" == "linux" ]] && [[ "$(uname -m)" =~ ^(aarch64|arm64)$ ]]; then
+    # cover both 4k (AL2023/Ubuntu) and 64k (RHEL) aarch64 kernels
+    arrow_configure_opts+=("-DARROW_JEMALLOC_LG_PAGE=16")
+fi
 
 rm -rf $ARROW_BUILD_DIR
 rm -rf $ARROW_DEPS_BUILD_DIR
